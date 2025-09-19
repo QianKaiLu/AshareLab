@@ -39,15 +39,25 @@ BAN_PATTERNS = (
     "max retries exceeded"
 )
 
+
 def _looks_like_ip_ban(exc: Exception) -> bool:
+    """
+    检查给定的异常是否看起来像因为访问频率过高而被封的模式。
+    """
     msg = (str(exc) or "").lower()
     return any(pat in msg for pat in BAN_PATTERNS)
+
 
 class RateLimitError(RuntimeError):
     """表示命中限流/封禁，需要长时间冷却后重试。"""
     pass
 
+
 def _cool_sleep(base_seconds: int) -> None:
+    """
+    当检测到限流/封禁时，随机抖动后休眠一段时间。
+    避免再次触发封禁。
+    """
     jitter = random.uniform(0.9, 1.2)
     sleep_s = max(1, int(base_seconds * jitter))
     logger.warning("疑似被限流/封禁，进入冷却期 %d 秒...", sleep_s)
@@ -56,14 +66,20 @@ def _cool_sleep(base_seconds: int) -> None:
 # --------------------------- 历史K线（Tushare 日线，固定qfq） --------------------------- #
 pro: Optional[ts.pro_api] = None  # 模块级会话
 
+
 def set_api(session) -> None:
-    """由外部(比如GUI)注入已创建好的 ts.pro_api() 会话"""
+    """
+    由外部(比如GUI)注入已创建好的 ts.pro_api() 会话
+    """
     global pro
     pro = session
-    
+
 
 def _to_ts_code(code: str) -> str:
-    """把6位code映射到标准 ts_code 后缀。"""
+    """
+    将6位代码转换为符合Tushare标准的 ts_code 格式，带市场后缀（.SH/.SZ/.BJ）
+    支持沪市、深市、北交所。
+    """
     code = str(code).zfill(6)
     if code.startswith(("60", "68", "9")):
         return f"{code}.SH"
@@ -72,7 +88,12 @@ def _to_ts_code(code: str) -> str:
     else:
         return f"{code}.SZ"
 
+
 def _get_kline_tushare(code: str, start: str, end: str) -> pd.DataFrame:
+    """
+    使用Tsushare接口获取指定股票代码的历史K线数据。
+    返回 DataFrame，包含日期、开盘、收盘、最高、最低、成交量等字段。
+    """
     ts_code = _to_ts_code(code)
     try:
         df = ts.pro_bar(
@@ -99,7 +120,13 @@ def _get_kline_tushare(code: str, start: str, end: str) -> pd.DataFrame:
         df[c] = pd.to_numeric(df[c], errors="coerce")
     return df.sort_values("date").reset_index(drop=True)
 
+
 def validate(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    对历史K线数据进行基本校验：
+    - 日期不能为NaN
+    - 数据中不能包含未来日期
+    """
     if df is None or df.empty:
         return df
     df = df.drop_duplicates(subset="date").sort_values("date").reset_index(drop=True)
@@ -111,12 +138,11 @@ def validate(df: pd.DataFrame) -> pd.DataFrame:
 
 # --------------------------- 读取 stocklist.csv & 过滤板块 --------------------------- #
 
+
 def _filter_by_boards_stocklist(df: pd.DataFrame, exclude_boards: set[str]) -> pd.DataFrame:
     """
-    exclude_boards 子集：{'gem','star','bj'}
-    - gem  : 创业板 300/301（.SZ）
-    - star : 科创板 688（.SH）
-    - bj   : 北交所（.BJ 或 4/8 开头）
+    根据 exclude_boards 参数过滤掉不需要的股票板块。
+    支持：gem（创业板），star（科创板），bj（北交所）
     """
     code = df["symbol"].astype(str)
     ts_code = df["ts_code"].astype(str).str.upper()
@@ -131,8 +157,13 @@ def _filter_by_boards_stocklist(df: pd.DataFrame, exclude_boards: set[str]) -> p
 
     return df[mask].copy()
 
+
 def load_codes_from_stocklist(stocklist_csv: Path, exclude_boards: set[str]) -> List[str]:
-    df = pd.read_csv(stocklist_csv)    
+    """
+    从 stocklist.csv 文件加载股票代码，并根据板块排除规则过滤。
+    返回去重后的代码列表。
+    """
+    df = pd.read_csv(stocklist_csv)
     df = _filter_by_boards_stocklist(df, exclude_boards)
     codes = df["symbol"].astype(str).str.zfill(6).tolist()
     codes = list(dict.fromkeys(codes))  # 去重保持顺序
@@ -141,12 +172,19 @@ def load_codes_from_stocklist(stocklist_csv: Path, exclude_boards: set[str]) -> 
     return codes
 
 # --------------------------- 单只抓取（全量覆盖保存） --------------------------- #
+
+
 def fetch_one(
     code: str,
     start: str,
     end: str,
     out_dir: Path,
 ):
+    """
+    为抓取单只股票的历史K线数据：
+    1. 若成功则保存为CSV，路径为：out_dir/code.csv
+    2. 若失败，会尝试最多3次重试，包括等待冷却时间
+    """
     csv_path = out_dir / f"{code}.csv"
 
     for attempt in range(1, 4):
@@ -170,7 +208,18 @@ def fetch_one(
         logger.error("%s 三次抓取均失败，已跳过！", code)
 
 # --------------------------- 主入口 --------------------------- #
+
+
 def main():
+    """
+    脚本主入口：
+    1. 解析命令行参数
+    2. 设置日志和Tushare Token
+    3. 加载股票列表
+    4. 并发抓取K线数据
+    5. 输出结果到指定目录
+    """
+
     parser = argparse.ArgumentParser(description="从 stocklist.csv 读取股票池并用 Tushare 抓取日线K线（固定qfq，全量覆盖）")
     # 抓取范围
     parser.add_argument("--start", default="20190101", help="起始日期 YYYYMMDD 或 'today'")

@@ -36,6 +36,25 @@ def compute_kdj(df: pd.DataFrame, n: int = 9) -> pd.DataFrame:
     J = 3 * K - 2 * D
     return df.assign(K=K, D=D, J=J)
 
+def compute_kdj_v2(df: pd.DataFrame, n: int = 9) -> pd.DataFrame:
+    """计算KDJ指标"""
+    if df.empty:
+        return df.assign(K=np.nan, D=np.nan, J=np.nan)
+
+    # 计算N周期内最低价和最高价
+    low_n = df["low"].rolling(window=n, min_periods=1).min()
+    high_n = df["high"].rolling(window=n, min_periods=1).max()
+    
+    # 计算RSV (Raw Stochastic Value)
+    rsv = (df["close"] - low_n) / (high_n - low_n + 1e-9) * 100
+
+    # 使用 ewm 进行指数加权移动平均模拟 K 和 D 的递推关系
+    K = rsv.ewm(alpha=1/3, adjust=False, min_periods=1).mean()  # 初始值自动为50
+    D = K.ewm(alpha=1/3, adjust=False, min_periods=1).mean()
+    J = 3 * K - 2 * D
+
+    return df.assign(K=K, D=D, J=J)
+
 
 def compute_bbi(df: pd.DataFrame) -> pd.Series:
     """计算BBI指标(Bull and Bear Index)
@@ -209,6 +228,9 @@ def last_valid_ma_cross_up(
     if lookback_n is not None:
         start = max(start, n - lookback_n)
 
+
+
+def compute_zx_lines(
     # 自后向前找最后一次有效上穿
     for i in range(n - 1, start - 1, -1):
         if i - 1 < 0:
@@ -219,9 +241,6 @@ def last_valid_ma_cross_up(
             if c_prev < m_prev and c_now >= m_now:
                 return i
     return None
-
-
-def compute_zx_lines(
     df: pd.DataFrame,
     m1: int = 14, m2: int = 28, m3: int = 57, m4: int = 114
 ) -> tuple[pd.Series, pd.Series]:

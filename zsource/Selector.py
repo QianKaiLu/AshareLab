@@ -1,23 +1,12 @@
 from typing import Dict, List, Optional, Any
 
+from scipy.signal import find_peaks
 import numpy as np
 import pandas as pd
-from scipy.signal import find_peaks
-
 
 # --------------------------- 通用指标 --------------------------- #
 
-
 def compute_kdj(df: pd.DataFrame, n: int = 9) -> pd.DataFrame:
-    """计算KDJ指标
-    
-    Args:
-        df: 包含high, low, close列的DataFrame
-        n: 计算周期，默认为9
-        
-    Returns:
-        添加了K, D, J列的DataFrame
-    """
     if df.empty:
         return df.assign(K=np.nan, D=np.nan, J=np.nan)
 
@@ -36,35 +25,8 @@ def compute_kdj(df: pd.DataFrame, n: int = 9) -> pd.DataFrame:
     J = 3 * K - 2 * D
     return df.assign(K=K, D=D, J=J)
 
-def compute_kdj_v2(df: pd.DataFrame, n: int = 9) -> pd.DataFrame:
-    """计算KDJ指标"""
-    if df.empty:
-        return df.assign(K=np.nan, D=np.nan, J=np.nan)
-
-    # 计算N周期内最低价和最高价
-    low_n = df["low"].rolling(window=n, min_periods=1).min()
-    high_n = df["high"].rolling(window=n, min_periods=1).max()
-    
-    # 计算RSV (Raw Stochastic Value)
-    rsv = (df["close"] - low_n) / (high_n - low_n + 1e-9) * 100
-
-    # 使用 ewm 进行指数加权移动平均模拟 K 和 D 的递推关系
-    K = rsv.ewm(alpha=1/3, adjust=False, min_periods=1).mean()  # 初始值自动为50
-    D = K.ewm(alpha=1/3, adjust=False, min_periods=1).mean()
-    J = 3 * K - 2 * D
-
-    return df.assign(K=K, D=D, J=J)
-
 
 def compute_bbi(df: pd.DataFrame) -> pd.Series:
-    """计算BBI指标(Bull and Bear Index)
-    
-    Args:
-        df: 包含close列的DataFrame
-        
-    Returns:
-        BBI序列
-    """
     ma3 = df["close"].rolling(3).mean()
     ma6 = df["close"].rolling(6).mean()
     ma12 = df["close"].rolling(12).mean()
@@ -76,18 +38,10 @@ def compute_rsv(
     df: pd.DataFrame,
     n: int,
 ) -> pd.Series:
-    """计算RSV指标
-    
+    """
     按公式：RSV(N) = 100 × (C - LLV(L,N)) ÷ (HHV(C,N) - LLV(L,N))
     - C 用收盘价最高值 (HHV of close)
     - L 用最低价最低值 (LLV of low)
-    
-    Args:
-        df: 包含high, low, close列的DataFrame
-        n: 计算周期
-        
-    Returns:
-        RSV序列
     """
     low_n = df["low"].rolling(window=n, min_periods=1).min()
     high_close_n = df["close"].rolling(window=n, min_periods=1).max()
@@ -96,16 +50,7 @@ def compute_rsv(
 
 
 def compute_dif(df: pd.DataFrame, fast: int = 12, slow: int = 26) -> pd.Series:
-    """计算 MACD 指标中的 DIF (EMA fast - EMA slow)。
-    
-    Args:
-        df: 包含close列的DataFrame
-        fast: 快速EMA周期，默认12
-        slow: 慢速EMA周期，默认26
-        
-    Returns:
-        DIF序列
-    """
+    """计算 MACD 指标中的 DIF (EMA fast - EMA slow)。"""
     ema_fast = df["close"].ewm(span=fast, adjust=False).mean()
     ema_slow = df["close"].ewm(span=slow, adjust=False).mean()
     return ema_fast - ema_slow
@@ -118,7 +63,8 @@ def bbi_deriv_uptrend(
     max_window: int | None = None,
     q_threshold: float = 0.0,
 ) -> bool:
-    """判断 BBI 是否"整体上升"。
+    """
+    判断 BBI 是否“整体上升”。
 
     令最新交易日为 T，在区间 [T-w+1, T]（w 自适应，w ≥ min_window 且 ≤ max_window）
     内，先将 BBI 归一化：BBI_norm(t) = BBI(t) / BBI(T-w+1)。
@@ -126,16 +72,18 @@ def bbi_deriv_uptrend(
     再计算一阶差分 Δ(t) = BBI_norm(t) - BBI_norm(t-1)。  
     若 Δ(t) 的前 q_threshold 分位数 ≥ 0，则认为该窗口通过；只要存在
     **最长** 满足条件的窗口即可返回 True。q_threshold=0 时退化为
-    "全程单调不降"（旧版行为）。
+    “全程单调不降”（旧版行为）。
 
-    Args:
-        bbi: BBI 序列（最新值在最后一位）。
-        min_window: 检测窗口的最小长度。
-        max_window: 检测窗口的最大长度；None 表示不设上限。
-        q_threshold: 允许一阶差分为负的比例（0 ≤ q_threshold ≤ 1）。
-
-    Returns:
-        bool: 是否满足上升趋势条件
+    Parameters
+    ----------
+    bbi : pd.Series
+        BBI 序列（最新值在最后一位）。
+    min_window : int
+        检测窗口的最小长度。
+    max_window : int | None
+        检测窗口的最大长度；None 表示不设上限。
+    q_threshold : float, default 0.0
+        允许一阶差分为负的比例（0 ≤ q_threshold ≤ 1）。
     """
     if not 0.0 <= q_threshold <= 1.0:
         raise ValueError("q_threshold 必须位于 [0, 1] 区间内")
@@ -167,21 +115,7 @@ def _find_peaks(
     rel_height: float = 0.5,
     **kwargs: Any,
 ) -> pd.DataFrame:
-    """查找数据中的峰值点
     
-    Args:
-        df: 输入DataFrame
-        column: 用于查找峰值的列名
-        distance: 峰值之间的最小距离
-        prominence: 峰值突出度
-        height: 峰值高度
-        width: 峰值宽度
-        rel_height: 相对高度参数
-        **kwargs: 其他传递给find_peaks的参数
-        
-    Returns:
-        包含峰值信息的DataFrame
-    """
     if column not in df.columns:
         raise KeyError(f"'{column}' not found in DataFrame columns: {list(df.columns)}")
 
@@ -207,30 +141,21 @@ def _find_peaks(
 
     return peaks_df
 
-
 def last_valid_ma_cross_up(
     close: pd.Series,
     ma: pd.Series,
     lookback_n: int | None = None,
 ) -> Optional[int]:
-    """查找"有效上穿 MA"的最后一个交易日 T（close[T-1] < ma[T-1] 且 close[T] ≥ ma[T]）。
-    
-    Args:
-        close: 收盘价序列
-        ma: 移动平均线序列
-        lookback_n: 仅在最近 N 根内查找；None 则全历史
-        
-    Returns:
-        整数位置（iloc 用），如果未找到则返回None
+    """
+    查找“有效上穿 MA”的最后一个交易日 T（close[T-1] < ma[T-1] 且 close[T] ≥ ma[T]）。
+    - 返回的是 **整数位置**（iloc 用）。
+    - lookback_n: 仅在最近 N 根内查找；None 则全历史。
     """
     n = len(close)
     start = 1  # 至少要从 1 起，因为要看 T-1
     if lookback_n is not None:
         start = max(start, n - lookback_n)
 
-
-
-def compute_zx_lines(
     # 自后向前找最后一次有效上穿
     for i in range(n - 1, start - 1, -1):
         if i - 1 < 0:
@@ -241,17 +166,15 @@ def compute_zx_lines(
             if c_prev < m_prev and c_now >= m_now:
                 return i
     return None
+
+
+def compute_zx_lines(
     df: pd.DataFrame,
     m1: int = 14, m2: int = 28, m3: int = 57, m4: int = 114
 ) -> tuple[pd.Series, pd.Series]:
-    """计算知行线指标
-    
-    Args:
-        df: 包含close列的DataFrame
-        m1, m2, m3, m4: 四条均线的周期参数
-        
-    Returns:
-        tuple: (ZXDQ, ZXDKX)序列
+    """返回 (ZXDQ, ZXDKX)
+    ZXDQ = EMA(EMA(C,10),10)
+    ZXDKX = (MA(C,14)+MA(C,28)+MA(C,57)+MA(C,114))/4
     """
     close = df["close"].astype(float)
     zxdq = close.ewm(span=10, adjust=False).mean().ewm(span=10, adjust=False).mean()
@@ -265,17 +188,10 @@ def compute_zx_lines(
 
 
 def passes_day_constraints_today(df: pd.DataFrame, pct_limit: float = 0.02, amp_limit: float = 0.07) -> bool:
-    """所有战法的统一当日过滤：
+    """
+    所有战法的统一当日过滤：
     1) 当前交易日相较于前一日涨跌幅 < pct_limit（绝对值）
     2) 当日振幅（High-Low 相对 Low） < amp_limit
-    
-    Args:
-        df: 包含日期、开盘价、最高价、最低价、收盘价的DataFrame
-        pct_limit: 涨跌幅限制
-        amp_limit: 振幅限制
-        
-    Returns:
-        bool: 是否满足当日约束条件
     """
     if len(df) < 2:
         return False
@@ -299,19 +215,11 @@ def zx_condition_at_positions(
     require_short_gt_long: bool = True,
     pos: int | None = None,
 ) -> bool:
-    """在指定位置 pos（iloc 位置；None 表示当日）检查知行条件：
+    """
+    在指定位置 pos（iloc 位置；None 表示当日）检查知行条件：
       - 收盘 > 长期线（可选）
       - 短期线 > 长期线（可选）
     注：长期线需满样本；若为 NaN 直接返回 False。
-    
-    Args:
-        df: 包含价格数据的DataFrame
-        require_close_gt_long: 是否要求收盘价大于长期线
-        require_short_gt_long: 是否要求短期线大于长期线
-        pos: 检查的位置，None表示最新一天
-        
-    Returns:
-        bool: 是否满足知行条件
     """
     if df.empty:
         return False
@@ -335,12 +243,10 @@ def zx_condition_at_positions(
         return False
     return True
 
-
 # --------------------------- Selector 类 --------------------------- #
-
-
 class BBIKDJSelector:
-    """自适应 *BBI(导数)* + *KDJ* 选股器
+    """
+    自适应 *BBI(导数)* + *KDJ* 选股器
         • BBI: 允许 bbi_q_threshold 比例的回撤
         • KDJ: J < threshold ；或位于历史 J 的 j_q_threshold 分位及以下
         • MACD: DIF > 0
@@ -356,16 +262,6 @@ class BBIKDJSelector:
         bbi_q_threshold: float = 0.05,
         j_q_threshold: float = 0.10,
     ) -> None:
-        """初始化BBIKDJ选股器
-        
-        Args:
-            j_threshold: J值阈值
-            bbi_min_window: BBI最小检测窗口
-            max_window: 最大检测窗口
-            price_range_pct: 价格波动幅度限制
-            bbi_q_threshold: BBI回撤比例阈值
-            j_q_threshold: J值分位数阈值
-        """
         self.j_threshold = j_threshold
         self.bbi_min_window = bbi_min_window
         self.max_window = max_window
@@ -375,14 +271,6 @@ class BBIKDJSelector:
 
     # ---------- 单支股票过滤 ---------- #
     def _passes_filters(self, hist: pd.DataFrame) -> bool:
-        """检查单支股票是否满足过滤条件
-        
-        Args:
-            hist: 股票历史数据
-            
-        Returns:
-            bool: 是否满足过滤条件
-        """
         hist = hist.copy()
         hist["BBI"] = compute_bbi(hist)
         
@@ -415,6 +303,7 @@ class BBIKDJSelector:
         j_quantile = float(j_window.quantile(self.j_q_threshold))
 
         if not (j_today < self.j_threshold or j_today <= j_quantile):
+            
             return False
         
         # —— 2.5 60日均线条件（使用通用函数）
@@ -424,7 +313,7 @@ class BBIKDJSelector:
         if hist["close"].iloc[-1] < hist["MA60"].iloc[-1]:
             return False
 
-        # 寻找最近一次"有效上穿 MA60"的 T（使用 max_window 作为回看长度，避免过旧）
+        # 寻找最近一次“有效上穿 MA60”的 T（使用 max_window 作为回看长度，避免过旧）
         t_pos = last_valid_ma_cross_up(hist["close"], hist["MA60"], lookback_n=self.max_window)
         if t_pos is None:
             return False        
@@ -444,15 +333,6 @@ class BBIKDJSelector:
     def select(
         self, date: pd.Timestamp, data: Dict[str, pd.DataFrame]
     ) -> List[str]:
-        """批量选股
-        
-        Args:
-            date: 选股日期
-            data: 股票数据字典
-            
-        Returns:
-            选股结果列表
-        """
         picks: List[str] = []
         for code, df in data.items():
             hist = df[df["date"] <= date]
@@ -495,16 +375,6 @@ class SuperB1Selector:
         # ↓↓↓ 新增：嵌套 BBIKDJSelector 配置
         B1_params: Optional[Dict[str, Any]] = None        
     ) -> None:        
-        """初始化SuperB1选股器
-        
-        Args:
-            lookback_n: 回看交易日数量
-            close_vol_pct: 收盘价波动率限制
-            price_drop_pct: 当日价格下跌比例
-            j_threshold: J值阈值
-            j_q_threshold: J值分位数阈值
-            B1_params: BBIKDJSelector参数配置
-        """
         # ---------- 参数合法性检查 ----------
         if lookback_n < 2:
             raise ValueError("lookback_n 应 ≥ 2")
@@ -532,14 +402,6 @@ class SuperB1Selector:
 
     # 单支股票过滤核心
     def _passes_filters(self, hist: pd.DataFrame) -> bool:
-        """检查单支股票是否满足SuperB1过滤条件
-        
-        Args:
-            hist: 股票历史数据
-            
-        Returns:
-            bool: 是否满足过滤条件
-        """
         if len(hist) < 2:
             return False
 
@@ -596,15 +458,6 @@ class SuperB1Selector:
 
     # 批量选股接口
     def select(self, date: pd.Timestamp, data: Dict[str, pd.DataFrame]) -> List[str]:        
-        """批量选股
-        
-        Args:
-            date: 选股日期
-            data: 股票数据字典
-            
-        Returns:
-            选股结果列表
-        """
         picks: List[str] = []
         min_len = self.lookback_n + self._extra_for_bbi
 
@@ -619,7 +472,8 @@ class SuperB1Selector:
 
 
 class PeakKDJSelector:
-    """Peaks + KDJ 选股器    
+    """
+    Peaks + KDJ 选股器    
     """
 
     def __init__(
@@ -630,15 +484,6 @@ class PeakKDJSelector:
         gap_threshold: float = 0.02,
         j_q_threshold: float = 0.10,
     ) -> None:
-        """初始化PeakKDJ选股器
-        
-        Args:
-            j_threshold: J值阈值
-            max_window: 最大检测窗口
-            fluc_threshold: 波动率阈值
-            gap_threshold: 间隔阈值
-            j_q_threshold: J值分位数阈值
-        """
         self.j_threshold = j_threshold
         self.max_window = max_window
         self.fluc_threshold = fluc_threshold  # 当日↔peak_(t-n) 波动率上限
@@ -647,14 +492,6 @@ class PeakKDJSelector:
 
     # ---------- 单支股票过滤 ---------- #
     def _passes_filters(self, hist: pd.DataFrame) -> bool:
-        """检查单支股票是否满足PeakKDJ过滤条件
-        
-        Args:
-            hist: 股票历史数据
-            
-        Returns:
-            bool: 是否满足过滤条件
-        """
         if hist.empty:
             return False
         
@@ -691,7 +528,7 @@ class PeakKDJSelector:
             if oc_t <= oc_prev:             # 要求 peak_t > peak_(t-n)
                 continue
 
-            # 只有当"总峰数 ≥ 3"时才检查区间内其他峰 oc_max
+            # 只有当“总峰数 ≥ 3”时才检查区间内其他峰 oc_max
             if total_peaks >= 3 and idx < total_peaks - 2:
                 inter_oc = peaks_list.loc[idx + 1 : total_peaks - 2, "oc_max"]
                 if not (inter_oc < oc_prev).all():
@@ -740,15 +577,6 @@ class PeakKDJSelector:
         date: pd.Timestamp,
         data: Dict[str, pd.DataFrame],
     ) -> List[str]:
-        """批量选股
-        
-        Args:
-            date: 选股日期
-            data: 股票数据字典
-            
-        Returns:
-            选股结果列表
-        """
         picks: List[str] = []
         for code, df in data.items():
             hist = df[df["date"] <= date]
@@ -761,7 +589,8 @@ class PeakKDJSelector:
     
 
 class BBIShortLongSelector:
-    """BBI 上升 + 短/长期 RSV 条件 + DIF > 0 选股器
+    """
+    BBI 上升 + 短/长期 RSV 条件 + DIF > 0 选股器
     """
     def __init__(
         self,
@@ -774,18 +603,6 @@ class BBIShortLongSelector:
         upper_rsv_threshold: float = 75,
         lower_rsv_threshold: float = 25
     ) -> None:
-        """初始化BBIShortLong选股器
-        
-        Args:
-            n_short: 短期RSV周期
-            n_long: 长期RSV周期
-            m: 检测窗口长度
-            bbi_min_window: BBI最小检测窗口
-            max_window: 最大检测窗口
-            bbi_q_threshold: BBI回撤比例阈值
-            upper_rsv_threshold: RSV上限阈值
-            lower_rsv_threshold: RSV下限阈值
-        """
         if m < 2:
             raise ValueError("m 必须 ≥ 2")
         self.n_short = n_short
@@ -799,14 +616,6 @@ class BBIShortLongSelector:
 
     # ---------- 单支股票过滤 ---------- #
     def _passes_filters(self, hist: pd.DataFrame) -> bool:
-        """检查单支股票是否满足BBIShortLong过滤条件
-        
-        Args:
-            hist: 股票历史数据
-            
-        Returns:
-            bool: 是否满足过滤条件
-        """
         hist = hist.copy()
         hist["BBI"] = compute_bbi(hist)
         
@@ -864,21 +673,13 @@ class BBIShortLongSelector:
 
         return True
 
+
     # ---------- 多股票批量 ---------- #
     def select(
         self,
         date: pd.Timestamp,
         data: Dict[str, pd.DataFrame],
     ) -> List[str]:
-        """批量选股
-        
-        Args:
-            date: 选股日期
-            data: 股票数据字典
-            
-        Returns:
-            选股结果列表
-        """
         picks: List[str] = []
         for code, df in data.items():
             hist = df[df["date"] <= date]
@@ -897,10 +698,11 @@ class BBIShortLongSelector:
     
     
 class MA60CrossVolumeWaveSelector:
-    """条件：
+    """
+    条件：
     1) 当日 J 绝对低或相对低（J < j_threshold 或 J ≤ 近 max_window 根 J 的 j_q_threshold 分位）
-    2) 最近 lookback_n 内，存在一次"有效上穿 MA60"（t-1 收盘 < MA60, t 收盘 ≥ MA60）；
-       且从该上穿日 T 到今天的"上涨波段"日均成交量 ≥ 上穿前等长窗口的日均成交量 * vol_multiple
+    2) 最近 lookback_n 内，存在一次“有效上穿 MA60”（t-1 收盘 < MA60, t 收盘 ≥ MA60）；
+       且从该上穿日 T 到今天的“上涨波段”日均成交量 ≥ 上穿前等长窗口的日均成交量 * vol_multiple
        —— 上涨波段定义为 [T, today] 间的所有交易日（不做趋势单调性强约束，稳健且可复现）
     3) 近 ma60_slope_days（默认 5）个交易日的 MA60 回归斜率 > 0
     """
@@ -914,16 +716,6 @@ class MA60CrossVolumeWaveSelector:
         ma60_slope_days: int = 5,
         max_window: int = 120,   # 用于计算 J 分位        
     ) -> None:
-        """初始化MA60CrossVolumeWave选股器
-        
-        Args:
-            lookback_n: 回看交易日数量
-            vol_multiple: 成交量倍数阈值
-            j_threshold: J值阈值
-            j_q_threshold: J值分位数阈值
-            ma60_slope_days: MA60斜率计算天数
-            max_window: 最大检测窗口
-        """
         if lookback_n < 2:
             raise ValueError("lookback_n 应 ≥ 2")
         if not (0.0 <= j_q_threshold <= 1.0):
@@ -939,15 +731,7 @@ class MA60CrossVolumeWaveSelector:
 
     @staticmethod
     def _ma_slope_positive(series: pd.Series, days: int) -> bool:
-        """对最近 days 个点做一阶线性回归，斜率 > 0 判为正
-        
-        Args:
-            series: 数据序列
-            days: 计算天数
-            
-        Returns:
-            bool: 斜率是否为正
-        """
+        """对最近 days 个点做一阶线性回归，斜率 > 0 判为正"""
         seg = series.dropna().tail(days)
         if len(seg) < days:
             return False
@@ -957,14 +741,9 @@ class MA60CrossVolumeWaveSelector:
         return bool(k > 0)
 
     def _passes_filters(self, hist: pd.DataFrame) -> bool:
-        """检查单支股票是否满足MA60CrossVolumeWave过滤条件
-        
-        Args:
-            hist: 股票历史数据，按日期升序，最后一行是目标交易日
-                需包含列：date, open, high, low, close, volume
-                
-        Returns:
-            bool: 是否满足过滤条件
+        """
+        hist：按日期升序，最后一行是目标交易日
+        需包含列：date, open, high, low, close, volume
         """
         if hist.empty:
             return False
@@ -1004,7 +783,7 @@ class MA60CrossVolumeWaveSelector:
         if seg_T_to_today.empty:
             return False
 
-        # 若并列最高，默认取"第一次"出现的那天；要"最后一次"可改见注释
+        # 若并列最高，默认取“第一次”出现的那天；要“最后一次”可改见注释
         tmax_label = seg_T_to_today["high"].idxmax()
         int_pos_T   = t_pos
         int_pos_Tmax = hist.index.get_loc(tmax_label)
@@ -1043,15 +822,6 @@ class MA60CrossVolumeWaveSelector:
         return True
 
     def select(self, date: pd.Timestamp, data: Dict[str, pd.DataFrame]) -> List[str]:
-        """批量选股
-        
-        Args:
-            date: 选股日期
-            data: 股票数据字典
-            
-        Returns:
-            选股结果列表
-        """
         picks: List[str] = []
         # 给足 60 日均线与量能比较的历史长度
         need_len = max(60 + self.lookback_n + self.ma60_slope_days, self.max_window + 20)

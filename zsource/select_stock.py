@@ -10,12 +10,7 @@ from typing import Any, Dict, Iterable, List
 
 import pandas as pd
 
-
-# ==========================================================================================
-# 日志配置
-# 配置日志输出到控制台和文件（select_results.log）
-# ==========================================================================================
-
+# ---------- 日志 ----------
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -28,18 +23,9 @@ logging.basicConfig(
 logger = logging.getLogger("select")
 
 
-# ==========================================================================================
-# 工具函数
-# 提供加载数据、配置及动态实例化 Selector 的功能
-# ==========================================================================================
+# ---------- 工具 ----------
 
 def load_data(data_dir: Path, codes: Iterable[str]) -> Dict[str, pd.DataFrame]:
-    """
-    从指定目录中按照股票代码加载 CSV 行情数据
-    :param data_dir: 行情数据目录
-    :param codes: 股票代码列表
-    :return: 以代码为键，行情数据 DataFrame 为值的字典
-    """
     frames: Dict[str, pd.DataFrame] = {}
     for code in codes:
         fp = data_dir / f"{code}.csv"
@@ -52,12 +38,6 @@ def load_data(data_dir: Path, codes: Iterable[str]) -> Dict[str, pd.DataFrame]:
 
 
 def load_config(cfg_path: Path) -> List[Dict[str, Any]]:
-    """
-    加载 Selector 配置文件，支持三种结构：
-    单个配置对象、配置对象数组、或包含 selectors 键的对象
-    :param cfg_path: 配置文件路径
-    :return: 配置对象列表
-    """
     if not cfg_path.exists():
         logger.error("配置文件 %s 不存在", cfg_path)
         sys.exit(1)
@@ -80,11 +60,7 @@ def load_config(cfg_path: Path) -> List[Dict[str, Any]]:
 
 
 def instantiate_selector(cfg: Dict[str, Any]):
-    """
-    根据配置动态加载 Selector 类并实例化
-    :param cfg: 配置对象，包含 class 和 params 字段
-    :return: 别名和实例化的 Selector 对象
-    """
+    """动态加载 Selector 类并实例化"""
     cls_name: str = cfg.get("class")
     if not cls_name:
         raise ValueError("缺少 class 字段")
@@ -99,13 +75,9 @@ def instantiate_selector(cfg: Dict[str, Any]):
     return cfg.get("alias", cls_name), cls(**params)
 
 
-# ==========================================================================================
-# 主程序入口
-# 解析参数、加载数据并运行各个 Selector，最终输出结果
-# ==========================================================================================
+# ---------- 主函数 ----------
 
 def main():
-    # --- 参数解析 ---
     p = argparse.ArgumentParser(description="Run selectors defined in configs.json")
     p.add_argument("--data-dir", default="./data", help="CSV 行情目录")
     p.add_argument("--config", default="./configs.json", help="Selector 配置文件")

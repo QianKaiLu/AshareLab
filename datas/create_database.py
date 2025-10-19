@@ -33,8 +33,11 @@ def create_stock_info_table():
     create_table_query = """
     CREATE TABLE IF NOT EXISTS stock_base_info (
         code TEXT PRIMARY KEY, -- 股票代码(纯数字 code)
+        exchange_code TEXT, -- 交易所代码 SH/SZ/BJ
+        exchange_name TEXT, -- 交易所名称
         name TEXT, -- 公司简称
         org_name_en TEXT, -- 公司英文名称
+        org_short_name_en TEXT, -- 公司英文简称
         full_name TEXT, -- 公司全称
         main_operation_business TEXT, -- 主要经营业务
         operating_scope TEXT, -- 经营范围

@@ -14,26 +14,26 @@ logger = get_fetch_logger()
 FETCH_WORKERS = 20
 
 def fetch_stock_infos(rebuild: bool = True):
-    logger.info("Fetching A-share code list...")
-
     if rebuild:
+        logger.info("Rebuilding stock_base_info table...")
         from datas.create_database import delete_table_if_exists, create_stock_info_table
         delete_table_if_exists("stock_base_info")
         create_stock_info_table()
-        logger.info("Rebuilt stock_base_info table.")
+        logger.info("🎉 Done.")
 
+    logger.info("Fetching A-share code list...")
     try:
         code_list_df = ak.stock_info_a_code_name()
     except Exception as e:
         logger.error(f"Fetching failed: {e}")
         return
-
     if code_list_df.empty:
         logger.error("Fetched data is empty.")
         return
 
     total_count = len(code_list_df)
-    logger.info(f"Fetched {total_count} stocks, starting concurrent fetch...")
+    logger.info(f"🎉 Done Fetched {total_count} codes.")
+    logger.info("Fetching stock detail infos...")
 
     with ThreadPoolExecutor(max_workers=FETCH_WORKERS) as executor:
         futures = [executor.submit(worker_task, row) for row in code_list_df.itertuples()]
@@ -41,7 +41,7 @@ def fetch_stock_infos(rebuild: bool = True):
         for future in tqdm(as_completed(futures), total=total_count):
             success_count += future.result()
 
-    logger.info(f"🎉 Finished: Success={success_count}, Failed={total_count - success_count}")
+    logger.info(f"🎉 Done: Success={success_count}, Failed={total_count - success_count}")
 
 def worker_task(row_tuple) -> bool:
     """每个线程的任务函数，独立连接数据库"""
@@ -119,7 +119,7 @@ def fetch_and_save_stock_info(row, cursor) -> bool:
             :org_introduction, :classi_name, :list_date, :idn_code, :idn_name
         )
         """
-        cursor.execute(sql, record)  # ⚠️ 注意：这行在多线程中不能直接用同一个 cursor！
+        cursor.execute(sql, record)
 
         return True
 

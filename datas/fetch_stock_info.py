@@ -5,9 +5,11 @@ from pathlib import Path
 import json
 from tools.log import get_fetch_logger
 from tools.stock_tools import get_exchange_by_code
+from tools.tools import ms_timestamp_to_date
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional, Any
+from datetime import datetime
 
 DB_PATH = Path(__file__).parent.parent / "database" / "ashare_data.db"
 logger = get_fetch_logger()
@@ -40,17 +42,22 @@ def fetch_stock_infos(rebuild: bool = True):
     with ThreadPoolExecutor(max_workers=FETCH_WORKERS) as executor:
         futures = [executor.submit(worker_task, row) for row in code_list_df.itertuples()]
         success_count = 0
-        for future in tqdm(as_completed(futures), total=total_count):
-            success, row = future.result()
-            if success:
-                continuousFailed = 0
-                success_count += 1
-            else:
-                continuousFailed += 1
-                retryRows.append(row)
-                if continuousFailed >= 10:
-                    logger.error("💔 Detected too many continuous failures, aborting...")
-                    break
+        try:
+            for future in tqdm(as_completed(futures), total=total_count):
+                success, row = future.result()
+                if success:
+                    continuousFailed = 0
+                    success_count += 1
+                else:
+                    continuousFailed += 1
+                    retryRows.append(row)
+                    if continuousFailed >= 10:
+                        raise Exception("Too many continuous failures")
+        except Exception as e:
+            if continuousFailed >= 10:
+                logger.error("💔 Detected too many continuous failures, aborting...")
+                for f in futures:
+                    f.cancel()
             
     if continuousFailed < 10:
         # Retry failed ones
@@ -114,6 +121,7 @@ def fetch_and_save_stock_info(row, cursor) -> bool:
             idn_code = affiliate_industry.get('ind_code')
             idn_name = affiliate_industry.get('ind_name')
 
+        date_str = ms_timestamp_to_date(data_dict.get('listed_date'))
         record = {
             'code': code,
             'exchange_code': exchange_code,
@@ -126,7 +134,7 @@ def fetch_and_save_stock_info(row, cursor) -> bool:
             'operating_scope': data_dict.get('operating_scope'),
             'org_introduction': data_dict.get('org_cn_introduction'),
             'classi_name': data_dict.get('classi_name'),
-            'list_date': data_dict.get('listed_date'),
+            'list_date': date_str,
             'idn_code': idn_code,
             'idn_name': idn_name,
         }

@@ -7,6 +7,7 @@ from tools.log import get_fetch_logger
 from tools.stock_tools import get_exchange_by_code
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Optional, Any
 
 DB_PATH = Path(__file__).parent.parent / "database" / "ashare_data.db"
 logger = get_fetch_logger()
@@ -34,17 +35,39 @@ def fetch_stock_infos(rebuild: bool = True):
     total_count = len(code_list_df)
     logger.info(f"🎉 Done Fetched {total_count} codes.")
     logger.info("Fetching stock detail infos...")
-
+    continuousFailed = 0
+    retryRows = []
     with ThreadPoolExecutor(max_workers=FETCH_WORKERS) as executor:
         futures = [executor.submit(worker_task, row) for row in code_list_df.itertuples()]
         success_count = 0
         for future in tqdm(as_completed(futures), total=total_count):
-            success_count += future.result()
+            success, row = future.result()
+            if success:
+                continuousFailed = 0
+                success_count += 1
+            else:
+                continuousFailed += 1
+                retryRows.append(row)
+                if continuousFailed >= 10:
+                    logger.error("💔 Detected too many continuous failures, aborting...")
+                    break
+            
+    if continuousFailed < 10:
+        # Retry failed ones
+        if retryRows:
+            logger.info(f"Retrying {len(retryRows)} failed items...")
+            with ThreadPoolExecutor(max_workers=FETCH_WORKERS) as executor:
+                futures = [executor.submit(worker_task, row) for row in retryRows]
+                for future in tqdm(as_completed(futures), total=len(retryRows)):
+                    success, _ = future.result()
+                    if success:
+                        success_count += 1
+                    
+        logger.info(f"🎉 Done: Success={success_count}, Failed={total_count - success_count}")
+    else:
+        logger.info(f"💔 Aborted: Success={success_count}, Failed={total_count - success_count}")
 
-    logger.info(f"🎉 Done: Success={success_count}, Failed={total_count - success_count}")
-
-def worker_task(row_tuple) -> bool:
-    """每个线程的任务函数，独立连接数据库"""
+def worker_task(row_tuple) -> tuple[bool, Any]:
     row = row_tuple
     success = False
     conn = None
@@ -58,7 +81,7 @@ def worker_task(row_tuple) -> bool:
     finally:
         if conn:
             conn.close()
-    return success
+    return (success, row_tuple)
 
 def fetch_and_save_stock_info(row, cursor) -> bool:
     code = str(row.code).zfill(6)

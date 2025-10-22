@@ -39,6 +39,7 @@ def fetch_stock_infos(rebuild: bool = True):
     logger.info("Fetching stock detail infos...")
     continuousFailed = 0
     retryRows = []
+    startDatetime = datetime.now()
     with ThreadPoolExecutor(max_workers=FETCH_WORKERS) as executor:
         futures = [executor.submit(worker_task, row) for row in code_list_df.itertuples()]
         success_count = 0
@@ -69,8 +70,10 @@ def fetch_stock_infos(rebuild: bool = True):
                     success, _ = future.result()
                     if success:
                         success_count += 1
-                    
-        logger.info(f"🎉 Done: Success={success_count}, Failed={total_count - success_count}")
+        
+        endDatetime = datetime.now()
+        elapsed = (endDatetime - startDatetime).total_seconds()
+        logger.info(f"🎉 Done: {elapsed:.2f} seconds taken, Success={success_count}, Failed={total_count - success_count}, Retried={len(retryRows)}")
     else:
         logger.info(f"💔 Aborted: Success={success_count}, Failed={total_count - success_count}")
 

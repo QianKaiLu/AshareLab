@@ -6,14 +6,12 @@ from pathlib import Path
 import time
 import json
 
-"""
-我需要构建一个 a 股数据库，数据来源主要是 akshare，用于之后的画图、筛选、技术分析等。
-首先我需要基于 akshare 获取 A 股股票列表，并存储到 SQLite 数据库中，请问表结构怎么设计， python 中如何创建数据库？
-"""
-
 DB_DIR = Path(__file__).parent.parent / "database"
 DB_DIR.mkdir(parents=True, exist_ok=True)
 DB_PATH = DB_DIR / "ashare_data.db"
+
+STOCK_INFO_TABLE = "stock_base_info"
+DAILY_BAR_TABLE = "stock_bars_daily_qfq"
 
 def create_data_base():
     conn = sqlite3.connect(DB_PATH)
@@ -30,8 +28,8 @@ def delete_table_if_exists(table_name: str):
 def create_stock_info_table():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    create_table_query = """
-    CREATE TABLE IF NOT EXISTS stock_base_info (
+    create_table_query = f"""
+    CREATE TABLE IF NOT EXISTS {STOCK_INFO_TABLE} (
         code TEXT PRIMARY KEY, -- 股票代码(纯数字 code)
         exchange_code TEXT, -- 交易所代码 SH/SZ/BJ
         exchange_name TEXT, -- 交易所名称
@@ -52,7 +50,33 @@ def create_stock_info_table():
     conn.commit()
     conn.close()
 
+def create_daily_bar_table():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    create_table_query = f"""
+    CREATE TABLE IF NOT EXISTS {DAILY_BAR_TABLE} (
+        code TEXT NOT NULL, -- 股票代码 (带交易所前缀)
+        date DATE NOT NULL, -- 交易日期
+        open REAL, -- 开盘价
+        close REAL, -- 收盘价
+        high REAL, -- 最高价
+        low REAL, -- 最低价
+        volume INTEGER, -- 成交量
+        amount REAL, -- 成交额
+        amplitude REAL, -- 振幅
+        change_pct REAL, -- 涨跌幅
+        price_change REAL, -- 涨跌额
+        turnover_rate REAL, -- 换手率
+        PRIMARY KEY (code, date)
+    );
+    """
+    cursor.execute(create_table_query)
+    conn.commit()
+    conn.close()
+
 if __name__ == "__main__":
     create_data_base()
-    delete_table_if_exists("stock_base_info")
+    delete_table_if_exists(f"{STOCK_INFO_TABLE}")
+    delete_table_if_exists(f"{DAILY_BAR_TABLE}")
     create_stock_info_table()
+    create_daily_bar_table()

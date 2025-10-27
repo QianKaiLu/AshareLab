@@ -10,6 +10,7 @@ from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional, Any
 from datetime import datetime
+from datas.create_database import STOCK_INFO_TABLE
 
 DB_PATH = Path(__file__).parent.parent / "database" / "ashare_data.db"
 logger = get_fetch_logger()
@@ -20,7 +21,7 @@ def fetch_stock_infos(rebuild: bool = True):
     if rebuild:
         logger.info("Rebuilding stock_base_info table...")
         from datas.create_database import delete_table_if_exists, create_stock_info_table
-        delete_table_if_exists("stock_base_info")
+        delete_table_if_exists(STOCK_INFO_TABLE)
         create_stock_info_table()
         logger.info("🎉 Done.")
 

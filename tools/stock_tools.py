@@ -1,4 +1,5 @@
 from typing import Tuple
+import re
 
 def get_exchange_by_code(code: str) -> Tuple[str, str]:
     """
@@ -25,3 +26,47 @@ def get_exchange_by_code(code: str) -> Tuple[str, str]:
     else:
         raise ValueError(f"unsupported ashare stock code: {code}")
 
+def to_std_code(code: str) -> str:
+    """
+    Convert various stock code formats to standardized 6-digit string.
+    
+    Examples:
+        '321' -> '000321'
+        '000321' -> '000321'
+        'SH600000' -> '600000'
+        '600000.SH' -> '600000'
+        'sz000800' -> '000800'
+        '159915.SZ' -> '159915'
+
+    Args:
+        code (str): Raw stock code input
+
+    Returns:
+        str: Standardized 6-digit code, e.g. '000321'
+
+    Raises:
+        ValueError: If unable to extract valid 6-digit code
+    """
+    if not isinstance(code, str):
+        raise TypeError(f"Expected str, got {type(code)}")
+
+    code = code.strip()
+
+    if not code:
+        raise ValueError("Empty code input")
+
+    digits = re.findall(r'\d+', code)
+    if not digits:
+        raise ValueError(f"No digits found in code: {code}")
+
+    main_digits = max(digits, key=len)
+
+    if len(main_digits) == 6:
+        return main_digits
+    elif len(main_digits) < 6:
+        padded = main_digits.zfill(6)
+        if len(padded) > 6:
+            raise ValueError(f"Padded code exceeds 6 digits: {padded}")
+        return padded
+    else:
+        raise ValueError(f"Digit sequence too long ({len(main_digits)} > 6): {main_digits}")

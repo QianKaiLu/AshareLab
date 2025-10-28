@@ -12,6 +12,7 @@ from typing import Optional, Any
 from datetime import datetime
 from datas.create_database import DB_PATH, DAILY_BAR_TABLE, delete_table_if_exists, create_daily_bar_table
 from datas.query_stock import query_daily_bars, query_latest_bars
+from datas.export import export_bars_to_csv
 import time
 
 logger = get_fetch_logger()
@@ -151,6 +152,5 @@ if __name__ == "__main__":
             logger.error(f"Failed to fetch daily bars for {code}")
 
     time.sleep(2)  # wait for db writes to complete
-    df = query_daily_bars(code='002594', from_date='20251001', to_date='20251029')
-    print(df)
-    print(df.dtypes)
+    df = query_latest_bars('002594', n=300)
+    export_bars_to_csv(df, only_base_info=True)

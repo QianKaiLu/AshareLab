@@ -71,6 +71,11 @@ def create_daily_bar_table():
     );
     """
     cursor.execute(create_table_query)
+
+    # Add index for faster date-range queries
+    cursor.execute(f"CREATE INDEX IF NOT EXISTS idx_{DAILY_BAR_TABLE}_date ON {DAILY_BAR_TABLE} (date);")
+    cursor.execute(f"CREATE INDEX IF NOT EXISTS idx_{DAILY_BAR_TABLE}_code ON {DAILY_BAR_TABLE} (code);")
+
     conn.commit()
     conn.close()
 

@@ -84,7 +84,15 @@ def fetch_daily_bar(
         available_columns = [col for col in final_columns if col in df.columns]
         df = df[available_columns]
 
-        df['date'] = pd.to_datetime(df['date'])
+        # Drop invalid dates
+        original_len = len(df)
+        df['date'] = pd.to_datetime(df['date'], errors='coerce')
+        df = df.dropna(subset=['date']).copy()
+        dropped_count = original_len - len(df)
+        if dropped_count > 0:
+            logger.warning(f"Dropped {dropped_count} rows with invalid dates for {code}")
+            
+        # Convert data types
         for col in ['open', 'close', 'high', 'low', 'amount', 'amplitude', 'change_pct', 'price_change', 'turnover_rate']:
             df[col] = pd.to_numeric(df[col], errors='coerce')
         df['volume'] = pd.to_numeric(df['volume'], errors='coerce').fillna(0).astype('int64') * 100
@@ -102,57 +110,37 @@ def fetch_daily_bar(
         logger.error(f"Error fetching data for {code}: {e}", exc_info=True)
         return None
 
-def save_to_database(df: pd.DataFrame, table_name: str = DAILY_BAR_TABLE, db_path: Path = DB_PATH):
+def save_daily_bars_to_database(df: pd.DataFrame):
     """
-    将清洗好的日线数据保存到 SQLite 数据库
+    Save daily bar DataFrame to SQLite database
     """
     if df.empty:
-        print("Warning: Empty DataFrame, nothing to save.")
+        logger.warning(f"Warning: Empty DataFrame, nothing to save.")
         return
 
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(DB_PATH)
     try:
         df.to_sql(
-            name=table_name,
+            name=DAILY_BAR_TABLE,
             con=conn,
-            if_exists='append',      # 'fail', 'replace', 'append'
-            index=False,             # 不要将 pandas 索引写入数据库
-            method='multi',          # 加快插入速度
-            chunksize=1000           # 分块插入大数据
+            if_exists='append',
+            index=False,
+            method='multi',
+            chunksize=1000
         )
-        print(f"✅ Successfully saved {len(df)} rows to `{table_name}`")
     except Exception as e:
-        print(f"❌ Error saving to database: {e}")
+        logger.error(f"💔 Daily bar of {df['code'].iloc[0]} writing to db failed: {e}")
     finally:
         conn.close()
 
-def load_from_database(
-    code: str,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    table_name: str = DAILY_BAR_TABLE,
-    db_path: Path = DB_PATH
-) -> pd.DataFrame:
-    """
-    从数据库加载某只股票的日线数据
-    """
-    conn = sqlite3.connect(db_path)
-    
-    # 构建查询语句
-    where_clauses = ["code = ?"]
-    params = [code]
+if __name__ == "__main__":
+    delete_table_if_exists(DAILY_BAR_TABLE)
+    create_daily_bar_table()
 
-    if start_date:
-        where_clauses.append("date >= ?")
-        params.append(start_date)
-    if end_date:
-        where_clauses.append("date <= ?")
-        params.append(end_date)
-
-    where_str = " AND ".join(where_clauses)
-    query = f"SELECT * FROM {table_name} WHERE {where_str} ORDER BY date ASC"
-
-    df = pd.read_sql(query, conn, params=params, parse_dates=['date'])
-    conn.close()
-
-    return df
+    stock_codes = ['002050', '002594', '002714']
+    for code in stock_codes:
+        df_bars = fetch_daily_bar(code=code, from_date='20200101')
+        if df_bars is not None:
+            save_daily_bars_to_database(df_bars)
+        else:
+            logger.error(f"Failed to fetch daily bars for {code}")

@@ -11,12 +11,14 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional, Any
 from datetime import datetime
 from datas.create_database import DB_PATH, DAILY_BAR_TABLE, delete_table_if_exists, create_daily_bar_table
+from datas.query_stock import query_daily_bars, query_latest_bars
+import time
 
 logger = get_fetch_logger()
 FETCH_WORKERS = 10
 START_DATE_DEFAULT = "20100101"
 
-def fetch_daily_bar(
+def fetch_daily_bar_from_akshare(
     code: str,
     from_date: Optional[str] = None,
     to_date: Optional[str] = None,
@@ -118,9 +120,12 @@ def save_daily_bars_to_database(df: pd.DataFrame):
         logger.warning(f"Warning: Empty DataFrame, nothing to save.")
         return
 
+    write_df = df.copy()
+    write_df['date'] = write_df['date'].dt.strftime("%Y-%m-%d")
     conn = sqlite3.connect(DB_PATH)
     try:
-        df.to_sql(
+        # to_sql 要求 df 中的数据是数据库表列的子集或者全集，不能有数据库中不存在的列
+        write_df.to_sql(
             name=DAILY_BAR_TABLE,
             con=conn,
             if_exists='append',
@@ -129,7 +134,7 @@ def save_daily_bars_to_database(df: pd.DataFrame):
             chunksize=1000
         )
     except Exception as e:
-        logger.error(f"💔 Daily bar of {df['code'].iloc[0]} writing to db failed: {e}")
+        logger.error(f"💔 Daily bar of {write_df['code'].iloc[0]} writing to db failed: {e}")
     finally:
         conn.close()
 
@@ -139,8 +144,13 @@ if __name__ == "__main__":
 
     stock_codes = ['002050', '002594', '002714']
     for code in stock_codes:
-        df_bars = fetch_daily_bar(code=code, from_date='20200101')
+        df_bars = fetch_daily_bar_from_akshare(code=code, from_date='20200101')
         if df_bars is not None:
             save_daily_bars_to_database(df_bars)
         else:
             logger.error(f"Failed to fetch daily bars for {code}")
+
+    time.sleep(2)  # wait for db writes to complete
+    df = query_daily_bars(code='002594', from_date='20251001', to_date='20251029')
+    print(df)
+    print(df.dtypes)

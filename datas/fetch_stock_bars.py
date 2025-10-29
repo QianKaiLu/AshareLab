@@ -2,7 +2,6 @@ import akshare as ak
 import sqlite3
 import pandas as pd
 from pathlib import Path
-import json
 from tools.log import get_fetch_logger
 from tools.stock_tools import get_exchange_by_code
 from tools.tools import ms_timestamp_to_date
@@ -14,6 +13,7 @@ from datas.create_database import DB_PATH, DAILY_BAR_TABLE, delete_table_if_exis
 from datas.query_stock import query_daily_bars, query_latest_bars
 from datas.export import export_bars_to_csv
 import time
+from contextlib import closing
 
 logger = get_fetch_logger()
 FETCH_WORKERS = 10
@@ -115,35 +115,65 @@ def fetch_daily_bar_from_akshare(
 
 def save_daily_bars_to_database(df: pd.DataFrame):
     """
-    Save daily bar DataFrame to SQLite database
+    Save daily bar DataFrame to SQLite database with UPSERT behavior.
+    If (code, date) exists → UPDATE; else → INSERT.
+    Requires SQLite >= 3.24.0 and PRIMARY KEY(code, date) in table.
     """
     if df.empty:
-        logger.warning(f"Warning: Empty DataFrame, nothing to save.")
+        logger.warning("Warning: Empty DataFrame, nothing to save.")
         return
 
     write_df = df.copy()
-    write_df['date'] = write_df['date'].dt.strftime("%Y-%m-%d")
-    conn = sqlite3.connect(DB_PATH)
-    try:
-        # to_sql 要求 df 中的数据是数据库表列的子集或者全集，不能有数据库中不存在的列
-        write_df.to_sql(
-            name=DAILY_BAR_TABLE,
-            con=conn,
-            if_exists='append',
-            index=False,
-            method='multi',
-            chunksize=1000
-        )
-    except Exception as e:
-        logger.error(f"💔 Daily bar of {write_df['code'].iloc[0]} writing to db failed: {e}")
-    finally:
-        conn.close()
+    write_df['date'] = write_df['date'].dt.strftime("%Y-%m-%d")  # 转为字符串存入 SQLite
+
+    def upsert_method(table, cursor, keys, data_iter):
+        """Custom upsert for SQLite 3.24+ using ON CONFLICT DO UPDATE"""
+        columns = ", ".join(keys)
+        placeholders = ", ".join([f":{key}" for key in keys])
+        conflict_target = "(code, date)"
+
+        assignments = ", ".join([
+            f"{col} = excluded.{col}"
+            for col in keys
+            if col not in ('code', 'date')
+        ])
+
+        sql = f"""
+            INSERT INTO {table.name} ({columns})
+            VALUES ({placeholders})
+            ON CONFLICT {conflict_target} DO UPDATE SET
+            {assignments};
+        """
+
+        try:
+            cursor.executemany(
+                sql,
+                ({k: v for k, v in zip(keys, row)} for row in data_iter)
+            )
+        except Exception as e:
+            logger.error(f"❌ Upsert failed: {e}\nSQL: {sql}")
+            raise
+
+    with sqlite3.connect(DB_PATH) as conn:
+        try:
+            write_df.to_sql(
+                name=DAILY_BAR_TABLE,
+                con=conn,
+                if_exists='append',
+                index=False,
+                method=upsert_method,
+                chunksize=5000
+            )
+            logger.info(f"💾 Upserted {len(write_df)} records into {DAILY_BAR_TABLE}")
+        except Exception as e:
+            logger.error(f"💔 Failed to upsert bars: {e}", exc_info=True)
+
 
 if __name__ == "__main__":
     delete_table_if_exists(DAILY_BAR_TABLE)
     create_daily_bar_table()
 
-    stock_codes = ['002050', '002594', '002714']
+    stock_codes = ['600570', '002594', '002714']
     for code in stock_codes:
         df_bars = fetch_daily_bar_from_akshare(code=code, from_date='20200101')
         if df_bars is not None:
@@ -151,6 +181,6 @@ if __name__ == "__main__":
         else:
             logger.error(f"Failed to fetch daily bars for {code}")
 
-    time.sleep(2)  # wait for db writes to complete
-    df = query_latest_bars('002594', n=300)
-    export_bars_to_csv(df, only_base_info=True)
+    # time.sleep(2)  # wait for db writes to complete
+    # df = query_latest_bars('600570', n=300)
+    # export_bars_to_csv(df, only_base_info=True)

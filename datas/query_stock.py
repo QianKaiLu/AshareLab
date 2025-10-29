@@ -10,6 +10,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional, Any
 from datetime import datetime
 from datas.create_database import DB_PATH, DAILY_BAR_TABLE
+from contextlib import closing
+from datas.create_database import EARLIEST_DATE
 
 logger = get_fetch_logger()
 
@@ -150,3 +152,35 @@ def query_latest_bars(
     finally:
         if conn:
             conn.close()
+
+def latest_date_has_data_for_code(
+    code: str
+) -> Optional[datetime]:
+    """
+    Get the latest date for which daily bar data exists for the given stock code.
+    
+    Args:
+        code (str): Stock code, e.g. '321', '000321', 'SH600000', '600000.SH'
+    """
+    try:
+        std_code = to_std_code(code)
+    except Exception as e:
+        logger.warning(f"Invalid stock code '{code}': {e}")
+        return None
+
+    earliest_date = pd.to_datetime(EARLIEST_DATE)
+
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            cursor = conn.cursor()
+            query = f"SELECT MAX(date) FROM {DAILY_BAR_TABLE} WHERE code = ?"
+            cursor.execute(query, (std_code,))
+            result = cursor.fetchone()
+
+            if result[0] is not None:
+                latest_date = pd.to_datetime(result[0])
+                return latest_date
+            return earliest_date
+
+    except Exception as e:
+        return earliest_date

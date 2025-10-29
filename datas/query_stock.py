@@ -9,9 +9,8 @@ from tools.tools import ms_timestamp_to_date, format_date_input_to_yyyy_mm_dd
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional, Any
 from datetime import datetime
-from datas.create_database import DB_PATH, DAILY_BAR_TABLE
+from datas.create_database import DB_PATH, DAILY_BAR_TABLE, EARLIEST_DATE, STOCK_INFO_TABLE, get_db_connection
 from contextlib import closing
-from datas.create_database import EARLIEST_DATE
 
 logger = get_fetch_logger()
 
@@ -153,7 +152,7 @@ def query_latest_bars(
         if conn:
             conn.close()
 
-def latest_date_has_data_for_code(
+def get_latest_date_with_data(
     code: str
 ) -> Optional[datetime]:
     """
@@ -172,10 +171,8 @@ def latest_date_has_data_for_code(
 
     try:
         with sqlite3.connect(DB_PATH) as conn:
-            cursor = conn.cursor()
             query = f"SELECT MAX(date) FROM {DAILY_BAR_TABLE} WHERE code = ?"
-            cursor.execute(query, (std_code,))
-            result = cursor.fetchone()
+            result = conn.execute(query, (std_code,)).fetchone()
 
             if result[0] is not None:
                 latest_date = pd.to_datetime(result[0])
@@ -184,3 +181,66 @@ def latest_date_has_data_for_code(
 
     except Exception as e:
         return earliest_date
+
+def get_stock_info(
+        code: str
+)-> Optional[pd.DataFrame]:
+    """
+    Get the stock name for the given stock code.
+    """
+    try:
+        std_code = to_std_code(code)
+    except Exception as e:
+        logger.warning(f"Invalid stock code '{code}': {e}")
+        return None
+
+def get_stock_info_by_code(code: str) -> pd.DataFrame:
+    """
+    Get stock information for a single stock code.
+    """
+    try:
+        std_code = to_std_code(code)
+    except Exception as e:
+        logger.warning(f"Invalid stock code '{code}': {e}")
+        return pd.DataFrame()
+
+    query = f"SELECT * FROM {STOCK_INFO_TABLE} WHERE code = ?"
+    with get_db_connection() as conn:
+        df = pd.read_sql_query(query, conn, params=(std_code,))
+
+    if df.empty:
+        return pd.DataFrame()
+    
+    df.set_index('code', inplace=True)
+    return df
+
+
+def get_stock_info_by_codes(codes: list) -> pd.DataFrame:
+    """
+    Get stock information for multiple stock codes.
+    """
+    std_codes = []
+    for code in codes:
+        try:
+            std_code = to_std_code(code)
+            std_codes.append(std_code)
+        except Exception as e:
+            logger.warning(f"Invalid stock code '{code}': {e}")
+            continue
+
+    if not std_codes:
+        return pd.DataFrame()
+
+    placeholders = ','.join('?' for _ in std_codes)
+    query = f"SELECT * FROM {STOCK_INFO_TABLE} WHERE code IN ({placeholders})"
+    with get_db_connection() as conn:
+        df = pd.read_sql_query(query, conn, params=std_codes)
+
+    df.set_index('code', inplace=True)
+    return df
+    
+if __name__ == "__main__":
+    # Test query_daily_bars
+    codes = ['600570', '000332', '1']
+    df = get_stock_info_by_code(codes[0])
+    print(df['name'])

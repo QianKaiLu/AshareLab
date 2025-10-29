@@ -9,15 +9,15 @@ from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional, Any
 from datetime import datetime
-from datas.create_database import DB_PATH, DAILY_BAR_TABLE, delete_table_if_exists, create_daily_bar_table
-from datas.query_stock import query_daily_bars, query_latest_bars
+from datas.create_database import DB_PATH, DAILY_BAR_TABLE, EARLIEST_DATE, delete_table_if_exists, create_daily_bar_table
+from datas.query_stock import query_daily_bars, query_latest_bars, get_latest_date_with_data
 from datas.export import export_bars_to_csv
 import time
 from contextlib import closing
 
 logger = get_fetch_logger()
 FETCH_WORKERS = 10
-START_DATE_DEFAULT = "20100101"
+MARKED_CLOSE_HOUR = 16
 
 def fetch_daily_bar_from_akshare(
     code: str,
@@ -36,11 +36,14 @@ def fetch_daily_bar_from_akshare(
         DataFrame with daily bars or None if failed
     """
     if from_date is None:
-        from_date = START_DATE_DEFAULT
+        from_date = EARLIEST_DATE
 
-    # default to today   
+    # default to today if marked close hour has passed
     if to_date is None:
-        to_date = datetime.now().strftime("%Y%m%d")
+        if datetime.now().hour >= MARKED_CLOSE_HOUR:
+            to_date = datetime.now().strftime("%Y%m%d")
+        else:
+            to_date = (datetime.now() - pd.Timedelta(days=1)).strftime("%Y%m%d")
 
     try:
         df = ak.stock_zh_a_hist(
@@ -168,19 +171,27 @@ def save_daily_bars_to_database(df: pd.DataFrame):
         except Exception as e:
             logger.error(f"💔 Failed to upsert bars: {e}", exc_info=True)
 
+def update_daily_bars_for_code(
+    code: str
+):
+    latest_date = get_latest_date_with_data(code)
+    if latest_date is None:
+        logger.warning(f"No valid date found for {code}, skipping update.")
+        return
+
+    previous_day = latest_date - pd.Timedelta(days=5)
+    df_new = fetch_daily_bar_from_akshare(code=code, from_date=previous_day.strftime("%Y%m%d"))
+    if df_new is not None:
+        save_daily_bars_to_database(df_new)
 
 if __name__ == "__main__":
-    delete_table_if_exists(DAILY_BAR_TABLE)
-    create_daily_bar_table()
+    # delete_table_if_exists(DAILY_BAR_TABLE)
+    # create_daily_bar_table()
 
     stock_codes = ['600570', '002594', '002714']
     for code in stock_codes:
-        df_bars = fetch_daily_bar_from_akshare(code=code, from_date='20200101')
-        if df_bars is not None:
-            save_daily_bars_to_database(df_bars)
-        else:
-            logger.error(f"Failed to fetch daily bars for {code}")
+        update_daily_bars_for_code(code)
 
-    # time.sleep(2)  # wait for db writes to complete
-    # df = query_latest_bars('600570', n=300)
-    # export_bars_to_csv(df, only_base_info=True)
+    time.sleep(2)  # wait for db writes to complete
+    df = query_daily_bars(code='600570', from_date='20080101', to_date='20090101')
+    export_bars_to_csv(df, only_base_info=True)

@@ -4,6 +4,7 @@ from tools.log import get_fetch_logger
 from typing import Optional
 import subprocess
 import sys
+from datas.query_stock import get_stock_info_by_code
 
 logger = get_fetch_logger()
 EXPORT_PATH = Path(__file__).parent.parent / "output"
@@ -37,7 +38,14 @@ def export_bars_to_csv(
         start_date = df['date'].min().strftime("%Y%m%d")
         end_date = df['date'].max().strftime("%Y%m%d")
 
-        filename = f"{code}_{start_date}_{end_date}.csv"
+        pre_name = f"{code}"
+        stock_info = get_stock_info_by_code(code)
+        if not stock_info.empty:
+            stock_name = stock_info.at[code, 'name']
+            if stock_name:
+                pre_name = f"{stock_name}({code})"
+
+        filename = f"{pre_name}_{start_date}_{end_date}.csv"
         file_path = output_dir / filename
 
         if only_base_info:

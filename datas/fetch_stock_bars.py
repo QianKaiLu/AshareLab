@@ -193,5 +193,5 @@ if __name__ == "__main__":
         update_daily_bars_for_code(code)
 
     time.sleep(2)  # wait for db writes to complete
-    df = query_daily_bars(code='600570', from_date='20080101', to_date='20090101')
+    df = query_daily_bars(code='002714', from_date='20250101')
     export_bars_to_csv(df, only_base_info=True)

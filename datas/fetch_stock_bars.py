@@ -14,6 +14,7 @@ from datas.query_stock import query_daily_bars, query_latest_bars, get_latest_da
 from datas.export import export_bars_to_csv
 import time
 from contextlib import closing
+from ai.ai_kbar_analyses import analyze_kbar_data
 
 logger = get_fetch_logger()
 FETCH_WORKERS = 10
@@ -194,4 +195,7 @@ if __name__ == "__main__":
 
     time.sleep(2)  # wait for db writes to complete
     df = query_daily_bars(code='002714', from_date='20250101')
-    export_bars_to_csv(df, only_base_info=True)
+    path = export_bars_to_csv(df, only_base_info=True)
+    if path is not None:
+        logger.info(f"Exported bars to {path}, starting AI analysis...")
+        analyze_kbar_data(path)

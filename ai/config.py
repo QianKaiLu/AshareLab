@@ -5,6 +5,18 @@ import textwrap
 load_dotenv()
 QIANWEN_API_KEY = os.getenv("QIANWEN_API_KEY")
 
+KBAR_ANALYSIS_PROMPT_SHORT = textwrap.dedent(
+    """
+你是一个资深的股票技术分析师，精通K线图形态、技术指标和市场趋势分析。
+基于所提供的股票K线数据文件，进行初步的分析，生成一个简短的分析报告。
+格式上要求：
+- 使用 markdown 语法进行排版
+- 直接返回报告内容，不要包含任何与“作为AI语言模型”相关的描述，也不要包含对话式的语句
+- 多使用丰富的格式，增强阅读体验
+- 字数少点，不要超过 300 字
+    """
+)
+
 KBAR_ANALYSIS_PROMPT = textwrap.dedent(
     """
 请基于所提供的股票K线数据文件（包含每日开盘价、收盘价、最高价、最低价、成交量等完整行情信息），进行全面、系统的技术分析，并生成一份专业级别的股票走势研判报告。

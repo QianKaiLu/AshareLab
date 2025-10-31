@@ -13,7 +13,7 @@ def export_bars_to_csv(
     df: pd.DataFrame,
     only_base_info: bool = False,
     output_dir: Path = EXPORT_PATH,
-    open_folder_after: bool = True
+    open_folder_after: bool = False
 ) -> Optional[Path]:
     """
     Export DataFrame to CSV file with formatted name and ensure directory exists.

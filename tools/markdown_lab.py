@@ -13,75 +13,138 @@ logger = get_analyze_logger()
 template = Template("""
 <html><head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-  body { 
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-    max-width: 580px; 
-    margin: 40px auto; 
-    padding: 36px;
-    background: #f8f9fa;          /* 浅灰背景 */
-    color: #2d3748;               /* 深灰文字（非纯黑） */
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    line-height: 1.65;
+<style>
+  :root {
+    /* 深暖背景与文字 */
+    --bg: #1a140f;           /* 主背景：深棕黑，像咖啡底色 */
+    --text: #e6d7c3;         /* 主文本：米白色/暖白 */
+    --muted: #b8a594;        /* 次要文字：灰褐色，柔和不刺眼 */
+    --border: #3c322b;       /* 边框：中深棕 */
+
+    /* 强调色 —— 暖调主次色 */
+    --primary: #d19a66;      /* 主色：琥珀橙/暖铜色（原 fuchsia 替代）*/
+    --success: #8b9b66;      /* 成功/正面：橄榄绿，偏暖 */
+    --danger: #cc775d;       /* 警告/负面：陶土红，温暖但警觉 */
+
+    /* 组件背景色 */
+    --blockquote-bg: #2a221a; /* 引用块背景：稍亮的深棕 */
+    --table-header: #2d241c;  /* 表头背景：略亮于主背景 */
+    --code-bg: #241d17;       /* 代码块背景：深可可色 */
+
+    /* 字体 */
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   }
-  
-  /* 标题样式 */
+
+  body {
+    font-family: var(--font-sans);
+    max-width: 680px;
+    margin: 32px auto;
+    padding: 20px;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    box-sizing: border-box;
+    font-size: 16px;
+  }
+
+  /* 标题 */
   h1, h2, h3 {
-    color: #1a202c;               /* 深炭灰 */
+    color: #ead7c0;
+    margin-top: 1.6em;
+    margin-bottom: 0.6em;
     font-weight: 600;
-    margin-top: 1.4em;
+    letter-spacing: -0.02em;
   }
-  
-  /* 链接颜色 */
+  h1 { font-size: 1.8rem; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  h2 { font-size: 1.45rem; }
+  h3 { font-size: 1.25rem; }
+
+  /* 引用块 —— 左边橙棕条+暖暗背景 */
+  blockquote {
+    border-left: 5px solid var(--primary);
+    background-color: var(--blockquote-bg);
+    padding: 18px 22px;
+    margin: 24px 0;
+    border-radius: 0 8px 8px 0;
+    color: var(--muted);
+    font-style: italic;
+    box-shadow: inset 2px 0 0 rgba(255,255,255,0.05);
+  }
+
+  /* 表格样式：温润深棕风格 */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.8em 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+  th {
+    background-color: var(--table-header);
+    color: #d6c7b5;
+    padding: 13px 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.95em;
+    border-bottom: 2px solid var(--primary);
+  }
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+  }
+  tr:nth-child(even) {
+    background-color: #221a13;
+  }
+  tr:hover {
+    background-color: #2b2016;
+  }
+
+  /* 代码块 */
+  pre {
+    background: var(--code-bg);
+    border-radius: 9px;
+    padding: 18px 20px;
+    overflow-x: auto;
+    margin: 1.8em 0;
+    border: 1px solid var(--border);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+  }
+  code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.9em;
+    color: var(--primary);
+    background: var(--blockquote-bg);
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+  }
+  pre code {
+    background: none;
+    color: #dcd0ba;
+    padding: 0;
+    font-size: 1em;
+  }
+
+  /* 链接 & 状态类 */
   a {
-    color: #2b6cb0;               /* 专业蓝 */
+    color: var(--primary);
     text-decoration: none;
   }
   a:hover {
     text-decoration: underline;
+    color: #e6af7a;
   }
-  
-  img {
-    max-width: 100%;
-    border-radius: 8px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-    margin: 1.2em 0;
-    box-sizing: border-box;
-  }
-  
-  /* 表格优化 */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 1.2em 0;
-    max-width: 100%;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  }
-  th {
-    background-color: #edf2f7;    /* 浅灰蓝表头 */
-    padding: 10px 12px;
-    text-align: left;
+  .positive {
+    color: var(--success);
     font-weight: 600;
-    color: #4a5568;
   }
-  td {
-    padding: 10px 12px;
-    border-bottom: 1px solid #e2e8f0;
+  .negative {
+    color: var(--danger);
+    font-weight: 600;
   }
-  tr:hover td {
-    background-color: #f8fafc;
-  }
-  
-  /* 关键数据强调 */
-  .positive { color: #2f855a; }   /* 稳重绿色（上涨） */
-  .negative { color: #e53e3e; }   /* 深红色（下跌） */
-  .highlight { 
-    background-color: #ebf8ff; 
-    padding: 2px 6px;
-    border-radius: 4px;
-  }
-</style></head><body>{{ content }}</body></html>
+</style>
+</head>
+<body>{{ content }}</body>
+</html>
 """)
 
 def save_md_to_file_name(md_content: str, file_name: str) -> Optional[Path]:
@@ -110,7 +173,18 @@ def render_markdown_to_image(md_content: str, image_path: Path, open_folder_afte
     """Render markdown content to an image using Playwright"""
     try:
         # Convert markdown to HTML
-        html_body = markdown.markdown(md_content)
+        html_body = markdown.markdown(
+            md_content,
+            extensions=[
+                'tables',
+                'fenced_code',
+                'codehilite',
+                'attr_list',
+            ],
+            extension_configs={
+                'codehilite': {'css_class': 'highlight'},
+            }
+        )
         
         # Create full HTML with styling
         html = template.render(content=html_body)

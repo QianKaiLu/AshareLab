@@ -11,10 +11,12 @@ from typing import Optional, Any
 from datetime import datetime
 from datas.create_database import DB_PATH, DAILY_BAR_TABLE, EARLIEST_DATE, delete_table_if_exists, create_daily_bar_table
 from datas.query_stock import query_daily_bars, query_latest_bars, get_latest_date_with_data
-from datas.export import export_bars_to_csv
+from tools.export import export_bars_to_csv
 import time
 from contextlib import closing
 from ai.ai_kbar_analyses import analyze_kbar_data
+from tools.markdown_lab import save_md_to_file_name, render_markdown_to_image_file_name
+from datas.query_stock import get_stock_info_by_code
 
 logger = get_fetch_logger()
 FETCH_WORKERS = 10
@@ -189,13 +191,24 @@ if __name__ == "__main__":
     # delete_table_if_exists(DAILY_BAR_TABLE)
     # create_daily_bar_table()
 
-    stock_codes = ['600570', '002594', '002714']
-    for code in stock_codes:
-        update_daily_bars_for_code(code)
-
-    time.sleep(2)  # wait for db writes to complete
-    df = query_daily_bars(code='002714', from_date='20250101')
+    # stock_codes = ['600570', '002594', '002714']
+    # for code in stock_codes:
+    #     update_daily_bars_for_code(code)
+    code = '300476'
+    update_daily_bars_for_code(code)
+    df = query_daily_bars(code=code, from_date='20250101')
     path = export_bars_to_csv(df, only_base_info=True)
+    stock_info = get_stock_info_by_code(code)
     if path is not None:
         logger.info(f"Exported bars to {path}, starting AI analysis...")
-        analyze_kbar_data(path)
+        md_content = analyze_kbar_data(csv_file_path=path,base_info=stock_info.to_dict('list'))
+        if md_content:
+            pre_name = f"{code}"
+            if not stock_info.empty:
+                stock_name = stock_info.at[code, 'name']
+                if stock_name:
+                    pre_name = f"{stock_name}({code})"
+            file_name = f"{pre_name}_分析报告"
+            save_md_to_file_name(md_content, file_name)
+            render_markdown_to_image_file_name(md_content, file_name, open_folder_after=True)
+

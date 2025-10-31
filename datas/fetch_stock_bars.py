@@ -14,7 +14,7 @@ from datas.query_stock import query_daily_bars, query_latest_bars, get_latest_da
 from tools.export import export_bars_to_csv
 import time
 from contextlib import closing
-from ai.ai_kbar_analyses import analyze_kbar_data
+from ai.ai_kbar_analyses import analyze_kbar_data_openai
 from tools.markdown_lab import save_md_to_file_name, render_markdown_to_image_file_name
 from datas.query_stock import get_stock_info_by_code
 
@@ -194,14 +194,14 @@ if __name__ == "__main__":
     # stock_codes = ['600570', '002594', '002714']
     # for code in stock_codes:
     #     update_daily_bars_for_code(code)
-    code = '300476'
+    code = '002460'
     update_daily_bars_for_code(code)
     df = query_daily_bars(code=code, from_date='20250101')
     path = export_bars_to_csv(df, only_base_info=True)
     stock_info = get_stock_info_by_code(code)
     if path is not None:
         logger.info(f"Exported bars to {path}, starting AI analysis...")
-        md_content = analyze_kbar_data(csv_file_path=path,base_info=stock_info.to_dict('list'))
+        md_content = analyze_kbar_data_openai(csv_file_path=path,base_info=stock_info.to_dict('list'))
         if md_content:
             pre_name = f"{code}"
             if not stock_info.empty:

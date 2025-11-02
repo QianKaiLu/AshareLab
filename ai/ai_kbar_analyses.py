@@ -1,4 +1,4 @@
-from ai.config import QIANWEN_API_KEY, KBAR_ANALYSIS_PROMPT, KBAR_ANALYSIS_PROMPT_SHORT
+from ai.config import QIANWEN_API_KEY, KBAR_ANALYSIS_PROMPT
 from openai import OpenAI
 from pathlib import Path
 from typing import Optional
@@ -11,6 +11,14 @@ client = OpenAI(
     api_key=QIANWEN_API_KEY,
     base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
 )
+
+with open(Path(__file__).parent / "kbar_analysis_prompt_short.jinja") as f:
+    template = Template(f.read())
+    co_name = "慢就是快实验室"
+    author = "钱大头"
+    KBAR_ANALYSIS_PROMPT_SHORT = template.render(co_name=co_name, author=author)
+    KBAR_ANALYSIS_PROMPT = template.render(co_name="慢就是稳稳就是快实验室（Lazy-Lab）", author=author)
+
 
 def analyze_kbar_data_openai(csv_file_path: Path, base_info: dict) -> Optional[str]:
     if not QIANWEN_API_KEY:
@@ -28,7 +36,7 @@ def analyze_kbar_data_openai(csv_file_path: Path, base_info: dict) -> Optional[s
             messages=[
                 {
                     "role": "system",
-                    "content": KBAR_ANALYSIS_PROMPT_SHORT,
+                    "content": KBAR_ANALYSIS_PROMPT,
                 },
                 {
                     "role": "user",

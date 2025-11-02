@@ -194,7 +194,7 @@ if __name__ == "__main__":
     # stock_codes = ['600570', '002594', '002714']
     # for code in stock_codes:
     #     update_daily_bars_for_code(code)
-    code = '002460'
+    code = '601778'
     update_daily_bars_for_code(code)
     df = query_daily_bars(code=code, from_date='20250101')
     path = export_bars_to_csv(df, only_base_info=True)

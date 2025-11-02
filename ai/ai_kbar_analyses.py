@@ -3,6 +3,7 @@ from openai import OpenAI
 from pathlib import Path
 from typing import Optional
 from tools.log import get_analyze_logger
+from jinja2 import Template
 
 logger = get_analyze_logger()
 

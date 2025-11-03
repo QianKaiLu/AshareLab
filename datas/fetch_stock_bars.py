@@ -194,21 +194,22 @@ if __name__ == "__main__":
     # stock_codes = ['600570', '002594', '002714']
     # for code in stock_codes:
     #     update_daily_bars_for_code(code)
-    code = '601778'
+    code = '002959'
     update_daily_bars_for_code(code)
     df = query_daily_bars(code=code, from_date='20250101')
-    path = export_bars_to_csv(df, only_base_info=True)
-    stock_info = get_stock_info_by_code(code)
-    if path is not None:
-        logger.info(f"Exported bars to {path}, starting AI analysis...")
-        md_content = analyze_kbar_data_openai(csv_file_path=path,base_info=stock_info.to_dict('list'))
-        if md_content:
-            pre_name = f"{code}"
-            if not stock_info.empty:
-                stock_name = stock_info.at[code, 'name']
-                if stock_name:
-                    pre_name = f"{stock_name}({code})"
-            file_name = f"{pre_name}_分析报告"
-            save_md_to_file_name(md_content, file_name)
-            render_markdown_to_image_file_name(md_content, file_name, open_folder_after=True)
-
+    if df is not None and not df.empty:
+        path = export_bars_to_csv(df, only_base_info=True)
+        stock_info = get_stock_info_by_code(code)
+        recent_news = ak.stock_news_em(symbol=code).to_dict(orient='records')
+        if path is not None:
+            logger.info(f"Exported bars to {path}, starting AI analysis...")
+            md_content = analyze_kbar_data_openai(csv_file_path=path,base_info=stock_info.to_dict('list'), recent_news=recent_news)
+            if md_content:
+                pre_name = f"{code}"
+                if not stock_info.empty:
+                    stock_name = stock_info.at[code, 'name']
+                    if stock_name:
+                        pre_name = f"{stock_name}({code})"
+                file_name = f"{pre_name}_分析报告"
+                save_md_to_file_name(md_content, file_name)
+                render_markdown_to_image_file_name(md_content, file_name, open_folder_after=True)

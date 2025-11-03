@@ -1,7 +1,7 @@
-from ai.config import QIANWEN_API_KEY, KBAR_ANALYSIS_PROMPT
+from ai.config import QIANWEN_API_KEY
 from openai import OpenAI
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any
 from tools.log import get_analyze_logger
 from jinja2 import Template
 
@@ -12,15 +12,15 @@ client = OpenAI(
     base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
 )
 
-with open(Path(__file__).parent / "kbar_analysis_prompt_short.jinja") as f:
+with open(Path(__file__).parent / "kbar_analysis_prompt.jinja") as f:
     template = Template(f.read())
-    co_name = "慢就是快实验室"
+    co_name = "慢就是稳稳就是快实验室（Lazy-Lab）"
     author = "钱大头"
     KBAR_ANALYSIS_PROMPT_SHORT = template.render(co_name=co_name, author=author)
-    KBAR_ANALYSIS_PROMPT = template.render(co_name="慢就是稳稳就是快实验室（Lazy-Lab）", author=author)
+    KBAR_ANALYSIS_PROMPT = template.render(co_name=co_name, author=author)
 
 
-def analyze_kbar_data_openai(csv_file_path: Path, base_info: dict) -> Optional[str]:
+def analyze_kbar_data_openai(csv_file_path: Path, base_info: dict, recent_news: Any) -> Optional[str]:
     if not QIANWEN_API_KEY:
         raise ValueError("QIANWEN_API_KEY is not set in environment variables.")
     
@@ -40,16 +40,31 @@ def analyze_kbar_data_openai(csv_file_path: Path, base_info: dict) -> Optional[s
                 },
                 {
                     "role": "user",
-                    "content": f"股票基本信息：{base_info}。",
+                    "content": f"股票基本信息：{base_info}",
+                },
+                {
+                    "role": "user",
+                    "content": f"近期相关新闻：{recent_news}",
                 },
                 {
                     "role": "user",
                     "content": f"csv文件内容：\n\n{csv_content}",
                 },
-            ]
+            ],
+            stream=True,
+            stream_options={
+                "include_usage": False,
+            }
         )
-        logger.info(f"Received analysis response from QianWen API: \n{completion.choices[0].message.content}")
-        return completion.choices[0].message.content
+        md_content = ""
+        received_length = 0
+        for chunk in completion:
+            if chunk.choices and chunk.choices[0].delta.content is not None:
+                md_content += chunk.choices[0].delta.content
+                received_length += len(chunk.choices[0].delta.content)
+                print(f"\rReceived data length: {received_length:<10}", end="", flush=True)
+        print()  # for newline after streaming
+        return md_content
         
     except Exception as e:
         logger.error(f"Error during k-bar data analysis: {e}")

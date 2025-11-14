@@ -8,7 +8,7 @@ from tools.tools import ms_timestamp_to_date
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional, Any
-from datetime import datetime
+from datetime import datetime, timedelta
 from datas.create_database import DB_PATH, DAILY_BAR_TABLE, EARLIEST_DATE, delete_table_if_exists, create_daily_bar_table
 from datas.query_stock import query_daily_bars, query_latest_bars, get_latest_date_with_data
 from tools.export import export_bars_to_csv
@@ -43,11 +43,11 @@ def fetch_daily_bar_from_akshare(
 
     # default to today if marked close hour has passed
     if to_date is None:
-        if datetime.now().hour >= MARKED_CLOSE_HOUR:
-            to_date = datetime.now().strftime("%Y%m%d")
+        now = datetime.now()
+        if now.hour >= MARKED_CLOSE_HOUR:
+            to_date = now.strftime("%Y%m%d")
         else:
-            to_date = (datetime.now() - pd.Timedelta(days=1)).strftime("%Y%m%d")
-
+            to_date = (now - timedelta(days=1)).strftime("%Y%m%d")
     try:
         df = ak.stock_zh_a_hist(
             symbol=code,
@@ -187,6 +187,12 @@ def update_daily_bars_for_code(
     if df_new is not None:
         save_daily_bars_to_database(df_new)
 
+
+
+
+
+
+
 if __name__ == "__main__":
     # delete_table_if_exists(DAILY_BAR_TABLE)
     # create_daily_bar_table()
@@ -194,9 +200,9 @@ if __name__ == "__main__":
     # stock_codes = ['600570', '002594', '002714']
     # for code in stock_codes:
     #     update_daily_bars_for_code(code)
-    code = '002959'
+    code = '002008'
     update_daily_bars_for_code(code)
-    df = query_daily_bars(code=code, from_date='20250101')
+    df = query_daily_bars(code=code, from_date='20241113')
     if df is not None and not df.empty:
         path = export_bars_to_csv(df, only_base_info=True)
         stock_info = get_stock_info_by_code(code)

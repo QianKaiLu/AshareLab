@@ -18,7 +18,7 @@ def query_daily_bars(
     code: str,
     from_date: Optional[str] = None,
     to_date: Optional[str] = None,
-) -> Optional[pd.DataFrame]:
+) -> pd.DataFrame:
     """
     Query daily bar data from SQLite database by stock code and date range.
     
@@ -43,7 +43,7 @@ def query_daily_bars(
         )
         if cursor.fetchone() is None:
             logger.warning(f"Table '{DAILY_BAR_TABLE}' does not exist in database.")
-            return None
+            return pd.DataFrame()
         
         query = f"SELECT * FROM {DAILY_BAR_TABLE} WHERE code = ?"
         params: list[Any] = [std_code]
@@ -65,7 +65,7 @@ def query_daily_bars(
 
         if df.empty:
             logger.info(f"No daily bar data found for {std_code} between {from_date} and {to_date}")
-            return None
+            return pd.DataFrame()
 
         # Log result
         start_str = df['date'].min().strftime("%Y-%m-%d")
@@ -76,7 +76,7 @@ def query_daily_bars(
 
     except Exception as e:
         logger.error(f"❌ Error querying daily bar data for {code}: {e}", exc_info=True)
-        return None
+        return pd.DataFrame()
     finally:
         if conn:
             conn.close()
@@ -84,7 +84,7 @@ def query_daily_bars(
 def query_latest_bars(
     code: str,
     n: int = 1
-) -> Optional[pd.DataFrame]:
+) -> pd.DataFrame:
     """
     Query the latest N trading days' daily bar data using efficient SQL LIMIT.
     
@@ -103,7 +103,7 @@ def query_latest_bars(
         std_code = to_std_code(code)
     except Exception as e:
         logger.warning(f"Invalid stock code '{code}': {e}")
-        return None
+        return pd.DataFrame()
 
     try:
         conn = sqlite3.connect(DB_PATH)
@@ -130,12 +130,12 @@ def query_latest_bars(
 
         if df.empty:
             logger.info(f"No data found for {std_code} in latest {n} days.")
-            return None
+            return pd.DataFrame()
 
         result = df[::-1].reset_index(drop=True)
 
         if result.empty:
-            return None
+            return pd.DataFrame()
 
         start_str = result['date'].min().strftime("%Y-%m-%d")
         end_str = result['date'].max().strftime("%Y-%m-%d")
@@ -146,7 +146,7 @@ def query_latest_bars(
 
     except Exception as e:
         logger.error(f"❌ Failed to query latest {n} bars for {std_code}: {e}", exc_info=True)
-        return None
+        return pd.DataFrame()
 
     finally:
         if conn:

@@ -1,17 +1,14 @@
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pandas as pd
-from datas.query_stock import query_daily_bars
+from datas.query_stock import query_latest_bars
 from pathlib import Path
 
 code = '002959'
-df = query_daily_bars(code=code, from_date='20250601')
+df = query_latest_bars(code=code, n=60)
 
-column_mapping = {'date': 'Date', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close', 'volume': 'Volume'}
-df = df.rename(columns=column_mapping)
-
-df['MA5'] = df['Close'].rolling(window=5).mean()
-df['MA60'] = df['Close'].rolling(window=60).mean()
+df['MA5'] = df['close'].rolling(window=5).mean()
+df['MA20'] = df['close'].rolling(window=20).mean()
 
 fig = make_subplots(
     rows=2, cols=1,
@@ -23,11 +20,11 @@ fig = make_subplots(
 
 fig.add_trace(
     go.Candlestick(
-        x=df['Date'],
-        open=df['Open'],
-        high=df['High'],
-        low=df['Low'],
-        close=df['Close'],
+        x=df['date'],
+        open=df['open'],
+        high=df['high'],
+        low=df['low'],
+        close=df['close'],
         name='K线',
         increasing=dict(line=dict(color='#ef5350', width=1)),
         decreasing=dict(line=dict(color='#26a69a', width=1))
@@ -36,21 +33,21 @@ fig.add_trace(
 )
 
 fig.add_trace(
-    go.Scatter(x=df['Date'], y=df['MA5'], mode='lines', name='MA5',
+    go.Scatter(x=df['date'], y=df['MA5'], mode='lines', name='MA5',
                line=dict(color='#42a5f5', width=1.5)),
     row=1, col=1
 )
 fig.add_trace(
-    go.Scatter(x=df['Date'], y=df['MA60'], mode='lines', name='MA60',
+    go.Scatter(x=df['date'], y=df['MA20'], mode='lines', name='MA20',
                line=dict(color='#ff7043', width=1.5, dash='dot')),
     row=1, col=1
 )
 
-colors = ['#ef5350' if c > o else '#26a69a' for o, c in zip(df['Open'], df['Close'])]
+colors = ['#ef5350' if c > o else '#26a69a' for o, c in zip(df['open'], df['close'])]
 fig.add_trace(
     go.Bar(
-        x=df['Date'],
-        y=df['Volume'],
+        x=df['date'],
+        y=df['volume'],
         name='成交量',
         marker=dict(color=colors, opacity=0.6),
         showlegend=False
@@ -99,9 +96,11 @@ fig.update_layout(
     width=1100
 )
 
-output_dir = Path(__file__).parent.parent / "output"
-output_dir.mkdir(exist_ok=True)
-file_path = output_dir / "kline_chart_professional.png"
-fig.write_image(file_path, width=1100, height=700, scale=2)
+fig.show()
 
-print(f"✅ charts saved to：{file_path}")
+# output_dir = Path(__file__).parent.parent / "output"
+# output_dir.mkdir(exist_ok=True)
+# file_path = output_dir / "kline_chart_professional.png"
+# fig.write_image(file_path, width=1100, height=700, scale=2)
+
+# print(f"✅ charts saved to：{file_path}")

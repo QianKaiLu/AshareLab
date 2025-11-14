@@ -6,6 +6,8 @@ from tools.log import get_analyze_logger
 from jinja2 import Template
 
 logger = get_analyze_logger()
+co_name = "慢就是稳稳就是快实验室（Lazy-Lab）"
+author = "钱大头"
 
 client = OpenAI(
     api_key=QIANWEN_API_KEY,
@@ -14,11 +16,11 @@ client = OpenAI(
 
 with open(Path(__file__).parent / "kbar_analysis_prompt.jinja") as f:
     template = Template(f.read())
-    co_name = "慢就是稳稳就是快实验室（Lazy-Lab）"
-    author = "钱大头"
-    KBAR_ANALYSIS_PROMPT_SHORT = template.render(co_name=co_name, author=author)
     KBAR_ANALYSIS_PROMPT = template.render(co_name=co_name, author=author)
 
+with open(Path(__file__).parent / "kbar_analysis_prompt_short.jinja") as f:
+    template = Template(f.read())
+    KBAR_ANALYSIS_PROMPT_SHORT = template.render(co_name=co_name, author=author)
 
 def analyze_kbar_data_openai(csv_file_path: Path, base_info: dict, recent_news: Any) -> Optional[str]:
     if not QIANWEN_API_KEY:

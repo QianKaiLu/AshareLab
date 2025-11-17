@@ -182,18 +182,6 @@ def get_latest_date_with_data(
     except Exception as e:
         return earliest_date
 
-def get_stock_info(
-        code: str
-)-> Optional[pd.DataFrame]:
-    """
-    Get the stock name for the given stock code.
-    """
-    try:
-        std_code = to_std_code(code)
-    except Exception as e:
-        logger.warning(f"Invalid stock code '{code}': {e}")
-        return None
-
 def get_stock_info_by_code(code: str) -> pd.DataFrame:
     """
     Get stock information for a single stock code.
@@ -214,6 +202,46 @@ def get_stock_info_by_code(code: str) -> pd.DataFrame:
     df.set_index('code', inplace=True)
     return df
 
+def format_stock_info(df: pd.DataFrame, level: str = "medium") -> str:
+    if df.empty:
+        return "❌ No stock info found"
+
+    s = df.iloc[0]
+    safe = lambda x: str(x) if pd.notna(x) else ""
+
+    code = s.name
+    name = safe(s['name'])
+    exchange = f"{safe(s['exchange_name'])} ({safe(s['exchange_code'])})"
+    list_date = safe(s['list_date'])
+    industry = safe(s['idn_name'])
+
+    if level == "brief":
+        return f"{name} ({code}) — {industry}"
+    
+    elif level == "medium":
+        return (
+            f"Code: {code}\n"
+            f"Name: {name}\n"
+            f"Exchange: {exchange}\n"
+            f"Listing Date: {list_date}\n"
+            f"Industry: {industry}"
+        )
+    
+    elif level == "detailed":
+        return (
+            f"Stock Code: {code}\n"
+            f"Company Name: {name}\n"
+            f"Full Name: {safe(s['full_name'])}\n"
+            f"Exchange: {exchange}\n"
+            f"Listing Date: {list_date}\n"
+            f"Industry: {industry}\n"
+            f"Main Business: {safe(s['main_operation_business'])}\n"
+            f"Business Scope: {safe(s['operating_scope'])}\n"
+            f"Introduction: {safe(s['org_introduction'])}"
+        )
+    
+    else:
+        raise ValueError("level must be 'brief', 'medium', or 'detailed'")
 
 def get_stock_info_by_codes(codes: list) -> pd.DataFrame:
     """

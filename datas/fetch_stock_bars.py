@@ -187,12 +187,6 @@ def update_daily_bars_for_code(
     if df_new is not None:
         save_daily_bars_to_database(df_new)
 
-
-
-
-
-
-
 if __name__ == "__main__":
     # delete_table_if_exists(DAILY_BAR_TABLE)
     # create_daily_bar_table()

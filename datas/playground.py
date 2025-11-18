@@ -30,9 +30,9 @@ from newsapi import NewsApiClient
 # print(news)
 
 # # 沪深300成分股
-# df_300 = ak.index_stock_cons(symbol="000300")
-# print("沪深300成分股：")
-# print(df_300.count())
+df_300 = ak.index_stock_cons(symbol="000300")
+print("沪深300成分股：")
+print(df_300)
 # # 中证500成分股
 # df_500 = ak.index_stock_cons(symbol="000905")
 # print("中证500成分股：")

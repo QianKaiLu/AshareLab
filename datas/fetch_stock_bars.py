@@ -77,7 +77,7 @@ def fetch_daily_bar_from_akshare(
         df = df.rename(columns=column_mapping)
 
         # required columns
-        required_columns = ['date', 'high', 'low', 'close', 'open', 'volume', 'amount', 'amplitude', 'change_pct', 'price_change', 'turnover_rate']
+        required_columns = ['date', 'high', 'low', 'close', 'open', 'volume']
         missing_cols = [col for col in required_columns if col not in df.columns]
         if missing_cols:
             logger.error(f"Missing required columns after mapping: {missing_cols} for {code}")
@@ -187,29 +187,5 @@ def update_daily_bars_for_code(
     if df_new is not None:
         save_daily_bars_to_database(df_new)
 
-if __name__ == "__main__":
-    # delete_table_if_exists(DAILY_BAR_TABLE)
-    # create_daily_bar_table()
-
-    # stock_codes = ['600570', '002594', '002714']
-    # for code in stock_codes:
-    #     update_daily_bars_for_code(code)
-    code = '002008'
-    update_daily_bars_for_code(code)
-    df = query_daily_bars(code=code, from_date='20241113')
-    if df is not None and not df.empty:
-        path = export_bars_to_csv(df, only_base_info=True)
-        stock_info = get_stock_info_by_code(code)
-        recent_news = ak.stock_news_em(symbol=code).to_dict(orient='records')
-        if path is not None:
-            logger.info(f"Exported bars to {path}, starting AI analysis...")
-            md_content = analyze_kbar_data_openai(csv_file_path=path,base_info=stock_info.to_dict('list'), recent_news=recent_news)
-            if md_content:
-                pre_name = f"{code}"
-                if not stock_info.empty:
-                    stock_name = stock_info.at[code, 'name']
-                    if stock_name:
-                        pre_name = f"{stock_name}({code})"
-                file_name = f"{pre_name}_分析报告"
-                save_md_to_file_name(md_content, file_name)
-                render_markdown_to_image_file_name(md_content, file_name, open_folder_after=True)
+# if __name__ == "__main__":
+    

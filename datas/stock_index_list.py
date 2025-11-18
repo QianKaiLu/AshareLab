@@ -94,7 +94,7 @@ def hs300_code_list() -> pd.Series:
     Triggers an update if the local list is outdated or missing.
 
     Returns:
-        A Series containing stock codes (e.g., '600000.SH'), or empty Series if failed.
+        A Series containing stock codes (e.g., '600000'), or empty Series if failed.
     """
     update_index_stock_list()
     if hs300_list_path.exists():
@@ -110,7 +110,7 @@ def csi500_code_list() -> pd.Series:
     Triggers an update if the local list is outdated or missing.
 
     Returns:
-        A Series containing stock codes (e.g., '600000.SH'), or empty Series if failed.
+        A Series containing stock codes (e.g., '600000'), or empty Series if failed.
     """
     update_index_stock_list()
     if csi500_list_path.exists():

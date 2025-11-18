@@ -5,7 +5,10 @@ from datas.query_stock import get_stock_info_by_code, format_stock_info
 
 logger = get_fetch_logger()
 
+# input parameters
 code = '601127'
+from_date = '20241113'
+to_date = None  # None means up to latest available date
 
 stock_info = get_stock_info_by_code(code)
 if stock_info is not None and not stock_info.empty:
@@ -15,7 +18,7 @@ update_daily_bars_for_code(code)
 
 logger.info("Exporting...")
 
-df = query_daily_bars(code=code, from_date='20241113')
+df = query_daily_bars(code=code, from_date=from_date, to_date=to_date)
 if df is not None and not df.empty:
     path = export_bars_to_csv(df, only_base_info=True, open_folder_after=True)
     if path is not None:

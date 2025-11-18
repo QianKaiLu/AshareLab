@@ -8,7 +8,9 @@ from tools.markdown_lab import save_md_to_file_name, render_markdown_to_image_fi
 
 logger = get_analyze_logger()
 
-code = '600418'
+# input parameters
+code = '601127'
+from_date = '20241113'
 
 stock_info = get_stock_info_by_code(code)
 if stock_info is not None and not stock_info.empty:
@@ -18,7 +20,7 @@ logger.info("Updating daily bars...")
 update_daily_bars_for_code(code)
 logger.info("✅ Done updating.")
 
-df = query_daily_bars(code=code, from_date='20241113')
+df = query_daily_bars(code=code, from_date=from_date)
 
 if df is not None and not df.empty:
     path = export_bars_to_csv(df, only_base_info=True)

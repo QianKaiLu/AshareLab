@@ -8,6 +8,7 @@ from typing import Optional, Any
 from datetime import datetime, timedelta
 from tools.export import export_bars_to_csv
 from datas.query_stock import get_stock_info_by_code
+from tools.stock_tools import to_std_code
 
 logger = get_fetch_logger()
 
@@ -98,7 +99,8 @@ def hs300_code_list() -> pd.Series:
     """
     update_index_stock_list()
     if hs300_list_path.exists():
-        return pd.read_csv(hs300_list_path)["code"]
+        df = pd.read_csv(hs300_list_path, dtype={"code": "string"})
+        return df["code"].map(to_std_code)
     else:
         logger.warning("HS300 stock list file does not exist.")
         return pd.Series()
@@ -114,11 +116,12 @@ def csi500_code_list() -> pd.Series:
     """
     update_index_stock_list()
     if csi500_list_path.exists():
-        return pd.read_csv(csi500_list_path)["code"]
+        df = pd.read_csv(csi500_list_path, dtype={"code": "string"})
+        return df["code"].map(to_std_code)
     else:
         logger.warning("CSI500 stock list file does not exist.")
         return pd.Series()
 
 
 if __name__ == "__main__":
-    update_index_stock_list()
+    update_index_stock_list(force_update=True)

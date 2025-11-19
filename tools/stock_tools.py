@@ -70,3 +70,28 @@ def to_std_code(code: str) -> str:
         return padded
     else:
         raise ValueError(f"Digit sequence too long ({len(main_digits)} > 6): {main_digits}")
+
+def to_dot_ex_code(code: str) -> str:
+    """
+    Convert various stock code formats to 'XXXXXX.EX' format.
+    
+    Examples:
+        '321' -> '000321.SZ'
+        '000321' -> '000321.SZ'
+        'SH600000' -> '600000.SH'
+        '600000.SH' -> '600000.SH'
+        'sz000800' -> '000800.SZ'
+        '159915.SZ' -> '159915.SZ'
+
+    Args:
+        code (str): Raw stock code input
+
+    Returns:
+        str: Code in 'XXXXXX.EX' format
+
+    Raises:
+        ValueError: If unable to determine exchange or extract valid code
+    """
+    std_code = to_std_code(code)
+    exchange_code, _ = get_exchange_by_code(std_code)
+    return f"{std_code}.{exchange_code}"

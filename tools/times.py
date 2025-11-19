@@ -3,7 +3,9 @@ from typing import Optional
 import pandas as pd
 
 def ms_timestamp_to_date(timestamp):
-    """安全将毫秒时间戳转为 YYYY-MM-DD，失败返回 None"""
+    """
+    Convert milliseconds timestamp to date string in 'YYYY-MM-DD' format.
+    """
     try:
         if timestamp is None:
             return None

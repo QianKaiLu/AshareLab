@@ -1,12 +1,14 @@
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+# import plotly.graph_objects as go
+# from plotly.subplots import make_subplots
 import pandas as pd
 import akshare as ak
 from datas.query_stock import query_latest_bars
 from pathlib import Path
-import yfinance as yf
+# import yfinance as yf
 import requests
-from newsapi import NewsApiClient
+# from newsapi import NewsApiClient
+import tushare as ts
+from datas.fetch_stock_bars import fetch_daily_bar_from_akshare
 
 # newsapi = NewsApiClient(api_key='dc5b76fac93f4740ab3ec029c4ceeb44')
 # results = newsapi.get_everything(q='小米', language='zh')
@@ -29,11 +31,10 @@ from newsapi import NewsApiClient
 # news = ak.stock_news_em(symbol='600418')
 # print(news)
 
-# # 沪深300成分股
-df_300 = ak.index_stock_cons(symbol="000300")
-print("沪深300成分股：")
-print(df_300)
-# # 中证500成分股
-# df_500 = ak.index_stock_cons(symbol="000905")
-# print("中证500成分股：")
-# print(df_500.count())
+ts.set_token('d2f856055cefeb4a3a43784054478263d38d77072561d7fdba5e8f4e')
+# pro = ts.pro_api('2cf551afc37b607a31ddb855966986de8b8ec67aa856914b4a893b51')
+df = ts.pro_bar(ts_code='002594.SZ', start_date='20251001', end_date='20251119', adj='qfq')
+print(df)
+
+df = fetch_daily_bar_from_akshare(code='002594', from_date='20251001', to_date='20251119', adjust='qfq')
+print(df[["code", "date", "open", "close", "high", "low", "volume"]])

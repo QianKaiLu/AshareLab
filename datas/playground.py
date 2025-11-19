@@ -33,8 +33,8 @@ from datas.fetch_stock_bars import fetch_daily_bar_from_akshare
 
 ts.set_token('d2f856055cefeb4a3a43784054478263d38d77072561d7fdba5e8f4e')
 # pro = ts.pro_api('2cf551afc37b607a31ddb855966986de8b8ec67aa856914b4a893b51')
-df = ts.pro_bar(ts_code='002594.SZ', start_date='20251001', end_date='20251119', adj='qfq')
-print(df)
+df = ts.pro_bar(ts_code='002415.SZ', start_date='20251001', end_date='20251119', adj='qfq')
+print(df.dtypes)
 
-df = fetch_daily_bar_from_akshare(code='002594', from_date='20251001', to_date='20251119', adjust='qfq')
-print(df[["code", "date", "open", "close", "high", "low", "volume"]])
+# df = fetch_daily_bar_from_akshare(code='002594', from_date='20251001', to_date='20251119', adjust='qfq')
+# print(df[["code", "date", "open", "close", "high", "low", "volume"]])

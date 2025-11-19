@@ -9,7 +9,7 @@ from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional, Any
 from datetime import datetime, timedelta
-from datas.create_database import DB_PATH, DAILY_BAR_TABLE, EARLIEST_DATE, delete_table_if_exists, create_daily_bar_table
+from datas.create_database import DB_PATH, DAILY_BAR_TABLE, EARLIEST_DATE, get_db_connection
 from datas.query_stock import query_daily_bars, query_latest_bars, get_latest_date_with_data
 from tools.export import export_bars_to_csv
 import time
@@ -18,11 +18,14 @@ from ai.ai_kbar_analyses import analyze_kbar_data_openai
 from tools.markdown_lab import save_md_to_file_name, render_markdown_to_image_file_name
 from datas.query_stock import get_stock_info_by_code
 import tushare as ts
+from ratelimit import limits, sleep_and_retry
 
 logger = get_fetch_logger()
 FETCH_WORKERS = 10
 MARKED_CLOSE_HOUR = 16
 
+@sleep_and_retry
+@limits(calls=120, period=60)
 def fetch_daily_bar_from_akshare(
     code: str,
     from_date: Optional[str] = None,
@@ -104,7 +107,7 @@ def fetch_daily_bar_from_akshare(
             
         # Convert data types
         for col in ['open', 'close', 'high', 'low', 'amount', 'amplitude', 'change_pct', 'price_change', 'turnover_rate']:
-            df[col] = pd.to_numeric(df[col], errors='coerce')
+            df[col] = pd.to_numeric(df[col], errors='coerce').round(2)
         df['volume'] = pd.to_numeric(df['volume'], errors='coerce').fillna(0).astype('int64') * 100
 
         df.drop_duplicates(subset=['code', 'date'], keep='last', inplace=True)
@@ -120,11 +123,14 @@ def fetch_daily_bar_from_akshare(
         logger.error(f"Error fetching data for {code}: {e}", exc_info=True)
         return None
 
+
+@sleep_and_retry
+@limits(calls=45, period=60)
 def fetch_daily_bar_from_tushare(
     code: str,
     from_date: Optional[str] = None,
     to_date: Optional[str] = None,
-    adjust: str = "qfq"  # qfq:前复权, hfq:后复权, "" :不复权
+    adjust: str = "qfq",
 ) -> Optional[pd.DataFrame]:
     if from_date is None:
         from_date = EARLIEST_DATE
@@ -190,12 +196,15 @@ def fetch_daily_bar_from_tushare(
             
         # Convert data types
         for col in ['open', 'close', 'high', 'low', 'amount', 'change_pct', 'price_change']:
-            df[col] = pd.to_numeric(df[col], errors='coerce')
+            df[col] = pd.to_numeric(df[col], errors='coerce').round(2)
         df['volume'] = pd.to_numeric(df['volume'], errors='coerce').fillna(0).astype('int64') * 100
 
-        df.drop_duplicates(subset=['code', 'date'], keep='last', inplace=True)
-        df.sort_values(by='date', inplace=True)
-        df.reset_index(drop=True, inplace=True)
+        df = (
+            df
+            .drop_duplicates(subset=['code', 'date'], keep='last')
+            .sort_values('date')
+            .reset_index(drop=True)
+        )
 
         start_str = df['date'].min().strftime("%Y-%m-%d")
         end_str = df['date'].max().strftime("%Y-%m-%d")
@@ -295,10 +304,10 @@ def update_daily_bars_for_code(
     elif source == "tushare":
         df_new = fetch_daily_bar_from_tushare(code=code, from_date=previous_day.strftime("%Y%m%d"))
     if df_new is not None:
-            save_daily_bars_to_database(df_new)
+        save_daily_bars_to_database(df_new)
 
 if __name__ == "__main__":
     # Example usage: fetch and save daily bars for a specific stock code
-    test_code = "601699"
+    test_code = "002415"
     update_daily_bars_for_code(code=test_code, source="tushare")
     

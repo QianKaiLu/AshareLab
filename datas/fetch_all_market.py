@@ -1,13 +1,24 @@
 from tqdm import tqdm
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datas.fetch_stock_bars import MARKED_CLOSE_HOUR, logger, fetch_daily_bar_from_akshare, save_daily_bars_to_database
+from datas.fetch_stock_bars import MARKED_CLOSE_HOUR, logger, fetch_daily_bar_from_akshare, fetch_daily_bar_from_tushare, save_daily_bars_to_database
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from queue import Queue
 import threading
 from datas.stock_index_list import hs300_code_list
+from datetime import datetime, timedelta
+from datas.query_stock import get_latest_date_with_data
+from datas.create_database import DB_PATH, DAILY_BAR_TABLE, EARLIEST_DATE, get_db_connection
+import tushare as ts
 
-def fetch_stock_bars_parallel(stock_codes: pd.Series):
+'''
+使用 tenacity 库做自动重试（网络波动容错）
+使用 asyncio + aiohttp 提升 I/O 并发效率（比线程池更轻量高效）
+加全局速率限制器（如 ratelimit, limits）
+添加 Prometheus 监控指标 or 数据统计报告
+'''
+
+def fetch_stock_bars_parallel(stock_codes: pd.Series, source: str = "akshare"):
     result_queue = Queue(maxsize=20)
     stop_event = threading.Event()
 
@@ -16,7 +27,7 @@ def fetch_stock_bars_parallel(stock_codes: pd.Series):
 
     with ThreadPoolExecutor(max_workers=8) as executor:
         futures = {
-            executor.submit(worker_fetch_stock_and_queue, code, result_queue): code
+            executor.submit(worker_fetch_stock_and_queue, code, result_queue, source): code
             for code in stock_codes
         }
         success_count = 0
@@ -34,9 +45,28 @@ def fetch_stock_bars_parallel(stock_codes: pd.Series):
     stop_event.set()
     writer_thread.join()
 
-def worker_fetch_stock_and_queue(code: str, result_queue: Queue) -> bool:
+def worker_fetch_stock_and_queue(code: str, result_queue: Queue, source: str = "akshare") -> bool:
+    latest_date = get_latest_date_with_data(code)
+    previous_day = pd.to_datetime(EARLIEST_DATE)
+
+    if latest_date is not None:
+        now = datetime.now()
+        if now.hour >= MARKED_CLOSE_HOUR:
+            to_date = now
+        else:
+            to_date = (now - timedelta(days=1))
+
+        if latest_date.date() >= to_date.date():
+            logger.info(f"No update needed for {code}, latest date {latest_date.date()} is up-to-date.")
+            return True
+        previous_day = latest_date - pd.Timedelta(days=30)
+        
     try:
-        df = fetch_daily_bar_from_akshare(code)
+        df = None
+        if source == "akshare":
+            df = fetch_daily_bar_from_akshare(code=code, from_date=previous_day.strftime("%Y%m%d"))
+        elif source == "tushare":
+            df = fetch_daily_bar_from_tushare(code=code, from_date=previous_day.strftime("%Y%m%d"))
         if df is not None and not df.empty:
             result_queue.put(df)
             return True
@@ -66,4 +96,5 @@ def database_writer(result_queue: Queue, stop_event: threading.Event):
             break
 
 if __name__ == "__main__":
-    fetch_stock_bars_parallel(hs300_code_list())
+    ts.set_token('d2f856055cefeb4a3a43784054478263d38d77072561d7fdba5e8f4e')
+    fetch_stock_bars_parallel(hs300_code_list(), source="tushare")

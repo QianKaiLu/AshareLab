@@ -3,8 +3,8 @@ import sqlite3
 import pandas as pd
 from pathlib import Path
 from tools.log import get_fetch_logger
-from tools.stock_tools import get_exchange_by_code
-from tools.tools import ms_timestamp_to_date
+from tools.stock_tools import get_exchange_by_code, to_dot_ex_code
+from tools.times import ms_timestamp_to_date
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional, Any
@@ -17,6 +17,7 @@ from contextlib import closing
 from ai.ai_kbar_analyses import analyze_kbar_data_openai
 from tools.markdown_lab import save_md_to_file_name, render_markdown_to_image_file_name
 from datas.query_stock import get_stock_info_by_code
+import tushare as ts
 
 logger = get_fetch_logger()
 FETCH_WORKERS = 10
@@ -125,16 +126,6 @@ def fetch_daily_bar_from_tushare(
     to_date: Optional[str] = None,
     adjust: str = "qfq"  # qfq:前复权, hfq:后复权, "" :不复权
 ) -> Optional[pd.DataFrame]:
-    """
-    fetch daily stock bars from akshare
-    Args:
-        code: stock code with exchange prefix, e.g. SH600000
-        from_date: start date in YYYYMMDD format
-        to_date: end date in YYYYMMDD format
-        adjust: adjustment type, "qfq" for 前复权, "hfq" for 后复权, "" for no adjustment
-    Returns:
-        DataFrame with daily bars or None if failed
-    """
     if from_date is None:
         from_date = EARLIEST_DATE
 
@@ -146,31 +137,30 @@ def fetch_daily_bar_from_tushare(
         else:
             to_date = (now - timedelta(days=1)).strftime("%Y%m%d")
     try:
-        df = ak.stock_zh_a_hist(
-            symbol=code,
-            period="daily",
+        df = ts.pro_bar(
+            ts_code=to_dot_ex_code(code),
+            asset='E',
             start_date=from_date,
             end_date=to_date,
-            adjust=adjust
+            adj=adjust
         )
 
         if df.empty:
-            logger.warning(f"No daily bar data returned from akshare for code={code}")
+            logger.warning(f"No daily bar data returned from tushare for code={code}")
             return None
         
         column_mapping = {
-            '日期': 'date',
-            '开盘': 'open',
-            '最高': 'high',
-            '最低': 'low',
-            '收盘': 'close',
-            '成交量': 'volume',
-            '成交额': 'amount',
-            '振幅': 'amplitude',
-            '涨跌幅': 'change_pct',
-            '涨跌额': 'price_change',
-            '换手率': 'turnover_rate'
+            'trade_date': 'date',
+            'open': 'open',
+            'high': 'high',
+            'low': 'low',
+            'close': 'close',
+            'vol': 'volume',
+            'amount': 'amount',
+            'pct_chg': 'change_pct',
+            'change': 'price_change'
         }
+
         df = df.rename(columns=column_mapping)
 
         # required columns
@@ -184,8 +174,8 @@ def fetch_daily_bar_from_tushare(
 
         final_columns = [
             'code', 'date', 'open', 'close', 'high', 'low',
-            'volume', 'amount', 'amplitude', 'change_pct', 
-            'price_change', 'turnover_rate'
+            'volume', 'amount', 'change_pct', 
+            'price_change'
         ]
         available_columns = [col for col in final_columns if col in df.columns]
         df = df[available_columns]
@@ -199,7 +189,7 @@ def fetch_daily_bar_from_tushare(
             logger.warning(f"Dropped {dropped_count} rows with invalid dates for {code}")
             
         # Convert data types
-        for col in ['open', 'close', 'high', 'low', 'amount', 'amplitude', 'change_pct', 'price_change', 'turnover_rate']:
+        for col in ['open', 'close', 'high', 'low', 'amount', 'change_pct', 'price_change']:
             df[col] = pd.to_numeric(df[col], errors='coerce')
         df['volume'] = pd.to_numeric(df['volume'], errors='coerce').fillna(0).astype('int64') * 100
 
@@ -272,17 +262,43 @@ def save_daily_bars_to_database(df: pd.DataFrame):
             logger.error(f"💔 Failed to upsert bars: {e}", exc_info=True)
 
 def update_daily_bars_for_code(
-    code: str
+    code: str,
+    source: str = "akshare"
 ):
+    """
+    Update daily bars for a specific stock code by fetching new data from the source.
+    Args:
+        code: stock code, e.g. 300001
+        source: data source, "akshare" or "tushare"
+    """
+    if source not in {"akshare", "tushare"}:
+        raise ValueError(f"Unsupported source: {source}. Choose from 'akshare', 'tushare'.")
+    
     latest_date = get_latest_date_with_data(code)
     if latest_date is None:
         logger.warning(f"No valid date found for {code}, skipping update.")
         return
+    
+    now = datetime.now()
+    if now.hour >= MARKED_CLOSE_HOUR:
+        to_date = now
+    else:
+        to_date = (now - timedelta(days=1))
+    if latest_date.date() >= to_date.date():
+        logger.info(f"No update needed for {code}, latest date {latest_date.date()} is up-to-date.")
+        return
 
     previous_day = latest_date - pd.Timedelta(days=5)
-    df_new = fetch_daily_bar_from_akshare(code=code, from_date=previous_day.strftime("%Y%m%d"))
+    df_new = None
+    if source == "akshare":
+        df_new = fetch_daily_bar_from_akshare(code=code, from_date=previous_day.strftime("%Y%m%d"))
+    elif source == "tushare":
+        df_new = fetch_daily_bar_from_tushare(code=code, from_date=previous_day.strftime("%Y%m%d"))
     if df_new is not None:
-        save_daily_bars_to_database(df_new)
+            save_daily_bars_to_database(df_new)
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
+    # Example usage: fetch and save daily bars for a specific stock code
+    test_code = "601699"
+    update_daily_bars_for_code(code=test_code, source="tushare")
     

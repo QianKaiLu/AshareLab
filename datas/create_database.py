@@ -92,6 +92,15 @@ def prepare_database(recreate: bool = False):
         delete_table_if_exists(f"{DAILY_BAR_TABLE}")
     create_stock_info_table()
     create_daily_bar_table()
+    with get_db_connection() as conn:
+        conn.execute('PRAGMA journal_mode=WAL;')
+        conn.execute('PRAGMA synchronous=NORMAL;')
+        conn.commit()
 
 if __name__ == "__main__":
-    prepare_database()
+    with get_db_connection() as conn:
+        conn.execute('PRAGMA journal_mode=WAL;')
+        conn.execute('PRAGMA synchronous=NORMAL;')
+        conn.commit()
+    # delete_table_if_exists(f"{DAILY_BAR_TABLE}")
+    # create_daily_bar_table()

@@ -19,13 +19,12 @@ from tools.markdown_lab import save_md_to_file_name, render_markdown_to_image_fi
 from datas.query_stock import get_stock_info_by_code
 import tushare as ts
 from ratelimit import limits, sleep_and_retry
+from tools.tushare_rate_limiter import tushare_token_rate_limiter
 
 logger = get_fetch_logger()
 FETCH_WORKERS = 10
 MARKED_CLOSE_HOUR = 16
 
-@sleep_and_retry
-@limits(calls=120, period=60)
 def fetch_daily_bar_from_akshare(
     code: str,
     from_date: Optional[str] = None,
@@ -124,14 +123,15 @@ def fetch_daily_bar_from_akshare(
         return None
 
 
-@sleep_and_retry
-@limits(calls=45, period=60)
 def fetch_daily_bar_from_tushare(
     code: str,
     from_date: Optional[str] = None,
     to_date: Optional[str] = None,
     adjust: str = "qfq",
 ) -> Optional[pd.DataFrame]:
+
+    token = tushare_token_rate_limiter()
+    
     if from_date is None:
         from_date = EARLIEST_DATE
 
@@ -142,18 +142,38 @@ def fetch_daily_bar_from_tushare(
             to_date = now.strftime("%Y%m%d")
         else:
             to_date = (now - timedelta(days=1)).strftime("%Y%m%d")
+    
+    dot_ex_code = to_dot_ex_code(code)
     try:
-        df = ts.pro_bar(
-            ts_code=to_dot_ex_code(code),
-            asset='E',
+        
+        pro = ts.pro_api(token=token)        
+        df = pro.daily(
+            ts_code=dot_ex_code,
             start_date=from_date,
-            end_date=to_date,
-            adj=adjust
+            end_date=to_date
         )
-
+        
         if df.empty:
             logger.warning(f"No daily bar data returned from tushare for code={code}")
             return None
+        
+        adj = pro.adj_factor(
+            ts_code=dot_ex_code,
+            start_date=from_date, 
+            end_date=to_date
+            )
+        
+        if adj.empty:
+            logger.warning(f"No daily bar adj from tushare for code={code}")
+            return None
+        
+        df = df.merge(adj[['trade_date', 'adj_factor']], on='trade_date')
+        df = df.sort_values('trade_date').reset_index(drop=True)
+        latest_adj = df['adj_factor'].iloc[-1]
+        df['close'] = df['close'] * df['adj_factor'] / latest_adj
+        df['open'] = df['open'] * df['adj_factor'] / latest_adj
+        df['high'] = df['high'] * df['adj_factor'] / latest_adj
+        df['low'] = df['low'] * df['adj_factor'] / latest_adj
         
         column_mapping = {
             'trade_date': 'date',

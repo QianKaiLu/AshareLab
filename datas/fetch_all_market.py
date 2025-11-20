@@ -1,5 +1,6 @@
 from tqdm import tqdm
 import pandas as pd
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datas.fetch_stock_bars import MARKED_CLOSE_HOUR, logger, fetch_daily_bar_from_akshare, fetch_daily_bar_from_tushare, save_daily_bars_to_database
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -93,5 +94,16 @@ def database_writer(result_queue: Queue, stop_event: threading.Event):
         except Exception:
             break
 
+import time  # ✅ 新增导入
+
 if __name__ == "__main__":
+    start_time = time.time()  # ⏱️ 开始计时
+    
     fetch_stock_bars_parallel(query_all_stock_code_list(), source="tushare")
+    
+    # retry failed ones
+    fetch_stock_bars_parallel(query_all_stock_code_list(), source="tushare")
+    
+    end_time = time.time()  # ⏱️ 结束计时
+    total_seconds = end_time - start_time
+    logger.info(f"📊 used: {total_seconds:.2f} seconds ({timedelta(seconds=total_seconds)})") 

@@ -67,7 +67,7 @@ def fetch_index_stock_list():
     }
     
     logger.info("Updating HS300 lists...")
-    df_300 = ak.index_stock_cons(symbol="000300")
+    df_300 = ak.index_stock_cons(symbol="399300")
     if not df_300.empty:
         df_300 = df_300.rename(columns=column_mapping)
         df_300.to_csv(hs300_list_path, index=False)
@@ -76,7 +76,7 @@ def fetch_index_stock_list():
         done = False
 
     logger.info("Updating CSI500 lists...")
-    df_500 = ak.index_stock_cons(symbol="000905")
+    df_500 = ak.index_stock_cons(symbol="399905")
     if not df_500.empty:
         df_500 = df_500.rename(columns=column_mapping)
         df_500.to_csv(csi500_list_path, index=False)

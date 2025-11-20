@@ -107,13 +107,7 @@ def query_latest_bars(
 
     try:
         conn = sqlite3.connect(DB_PATH)
-
-        cursor = conn.cursor()
-        columns = [
-            'code', 'date', 'open', 'close', 'high', 'low',
-            'volume', 'amount', 'amplitude', 'change_pct',
-            'price_change', 'turnover_rate'
-        ]
+        
         query = f"""
         SELECT *
         FROM {DAILY_BAR_TABLE}
@@ -266,9 +260,20 @@ def get_stock_info_by_codes(codes: list) -> pd.DataFrame:
 
     df.set_index('code', inplace=True)
     return df
+
+def query_all_stock_code_list() -> pd.Series:
+    """
+    Query all stock basic information from the database.
+    """
+    query = f"SELECT code, name FROM {STOCK_INFO_TABLE}"
+    with get_db_connection() as conn:
+        df = pd.read_sql_query(query, conn)
+
+    return df['code'].map(to_std_code)
     
 if __name__ == "__main__":
     # Test query_daily_bars
-    codes = ['600570', '000332', '1']
-    df = get_stock_info_by_code(codes[0])
-    print(df['name'])
+    # codes = ['600570', '000332', '1']
+    # df = get_stock_info_by_code(codes[0])
+    df = query_all_stock_code_list()
+    print(df)

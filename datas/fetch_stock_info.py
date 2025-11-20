@@ -5,7 +5,7 @@ from pathlib import Path
 import json
 from tools.log import get_fetch_logger
 from tools.stock_tools import get_exchange_by_code
-from tools.tools import ms_timestamp_to_date
+from tools.times import ms_timestamp_to_date
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional, Any

@@ -37,7 +37,7 @@ def analyse_close_20_high_count(stock_codes: pd.Series, days: int = 365) -> pd.D
         .rename(columns={'close_at_20_high': 'close_at_20_high_count'})
     )
 
-    return result
+    return result.tail(days).reset_index(drop=True)
 
 if __name__ == "__main__":
     result_df = analyse_close_20_high_count(hs300_code_list(), days=365)

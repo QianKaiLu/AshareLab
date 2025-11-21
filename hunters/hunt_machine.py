@@ -11,7 +11,7 @@ class HuntMachine:
     def __init__(self, max_workers: int = 8):
         self.max_workers = max_workers
 
-    def hunt(self, analyzer: Callable[[pd.DataFrame], Any], min_bars: int = 30) -> List[str]:
+    def hunt(self, analyzer: Callable[[pd.DataFrame], Any], min_bars: int = 30, hunt_pool: Optional[List[str]] = None) -> List[str]:
         """
         Scan all stocks and apply the analyzer function.
         
@@ -19,12 +19,17 @@ class HuntMachine:
             analyzer: A function that takes a DataFrame (daily bars) and returns a truthy value if the stock matches.
                       The return value can be a boolean or any object (e.g., a dict with details).
             min_bars: Minimum number of bars required for the analyzer.
-            
+            hunt_pool: A list of stock codes to analyze.
+
         Returns:
             A list of results. If the analyzer returns a boolean, it returns the stock codes where it was True.
             If the analyzer returns other objects, it returns a list of (code, result) tuples.
         """
-        stock_codes = query_all_stock_code_list()
+        stock_codes = []
+        if hunt_pool is None:
+            stock_codes = query_all_stock_code_list()
+        else:
+            stock_codes = hunt_pool
         results = []
         
         logger.info(f"🏹 Start hunting among {len(stock_codes)} stocks...")

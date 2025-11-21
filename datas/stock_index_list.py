@@ -16,6 +16,7 @@ DATABASE_DIR = Path(__file__).parent.parent / "database"
 
 hs300_list_path = DATABASE_DIR / "hs300_stock_list.csv"
 csi500_list_path = DATABASE_DIR / "csi500_stock_list.csv"
+csi2000_list_path = DATABASE_DIR / "csi2000_stock_list.csv"
 dummy_path = DATABASE_DIR / ".dummy"
 
 update_interval_days = 30  # update every 30 days
@@ -84,6 +85,15 @@ def fetch_index_stock_list():
     else:
         done = False
         
+    logger.info("Updating CSI2000 lists...")
+    df_2000 = ak.index_stock_cons(symbol="932000")
+    if not df_2000.empty:
+        df_2000 = df_2000.rename(columns=column_mapping)
+        df_2000.to_csv(csi2000_list_path, index=False)
+        logger.info(f"Done with {len(df_2000)} entries.")
+    else:
+        done = False
+
     if done:
         # Update the dummy file's timestamp to mark successful update
         dummy_path.touch()
@@ -122,6 +132,21 @@ def csi500_code_list() -> pd.Series:
         logger.warning("CSI500 stock list file does not exist.")
         return pd.Series()
 
+def csi2000_code_list() -> pd.Series:
+    """Get a pandas Series of CSI2000 constituent stock codes.
+
+    Triggers an update if the local list is outdated or missing.
+
+    Returns:
+        A Series containing stock codes (e.g., '600000'), or empty Series if failed.
+    """
+    update_index_stock_list()
+    if csi2000_list_path.exists():
+        df = pd.read_csv(csi2000_list_path, dtype={"code": "string"})
+        return df["code"].map(to_std_code)
+    else:
+        logger.warning("CSI2000 stock list file does not exist.")
+        return pd.Series()
 
 if __name__ == "__main__":
     update_index_stock_list(force_update=True)

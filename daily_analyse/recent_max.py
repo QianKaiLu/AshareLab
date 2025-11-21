@@ -3,7 +3,7 @@ import sqlite3
 import pandas as pd
 from pathlib import Path
 from datas.query_stock import query_latest_bars
-from datas.stock_index_list import hs300_code_list, csi500_code_list
+from datas.stock_index_list import hs300_code_list, csi500_code_list, csi2000_code_list
 
 def close_at_20_high_serise(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty or 'close' not in df.columns:
@@ -40,6 +40,9 @@ def analyse_close_20_high_count(stock_codes: pd.Series, days: int = 365) -> pd.D
     return result
 
 if __name__ == "__main__":
-    result_df = analyse_close_20_high_count(csi500_code_list(), days=365)
+    result_df = analyse_close_20_high_count(hs300_code_list(), days=365)
     # print("Recent 365-day high counts for HS300 stocks in the past year:")
     print(result_df)
+    date_2024_09_24 = result_df[result_df['date'] == '2024-09-24']
+    count = date_2024_09_24.iloc[0]['close_at_20_high_count'] if not date_2024_09_24.empty else 0
+    print(f"20_high at 2024-09-24: {count}")

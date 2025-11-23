@@ -19,7 +19,7 @@ def rsi(
     Returns:
         pd.Series: RSI values
     """
-    rsi_values = ta_rsi(close=close, window=window, fillna=fillna)
+    rsi_values = ta_rsi(close=close, window=window, fillna=fillna).round(2)
     return rsi_values
 
 def add_rsi_to_dataframe(

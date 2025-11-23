@@ -31,7 +31,7 @@ def bbi(
         ma = close.rolling(window=period, min_periods=1).mean()
         ma_values.append(ma)
     
-    bbi = pd.concat(ma_values, axis=1).mean(axis=1)
+    bbi = pd.concat(ma_values, axis=1).mean(axis=1).round(2)
     
     return bbi
 

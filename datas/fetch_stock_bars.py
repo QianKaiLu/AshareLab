@@ -3,7 +3,7 @@ import sqlite3
 import pandas as pd
 from pathlib import Path
 from tools.log import get_fetch_logger
-from tools.stock_tools import get_exchange_by_code, to_dot_ex_code
+from tools.stock_tools import get_exchange_by_code, to_dot_ex_code, MARKED_CLOSE_HOUR, latest_trade_day
 from tools.times import ms_timestamp_to_date
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -23,7 +23,6 @@ from tools.tushare_rate_limiter import tushare_token_rate_limiter
 
 logger = get_fetch_logger()
 FETCH_WORKERS = 10
-MARKED_CLOSE_HOUR = 16
 
 def fetch_daily_bar_from_akshare(
     code: str,
@@ -46,11 +45,8 @@ def fetch_daily_bar_from_akshare(
 
     # default to today if marked close hour has passed
     if to_date is None:
-        now = datetime.now()
-        if now.hour >= MARKED_CLOSE_HOUR:
-            to_date = now.strftime("%Y%m%d")
-        else:
-            to_date = (now - timedelta(days=1)).strftime("%Y%m%d")
+        to_date = latest_trade_day().strftime("%Y%m%d")
+    
     try:
         df = ak.stock_zh_a_hist(
             symbol=code,
@@ -137,11 +133,7 @@ def fetch_daily_bar_from_tushare(
 
     # default to today if marked close hour has passed
     if to_date is None:
-        now = datetime.now()
-        if now.hour >= MARKED_CLOSE_HOUR:
-            to_date = now.strftime("%Y%m%d")
-        else:
-            to_date = (now - timedelta(days=1)).strftime("%Y%m%d")
+        to_date = latest_trade_day().strftime("%Y%m%d")
     
     dot_ex_code = to_dot_ex_code(code)
     try:
@@ -308,12 +300,9 @@ def update_daily_bars_for_code(
         logger.warning(f"No valid date found for {code}, skipping update.")
         return
     
-    now = datetime.now()
-    if now.hour >= MARKED_CLOSE_HOUR:
-        to_date = now
-    else:
-        to_date = (now - timedelta(days=1))
-    if latest_date.date() >= to_date.date():
+    to_date = latest_trade_day()
+    
+    if latest_date.date() >= to_date:
         logger.info(f"No update needed for {code}, latest date {latest_date.date()} is up-to-date.")
         return
 

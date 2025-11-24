@@ -10,10 +10,10 @@ def zxdkx(
     m4: int = 114
 ) -> pd.DataFrame:
     """
-    Calculate ZXDQ and ZXDKX indicators.
+    Calculate z_white and z_yellow indicators.
     
-    ZXDQ is the double EMA of closing prices with a span of 10.
-    ZXDKX is the average of moving averages of closing prices over periods m1, m2, m3, and m4.
+    z_white is the double EMA of closing prices with a span of 10.
+    z_yellow is the average of moving averages of closing prices over periods m1, m2, m3, and m4.
     
     Args:
         close: pd.Series of closing prices
@@ -23,15 +23,15 @@ def zxdkx(
         m4: int, period for fourth moving average, default is 114
     
     Returns:
-        pd.DataFrame: DataFrame with columns 'zxdq' and 'zxdkx'
+        pd.DataFrame: DataFrame with columns 'z_white' and 'z_yellow'
     """
-    zxdq = close.ewm(span=10, adjust=False).mean().ewm(span=10, adjust=False).mean()
+    z_white = close.ewm(span=10, adjust=False).mean().ewm(span=10, adjust=False).mean()
     ma1 = close.rolling(window=m1, min_periods=1).mean()
     ma2 = close.rolling(window=m2, min_periods=1).mean()
     ma3 = close.rolling(window=m3, min_periods=1).mean()
     ma4 = close.rolling(window=m4, min_periods=1).mean()
-    zxdkx = (ma1 + ma2 + ma3 + ma4) / 4.0
-    zxdkx_df = pd.DataFrame({'z_white': zxdq, 'z_yellow': zxdkx}).round(2)
+    z_yellow = (ma1 + ma2 + ma3 + ma4) / 4.0
+    zxdkx_df = pd.DataFrame({'z_white': z_white, 'z_yellow': z_yellow}).round(2)
     return zxdkx_df
 
 def add_zxdkx_to_dataframe(
@@ -44,7 +44,7 @@ def add_zxdkx_to_dataframe(
     inplace: bool = False
 ) -> Optional[pd.DataFrame]:
     """
-    Add ZXDQ and ZXDKX columns to DataFrame.
+    Add z_white and z_yellow columns to DataFrame.
     
     Args:
         df: pd.DataFrame containing price data
@@ -55,7 +55,7 @@ def add_zxdkx_to_dataframe(
         m4: int, period for fourth moving average, default is 114
         inplace: bool, if True modify df in place and return None; if False return modified copy
     Returns:
-        pd.DataFrame: Modified DataFrame with ZXDQ and ZXDKX columns (if inplace=False), or None (if inplace=True)
+        pd.DataFrame: Modified DataFrame with z_white and z_yellow columns (if inplace=False), or None (if inplace=True)
     """
     zxdkx_df = zxdkx(
         close=df[close_col],

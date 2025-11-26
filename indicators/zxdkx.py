@@ -10,10 +10,10 @@ def zxdkx(
     m4: int = 114
 ) -> pd.DataFrame:
     """
-    Calculate ZXDQ and ZXDKX indicators.
+    Calculate z_white and z_yellow indicators.
     
-    ZXDQ is the double EMA of closing prices with a span of 10.
-    ZXDKX is the average of moving averages of closing prices over periods m1, m2, m3, and m4.
+    z_white is the double EMA of closing prices with a span of 10.
+    z_yellow is the average of moving averages of closing prices over periods m1, m2, m3, and m4.
     
     Args:
         close: pd.Series of closing prices
@@ -44,7 +44,7 @@ def add_zxdkx_to_dataframe(
     inplace: bool = False
 ) -> Optional[pd.DataFrame]:
     """
-    Add ZXDQ and ZXDKX columns to DataFrame.
+    Add z_white and z_yellow columns to DataFrame.
     
     Args:
         df: pd.DataFrame containing price data

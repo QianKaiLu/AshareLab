@@ -13,6 +13,7 @@ from datas.stock_index_list import hs300_code_list, csi500_code_list
 from indicators.kdj import add_kdj_to_dataframe
 from indicators.macd import add_macd_to_dataframe
 from indicators.bbi import add_bbi_to_dataframe
+from indicators.zxdkx import add_zxdkx_to_dataframe
 
 # pro = ts.pro_api(token='2cf551afc37b607a31ddb855966986de8b8ec67aa856914b4a893b51')
 # code = '002594.SZ'
@@ -29,8 +30,9 @@ from indicators.bbi import add_bbi_to_dataframe
 # df['high'] = df['high'] * df['adj_factor'] / latest_adj
 # df['low'] = df['low'] * df['adj_factor'] / latest_adj
 
-df = query_latest_bars('601127', 1000)
+df = query_latest_bars('002050', 1000)
 add_kdj_to_dataframe(df, inplace=True)
 add_bbi_to_dataframe(df, inplace=True)
 add_macd_to_dataframe(df, inplace=True)
-print(df.tail(30)[['date', 'close', 'bbi', 'macd_dif', 'macd_difference']])
+add_zxdkx_to_dataframe(df, inplace=True)
+print(df.tail(30)[['date', 'close', 'bbi', 'z_white', 'z_yellow']])

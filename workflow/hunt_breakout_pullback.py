@@ -5,8 +5,8 @@ import pandas as pd
 # Add project root to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from hunters.hunt_machine import HuntMachine
-from hunters.strategy_breakout_pullback import analyze_breakout_pullback
+from hunter.hunt_machine import HuntMachine
+from hunter.strategy_breakout_pullback import analyze_breakout_pullback
 from datas.query_stock import get_stock_info_by_codes
 
 def main():

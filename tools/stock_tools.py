@@ -1,5 +1,8 @@
 from typing import Tuple
 import re
+import datetime
+
+MARKED_CLOSE_HOUR = 16
 
 def get_exchange_by_code(code: str) -> Tuple[str, str]:
     """
@@ -95,3 +98,21 @@ def to_dot_ex_code(code: str) -> str:
     std_code = to_std_code(code)
     exchange_code, _ = get_exchange_by_code(std_code)
     return f"{std_code}.{exchange_code}"
+
+import datetime
+
+def latest_trade_day() -> datetime.date:
+    now = datetime.datetime.now()
+    today = now.date()
+    weekday = today.weekday()  # Monday=0, Sunday=6
+
+    today_closed = now.hour >= MARKED_CLOSE_HOUR
+
+    if weekday == 0:  # Monday
+        return today if today_closed else today - datetime.timedelta(days=3)  # last Friday
+    elif 1 <= weekday <= 4:  # Tuesday to Friday
+        return today if today_closed else today - datetime.timedelta(days=1)
+    elif weekday == 5:  # Saturday → last Friday
+        return today - datetime.timedelta(days=1)
+    else:  # Sunday → last Friday
+        return today - datetime.timedelta(days=2)

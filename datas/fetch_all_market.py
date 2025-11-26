@@ -2,7 +2,7 @@ from tqdm import tqdm
 import pandas as pd
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datas.fetch_stock_bars import MARKED_CLOSE_HOUR, logger, fetch_daily_bar_from_akshare, fetch_daily_bar_from_tushare, save_daily_bars_to_database
+from datas.fetch_stock_bars import logger, fetch_daily_bar_from_akshare, fetch_daily_bar_from_tushare, save_daily_bars_to_database
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from queue import Queue
 import threading
@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from datas.query_stock import get_latest_date_with_data, query_all_stock_code_list
 from datas.create_database import DB_PATH, DAILY_BAR_TABLE, EARLIEST_DATE, get_db_connection
 import tushare as ts
+from tools.stock_tools import latest_trade_day
 
 def fetch_stock_bars_parallel(stock_codes: pd.Series, source: str = "akshare"):
     result_queue = Queue(maxsize=20)
@@ -44,13 +45,9 @@ def worker_fetch_stock_and_queue(code: str, result_queue: Queue, source: str = "
     previous_day = pd.to_datetime(EARLIEST_DATE)
 
     if latest_date is not None:
-        now = datetime.now()
-        if now.hour >= MARKED_CLOSE_HOUR:
-            to_date = now
-        else:
-            to_date = (now - timedelta(days=1))
+        to_date = latest_trade_day()
 
-        if latest_date.date() >= to_date.date():
+        if latest_date.date() >= to_date:
             logger.info(f"No update needed for {code}, latest date {latest_date.date()} is up-to-date.")
             return True
         previous_day = latest_date - pd.Timedelta(days=30)

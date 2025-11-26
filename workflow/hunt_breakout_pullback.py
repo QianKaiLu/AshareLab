@@ -60,6 +60,10 @@ def main():
     os.makedirs("output", exist_ok=True)
     df_res.to_csv(output_file, index=False)
     print(f"\nSaved results to {output_file}")
+    
+    # code list str
+    code_list_str = ','.join(df_res['code'].tolist())
+    print(f"\nCode List:\n{code_list_str}")
 
 if __name__ == "__main__":
     main()

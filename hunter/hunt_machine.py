@@ -22,8 +22,28 @@ class HuntResult:
             self.format_info = format_stock_info(self.stockInfo, level='brief')
             
     def __repr__(self):
-        return f"HuntResult({self.format_info})"
-
+        return self.format_info
+    
+    def __eq__(self, other):
+        if not isinstance(other, HuntResult):
+            return False
+        return self.code == other.code
+    
+    def __hash__(self):
+        return hash(self.code)
+    
+    @staticmethod
+    def union(left: List['HuntResult'], right: List['HuntResult']) -> List['HuntResult']:
+        result_dict = {res.code: res for res in left}
+        for res in right:
+            if res.code not in result_dict:
+                result_dict[res.code] = res
+        return list(result_dict.values())
+    
+    @staticmethod
+    def intersection(left: List['HuntResult'], right: List['HuntResult']) -> List['HuntResult']:
+        right_codes = {res.code for res in right}
+        return [res for res in left if res.code in right_codes]
 
 class HuntMachine:
     def __init__(self, max_workers: int = 8):

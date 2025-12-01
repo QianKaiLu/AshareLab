@@ -2,16 +2,34 @@ import pandas as pd
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable, List, Any, Optional
 from tqdm import tqdm
-from datas.query_stock import query_all_stock_code_list, query_latest_bars
+from datas.query_stock import query_all_stock_code_list, query_latest_bars, get_stock_info_by_code, format_stock_info
 from tools.log import get_fetch_logger
+from dataclasses import dataclass, field
 
 logger = get_fetch_logger()
+    
+@dataclass
+class HuntResult:
+    code: str
+    result_info: Any
+    stockInfo: pd.DataFrame = field(default_factory=pd.DataFrame, init=False)
+    format_info: str = field(default="", init=False)
+
+    def __post_init__(self):
+        if self.stockInfo.empty:
+            self.stockInfo = get_stock_info_by_code(self.code)
+        if not self.format_info:
+            self.format_info = format_stock_info(self.stockInfo, level='brief')
+            
+    def __repr__(self):
+        return f"HuntResult({self.format_info})"
+
 
 class HuntMachine:
     def __init__(self, max_workers: int = 8):
         self.max_workers = max_workers
 
-    def hunt(self, analyzer: Callable[[pd.DataFrame], Any], min_bars: int = 30, hunt_pool: Optional[List[str]] = None) -> List[str]:
+    def hunt(self, analyzer: Callable[[pd.DataFrame], Any], min_bars: int = 365, hunt_pool: Optional[List[str]] = None) -> List[HuntResult]:
         """
         Scan all stocks and apply the analyzer function.
         
@@ -22,15 +40,14 @@ class HuntMachine:
             hunt_pool: A list of stock codes to analyze.
 
         Returns:
-            A list of results. If the analyzer returns a boolean, it returns the stock codes where it was True.
-            If the analyzer returns other objects, it returns a list of (code, result) tuples.
+            A list of HuntResult objects for stocks that matched the analyzer criteria.
         """
         stock_codes = []
         if hunt_pool is None:
             stock_codes = query_all_stock_code_list()
         else:
             stock_codes = hunt_pool
-        results = []
+        results: list[HuntResult] = []
         
         logger.info(f"🏹 Start hunting among {len(stock_codes)} stocks...")
         
@@ -43,7 +60,7 @@ class HuntMachine:
             for future in tqdm(as_completed(futures), total=len(futures), desc="Hunting"):
                 code = futures[future]
                 try:
-                    result = future.result()
+                    result: Optional[HuntResult] = future.result()
                     if result:
                         results.append(result)
                 except Exception as e:
@@ -52,7 +69,7 @@ class HuntMachine:
         logger.info(f"✅ Hunt finished. Found {len(results)} matches.")
         return results
 
-    def _process_stock(self, code: str, analyzer: Callable[[pd.DataFrame], Any], min_bars: int) -> Optional[Any]:
+    def _process_stock(self, code: str, analyzer: Callable[[pd.DataFrame], Any], min_bars: int) -> Optional[HuntResult]:
         # Fetch data
         df = query_latest_bars(code, n=min_bars)
         if df.empty or len(df) < min_bars:
@@ -62,11 +79,7 @@ class HuntMachine:
         try:
             res = analyzer(df)
             if res:
-                # If boolean True, return code. If object, return (code, object)
-                if isinstance(res, bool):
-                    return code
-                else:
-                    return (code, res)
+                return HuntResult(code, res)
         except Exception as e:
             # logger.debug(f"Analyzer failed for {code}: {e}") # Optional: debug log
             pass

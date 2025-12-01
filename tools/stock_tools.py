@@ -2,7 +2,7 @@ from typing import Tuple
 import re
 import datetime
 
-MARKED_CLOSE_HOUR = 16
+MARKED_CLOSE_HOUR = 16 # close at 15:00, consider data stable after 16:00
 
 def get_exchange_by_code(code: str) -> Tuple[str, str]:
     """

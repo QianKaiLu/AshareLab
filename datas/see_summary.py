@@ -3,12 +3,18 @@ from plotly.subplots import make_subplots
 import pandas as pd
 from datas.query_stock import query_latest_bars
 from pathlib import Path
+from indicators.kdj import add_kdj_to_dataframe
+from indicators.macd import add_macd_to_dataframe
+from indicators.bbi import add_bbi_to_dataframe
+from indicators.zxdkx import add_zxdkx_to_dataframe
 
 code = '002959'
 df = query_latest_bars(code=code, n=60)
 
-df['MA5'] = df['close'].rolling(window=5).mean()
-df['MA20'] = df['close'].rolling(window=20).mean()
+add_bbi_to_dataframe(df, inplace=True)
+add_zxdkx_to_dataframe(df, inplace=True)
+
+print(df.tail(10))
 
 fig = make_subplots(
     rows=2, cols=1,
@@ -25,31 +31,26 @@ fig.add_trace(
         high=df['high'],
         low=df['low'],
         close=df['close'],
-        name='K线',
-        increasing=dict(line=dict(color='#ef5350', width=1)),
-        decreasing=dict(line=dict(color='#26a69a', width=1))
+        name='日 K 线',
+        increasing=dict(line=dict(color="#ef4846", width=1)),
+        decreasing=dict(line=dict(color="#28a85d", width=1))
     ),
     row=1, col=1
 )
 
 fig.add_trace(
-    go.Scatter(x=df['date'], y=df['MA5'], mode='lines', name='MA5',
-               line=dict(color='#42a5f5', width=1.5)),
-    row=1, col=1
-)
-fig.add_trace(
-    go.Scatter(x=df['date'], y=df['MA20'], mode='lines', name='MA20',
-               line=dict(color='#ff7043', width=1.5, dash='dot')),
+    go.Scatter(x=df['date'], y=df['bbi'], mode='lines', name='bbi',
+               line=dict(color="#e8ac2b", width=1.5, dash='dot')),
     row=1, col=1
 )
 
-colors = ['#ef5350' if c > o else '#26a69a' for o, c in zip(df['open'], df['close'])]
+colors = ['#ef4846' if c > o else '#28a85d' for o, c in zip(df['open'], df['close'])]
 fig.add_trace(
     go.Bar(
         x=df['date'],
         y=df['volume'],
         name='成交量',
-        marker=dict(color=colors, opacity=0.6),
+        marker=dict(color=colors, opacity=0.8),
         showlegend=False
     ),
     row=2, col=1
@@ -57,7 +58,7 @@ fig.add_trace(
 
 fig.update_layout(
     title=dict(
-        text=f'{code} 日K线图（含MA5/MA60与成交量）',
+        text=f'{code} 日K线图',
         x=0.5,
         xanchor='center',
         font=dict(size=20, color='white')
@@ -72,13 +73,13 @@ fig.update_layout(
         rangeslider_visible=False
     ),
     yaxis=dict(
-        title='价格',
+        title='Price',
         showgrid=True,
         gridcolor='#333',
         zeroline=False
     ),
     yaxis2=dict(
-        title='成交量',
+        title='Volume',
         showgrid=True,
         gridcolor='#333',
         zeroline=False

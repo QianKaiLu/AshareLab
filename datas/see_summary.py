@@ -7,9 +7,12 @@ from indicators.kdj import add_kdj_to_dataframe
 from indicators.macd import add_macd_to_dataframe
 from indicators.bbi import add_bbi_to_dataframe
 from indicators.zxdkx import add_zxdkx_to_dataframe
+from draws.kline_theme import ThemeRegistry, KlineTheme
+
+theme = ThemeRegistry.get(name="vintage_ticker")
 
 code = '002959'
-df = query_latest_bars(code=code, n=60)
+df = query_latest_bars(code=code, n=30)
 
 add_bbi_to_dataframe(df, inplace=True)
 add_zxdkx_to_dataframe(df, inplace=True)
@@ -32,40 +35,40 @@ fig.add_trace(
         low=df['low'],
         close=df['close'],
         name='日 K 线',
-        increasing=dict(line=dict(color="#ef4846", width=1)),
-        decreasing=dict(line=dict(color="#28a85d", width=1))
+        increasing=dict(line=dict(color=theme.up_color, width=1)),
+        decreasing=dict(line=dict(color=theme.down_color, width=1))
     ),
     row=1, col=1
 )
 
 fig.add_trace(
     go.Scatter(x=df['date'], y=df['bbi'], mode='lines', name='bbi',
-               line=dict(color="#e8ac2b", width=1.5, dash='dot')),
+               line=dict(color=theme.bbi_color, width=1.5, dash='dot')),
     row=1, col=1
 )
 
-colors = ['#ef4846' if c > o else '#28a85d' for o, c in zip(df['open'], df['close'])]
+colors = [theme.up_color if c > o else theme.down_color for o, c in zip(df['open'], df['close'])]
 fig.add_trace(
     go.Bar(
         x=df['date'],
         y=df['volume'],
         name='成交量',
-        marker=dict(color=colors, opacity=0.8),
+        marker=dict(color=colors, opacity=theme.volume_opacity),
         showlegend=False
     ),
     row=2, col=1
 )
-
+    
 fig.update_layout(
     title=dict(
         text=f'{code} 日K线图',
         x=0.5,
         xanchor='center',
-        font=dict(size=20, color='white')
+        font=dict(size=20, color=theme.text_color)
     ),
-    plot_bgcolor='#1e1e1e',
-    paper_bgcolor='#1e1e1e',
-    font=dict(color='white', size=12),
+    plot_bgcolor=theme.card_background,
+    paper_bgcolor=theme.card_background,
+    font=dict(color=theme.text_color, size=12),
     xaxis=dict(
         showgrid=False,
         zeroline=False,
@@ -75,13 +78,13 @@ fig.update_layout(
     yaxis=dict(
         title='Price',
         showgrid=True,
-        gridcolor='#333',
+        gridcolor=theme.grid_color,
         zeroline=False
     ),
     yaxis2=dict(
         title='Volume',
         showgrid=True,
-        gridcolor='#333',
+        gridcolor=theme.grid_color,
         zeroline=False
     ),
     legend=dict(
@@ -90,18 +93,12 @@ fig.update_layout(
         y=1.02,
         xanchor='right',
         x=1,
-        bgcolor='rgba(0,0,0,0.3)'
+        bgcolor='rgba(0,0,0,0)',
+        font=dict(color=theme.text_color)
     ),
     margin=dict(l=50, r=50, t=80, b=50),
-    height=700,
-    width=1100
+    height=1000,
+    width=600
 )
 
 fig.show()
-
-# output_dir = Path(__file__).parent.parent / "output"
-# output_dir.mkdir(exist_ok=True)
-# file_path = output_dir / "kline_chart_professional.png"
-# fig.write_image(file_path, width=1100, height=700, scale=2)
-
-# print(f"✅ charts saved to：{file_path}")

@@ -27,9 +27,15 @@ fig = make_subplots(
     specs=[[{"secondary_y": False}], [{"secondary_y": False}]]
 )
 
+# 1. 保留原始 date 列用于标签
+dates = df['date'].dt.strftime('%m月%d日').tolist()  # 或 '%Y-%m-%d' 看你喜好
+
+# 2. 用整数索引（0, 1, 2, ..., N-1）作为 x 坐标
+x_index = list(range(len(df)))
+
 fig.add_trace(
     go.Candlestick(
-        x=df['date'],
+        x=x_index,
         open=df['open'],
         high=df['high'],
         low=df['low'],
@@ -42,8 +48,12 @@ fig.add_trace(
 )
 
 fig.add_trace(
-    go.Scatter(x=df['date'], y=df['bbi'], mode='lines', name='bbi',
-               line=dict(color=theme.bbi_color, width=1.5, dash='dot')),
+    go.Scatter(
+        x=x_index, 
+        y=df['bbi'], 
+        mode='lines', 
+        name='bbi',
+        line=dict(color=theme.bbi_color, width=1.5, dash='dot')),
     row=1, col=1
 )
 
@@ -56,6 +66,23 @@ fig.add_trace(
         marker=dict(color=colors, opacity=theme.volume_opacity),
         showlegend=False
     ),
+    row=2, col=1
+)
+
+nticks = min(len(dates), 5)
+step = max(1, len(dates) // nticks)
+tick_indices = list(range(0, len(dates), step))
+tick_labels = [dates[i] for i in tick_indices]
+
+fig.update_xaxes(
+    tickvals=tick_indices,
+    ticktext=tick_labels,
+    row=1, col=1
+)
+
+fig.update_xaxes(
+    tickvals=tick_indices,
+    ticktext=tick_labels,
     row=2, col=1
 )
     

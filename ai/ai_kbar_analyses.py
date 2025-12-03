@@ -4,14 +4,17 @@ from pathlib import Path
 from typing import Optional, Any
 from tools.log import get_analyze_logger
 from jinja2 import Template
+from ai.ai_api_profile import ApiProfile, QWEN_MAX, DEEPSEEK_REASONER
 
 logger = get_analyze_logger()
 co_name = "慢就是稳稳就是快实验室（Lazy-Lab）"
 author = "钱大头"
 
+API_PROFILE: ApiProfile = DEEPSEEK_REASONER()
+
 client = OpenAI(
-    api_key=QIANWEN_API_KEY,
-    base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+    api_key=API_PROFILE.api_key,
+    base_url=API_PROFILE.base_url,
 )
 
 with open(Path(__file__).parent / "kbar_analysis_prompt.jinja") as f:
@@ -34,7 +37,7 @@ def analyze_kbar_data_openai(csv_file_path: Path, base_info: dict, recent_news: 
         logger.info(f"Read CSV file content from {csv_file_path}")
         
         completion = client.chat.completions.create(
-            model="qwen3-max",
+            model=API_PROFILE.model,
             messages=[
                 {
                     "role": "system",

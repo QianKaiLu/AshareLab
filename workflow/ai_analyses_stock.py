@@ -9,7 +9,7 @@ from tools.markdown_lab import save_md_to_file_name, render_markdown_to_image_fi
 logger = get_analyze_logger()
 
 # input parameters
-code = '601127'
+code = '600026'
 from_date = '20241113'
 
 stock_info = get_stock_info_by_code(code)

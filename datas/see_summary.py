@@ -11,7 +11,7 @@ from indicators.volume_ma import add_volume_ma_to_dataframe
 from draws.kline_theme import ThemeRegistry, KlineTheme
 from tools.colors import hex_to_rgba
 
-theme = ThemeRegistry.get(name="muted_pastel")
+theme = ThemeRegistry.get(name="vintage_ticker")
 
 code = '600423'
 stock_info = get_stock_info_by_code(code)
@@ -20,6 +20,8 @@ df = query_latest_bars(code=code, n=50)
 add_bbi_to_dataframe(df, inplace=True)
 add_zxdkx_to_dataframe(df, inplace=True)
 add_volume_ma_to_dataframe(df, inplace=True)
+add_macd_to_dataframe(df, inplace=True)
+add_kdj_to_dataframe(df, inplace=True)
 
 width = 600
 height = 500
@@ -29,8 +31,8 @@ print(df.tail(10))
 fig = make_subplots(
     rows=2, cols=1,
     shared_xaxes=True,
-    vertical_spacing=0.02,
-    row_heights=[0.75, (0.25-0.02)]
+    vertical_spacing=0.05,
+    row_heights=[0.75, (0.25-0.05)]
 )
 
 # 1. 保留原始 date 列用于标签
@@ -74,8 +76,8 @@ fig.add_trace(
         x=x_index, 
         y=df['z_white'], 
         mode='lines', 
-        name='快线',
-        line=dict(color=theme.quick_line_color, width=1, dash='solid'),
+        name='fast line',
+        line=dict(color=theme.quick_line_color, width=1.2, dash='solid'),
         showlegend=True
     ),
     row=1, col=1
@@ -86,8 +88,8 @@ fig.add_trace(
         x=x_index, 
         y=df['z_yellow'], 
         mode='lines', 
-        name='慢线',
-        line=dict(color=theme.slow_line_color, width=1, dash='solid'),
+        name='slow line',
+        line=dict(color=theme.slow_line_color, width=1.2, dash='solid'),
         showlegend=True
     ),
     row=1, col=1
@@ -98,8 +100,12 @@ fig.add_trace(
     go.Bar(
         x=x_index,
         y=df['volume'],
-        name='成交量',
-        marker=dict(color=colors, opacity=1.0),
+        name='volume',
+        marker=dict(
+            color=colors, 
+            opacity=1.0,
+            line=dict(width=0)
+        ),
         showlegend=False,
     ),
     row=2, col=1
@@ -110,7 +116,7 @@ fig.add_trace(
         x=x_index, 
         y=df['volume_ma_5'], 
         mode='lines', 
-        name='volume MA5',
+        name='VOL MA5',
         line=dict(color=theme.line_color_0, width=1, dash='solid'),
         showlegend=False
     ),
@@ -126,13 +132,19 @@ fig.update_xaxes(
     tickvals=tick_indices,
     ticktext=tick_labels,
     tickangle= -45,
-    tickfont=dict(size=8, color=theme.text_color),
+    tickfont=dict(size=9, color=theme.text_color, family='Arial'),
+    ticklen=5,
+    tickwidth=1,
     row=1, col=1
 )
 
 fig.update_xaxes(
     tickvals=tick_indices,
     ticktext=tick_labels,
+    tickangle= -45,
+    tickfont=dict(size=9, color=theme.text_color, family='Arial'),
+    ticklen=5,
+    tickwidth=1,
     row=2, col=1
 )
     
@@ -140,7 +152,7 @@ fig.update_layout(
     title=dict(
         text=f'{stock_info.at[code, 'name']} ({code})',
         x=0.5,
-        y=0.96,
+        y=0.955,
         xanchor='center',
         font=dict(size=16, color=theme.text_color, family='sans-serif')
     ),
@@ -150,12 +162,17 @@ fig.update_layout(
     showlegend=True,
     legend=dict(
         font=dict(size=10, color=theme.text_color),
-        orientation='v',
-        yanchor='middle',
-        y=0.9,
+        orientation='h',
+        yanchor='bottom',
+        y=0.96,
         xanchor='right',
         x=1.02,
-        bgcolor=hex_to_rgba(theme.card_background, 0.6)
+        bgcolor=hex_to_rgba(theme.card_background, 0.6),
+        # bordercolor=hex_to_rgba(theme.text_color, 0.3),
+        # borderwidth=0.5,
+        itemwidth=30,
+        itemsizing='constant',
+        traceorder='normal',
     ),
     xaxis=dict(
         showgrid=False,
@@ -167,8 +184,9 @@ fig.update_layout(
         title='Price',
         title_standoff=10,
         title_font = dict(size=10, color=theme.text_color),
-        tickfont = dict(size=8, color=theme.text_color),
+        tickfont = dict(size=9, color=theme.text_color),
         showgrid=True,
+        nticks=10,
         gridcolor=theme.grid_color,
         griddash='dot',
         gridwidth=1,
@@ -177,12 +195,13 @@ fig.update_layout(
         tickformat=".2f"
     ),
     yaxis2=dict(
-        title='Volume',
+        title='Vol',
         title_standoff=6,
         title_font = dict(size=10, color=theme.text_color),
-        tickfont = dict(size=8, color=theme.text_color),
+        tickfont = dict(size=9, color=theme.text_color),
         showticklabels=True,
         showgrid=True,
+        nticks=4,   
         griddash='dot',
         gridwidth=1,
         gridcolor=theme.grid_color,
@@ -190,61 +209,9 @@ fig.update_layout(
         zeroline=True,
         tickformat=".2s"
     ),
-    margin=dict(l=40, r=30, t=40, b=30),
+    margin=dict(l=40, r=20, t=60, b=40),
     height=height,
     width=width
 )
 
 fig.show()
-
-import plotly.io as pio
-from PIL import Image, ImageOps, ImageDraw
-import io
-
-# 先保存图表到内存中的 PNG
-img_bytes = fig.to_image(format="png", width=width, height=height, scale=4)  # scale 提高清晰度
-
-# 用 PIL 打开图像并处理
-img = Image.open(io.BytesIO(img_bytes))
-
-# ➤ 设置参数：圆角半径、边框颜色、边框宽度
-radius = theme.card_corner_radius           # 圆角半径
-border_color = theme.card_border_color  # 边框颜色，可以换成 theme 的颜色，如 theme.border_color
-border_width = theme.card_border_width  # 边框宽度
-
-# 创建带透明背景的新画布
-def add_rounded_rectangle_border(image, radius, border_color, border_width):
-    # 创建新图像，带透明背景
-    new_size = (image.width + 2 * border_width, image.height + 2 * border_width)
-    result = Image.new("RGBA", new_size, (0, 0, 0, 0))
-    mask = Image.new("L", new_size, 0)
-    draw_mask = ImageDraw.Draw(mask)
-    draw_mask.rounded_rectangle(
-        [(0, 0), (new_size[0]-1, new_size[1]-1)],
-        radius=radius,
-        fill=255,
-        width=border_width
-    )
-    draw_result = ImageDraw.Draw(result)
-    draw_result.rounded_rectangle(
-        [(0, 0), (new_size[0]-1, new_size[1]-1)],
-        radius=radius,
-        outline=border_color,
-        width=border_width
-    )
-
-    # 粘贴原图
-    result.paste(image, (border_width, border_width), mask=image.convert("RGBA"))
-
-    # 再用 mask 裁剪圆角
-    result.putalpha(mask)
-    return result
-
-img_with_border = add_rounded_rectangle_border(img, radius, border_color, border_width)
-
-# 保存最终图片
-EXPORT_PATH = Path(__file__).parent.parent / "output"
-output_path = EXPORT_PATH / f"{code}_chart.png"
-img_with_border.save(output_path, format="PNG")
-
-print(f"✅ 已保存带圆角边框的图表至: {output_path}")

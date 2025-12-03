@@ -31,7 +31,7 @@ class KlineTheme:
     card_background: str = "#1E1E1E"  # card background color
     plot_background: str = "#1E1E1E" # plot area color
     
-    card_corner_radius: int = 6
+    card_corner_radius: int = 20
 
     # Text styles
     text_color: str = "#FFFFFF"

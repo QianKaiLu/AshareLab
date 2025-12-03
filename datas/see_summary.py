@@ -21,6 +21,9 @@ add_bbi_to_dataframe(df, inplace=True)
 add_zxdkx_to_dataframe(df, inplace=True)
 add_volume_ma_to_dataframe(df, inplace=True)
 
+width = 600
+height = 500
+
 print(df.tail(10))
 
 fig = make_subplots(
@@ -188,8 +191,60 @@ fig.update_layout(
         tickformat=".2s"
     ),
     margin=dict(l=40, r=30, t=40, b=30),
-    height=500,
-    width=600
+    height=height,
+    width=width
 )
 
 fig.show()
+
+import plotly.io as pio
+from PIL import Image, ImageOps, ImageDraw
+import io
+
+# 先保存图表到内存中的 PNG
+img_bytes = fig.to_image(format="png", width=width, height=height, scale=4)  # scale 提高清晰度
+
+# 用 PIL 打开图像并处理
+img = Image.open(io.BytesIO(img_bytes))
+
+# ➤ 设置参数：圆角半径、边框颜色、边框宽度
+radius = theme.card_corner_radius           # 圆角半径
+border_color = theme.card_border_color  # 边框颜色，可以换成 theme 的颜色，如 theme.border_color
+border_width = theme.card_border_width  # 边框宽度
+
+# 创建带透明背景的新画布
+def add_rounded_rectangle_border(image, radius, border_color, border_width):
+    # 创建新图像，带透明背景
+    new_size = (image.width + 2 * border_width, image.height + 2 * border_width)
+    result = Image.new("RGBA", new_size, (0, 0, 0, 0))
+    mask = Image.new("L", new_size, 0)
+    draw_mask = ImageDraw.Draw(mask)
+    draw_mask.rounded_rectangle(
+        [(0, 0), (new_size[0]-1, new_size[1]-1)],
+        radius=radius,
+        fill=255,
+        width=border_width
+    )
+    draw_result = ImageDraw.Draw(result)
+    draw_result.rounded_rectangle(
+        [(0, 0), (new_size[0]-1, new_size[1]-1)],
+        radius=radius,
+        outline=border_color,
+        width=border_width
+    )
+
+    # 粘贴原图
+    result.paste(image, (border_width, border_width), mask=image.convert("RGBA"))
+
+    # 再用 mask 裁剪圆角
+    result.putalpha(mask)
+    return result
+
+img_with_border = add_rounded_rectangle_border(img, radius, border_color, border_width)
+
+# 保存最终图片
+EXPORT_PATH = Path(__file__).parent.parent / "output"
+output_path = EXPORT_PATH / f"{code}_chart.png"
+img_with_border.save(output_path, format="PNG")
+
+print(f"✅ 已保存带圆角边框的图表至: {output_path}")

@@ -11,7 +11,7 @@ from indicators.volume_ma import add_volume_ma_to_dataframe
 from draws.kline_theme import ThemeRegistry, KlineTheme
 from tools.colors import hex_to_rgba
 
-theme = ThemeRegistry.get(name="old_ticker_tape")
+theme = ThemeRegistry.get(name="vintage_ticker")
 
 code = '600423'
 stock_info = get_stock_info_by_code(code)
@@ -23,7 +23,7 @@ add_volume_ma_to_dataframe(df, inplace=True)
 add_macd_to_dataframe(df, inplace=True)
 add_kdj_to_dataframe(df, inplace=True)
 
-df = df.tail(60)
+df = df.tail(50)
 
 width = 600
 height = 500
@@ -31,10 +31,10 @@ height = 500
 print(df.tail(10))
 
 fig = make_subplots(
-    rows=2, cols=1,
+    rows=3, cols=1,
     shared_xaxes=True,
-    vertical_spacing=0.05,
-    row_heights=[0.75, (0.25-0.05)]
+    vertical_spacing=0.03,  # 更紧凑一点
+    row_heights=[0.60, 0.15, 0.10]  # K线占60%，成交量15%，KDJ 10%
 )
 
 # 1. 保留原始 date 列用于标签
@@ -125,6 +125,43 @@ fig.add_trace(
     row=2, col=1
 )
 
+# --- 添加 KDJ 指标线到第3行 ---
+fig.add_trace(
+    go.Scatter(
+        x=x_index,
+        y=df['kdj_k'],
+        mode='lines',
+        name='K',
+        line=dict(color=theme.line_color_0, width=1.5),
+        showlegend=True
+    ),
+    row=3, col=1
+)
+
+fig.add_trace(
+    go.Scatter(
+        x=x_index,
+        y=df['kdj_d'],
+        mode='lines',
+        name='D',
+        line=dict(color=theme.line_color_1, width=1.5),
+        showlegend=True
+    ),
+    row=3, col=1
+)
+
+fig.add_trace(
+    go.Scatter(
+        x=x_index,
+        y=df['kdj_j'],
+        mode='lines',
+        name='J',
+        line=dict(color=theme.line_color_2, width=1.5),
+        showlegend=True
+    ),
+    row=3, col=1
+)
+
 nticks = min(len(dates), 7)
 step = max(1, len(dates) // nticks)
 tick_indices = list(range(0, len(dates), step))
@@ -148,6 +185,17 @@ fig.update_xaxes(
     ticklen=5,
     tickwidth=1,
     row=2, col=1
+)
+
+fig.update_xaxes(
+    tickvals=tick_indices,
+    ticktext=tick_labels,
+    tickangle=-45,
+    tickfont=dict(size=9, color=theme.text_color, family='Arial'),
+    ticklen=5,
+    tickwidth=1,
+    showgrid=False,
+    row=3, col=1
 )
     
 fig.update_layout(
@@ -210,6 +258,21 @@ fig.update_layout(
         fixedrange=True,
         zeroline=True,
         tickformat=".2s"
+    ),
+    yaxis3=dict(
+        title='KDJ',
+        title_standoff=6,
+        title_font=dict(size=10, color=theme.text_color),
+        tickfont=dict(size=9, color=theme.text_color),
+        showgrid=True,
+        nticks=5,
+        gridcolor=theme.grid_color,
+        griddash='dot',
+        gridwidth=1,
+        fixedrange=True,
+        zeroline=True,
+        range=[0, 100],  # KDJ 一般范围是 0~100
+        tickformat=".0f"
     ),
     margin=dict(l=40, r=20, t=60, b=40),
     height=height,

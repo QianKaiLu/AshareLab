@@ -1,21 +1,25 @@
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pandas as pd
-from datas.query_stock import query_latest_bars
+from datas.query_stock import query_latest_bars, get_stock_info_by_code
 from pathlib import Path
 from indicators.kdj import add_kdj_to_dataframe
 from indicators.macd import add_macd_to_dataframe
 from indicators.bbi import add_bbi_to_dataframe
 from indicators.zxdkx import add_zxdkx_to_dataframe
+from indicators.volume_ma import add_volume_ma_to_dataframe
 from draws.kline_theme import ThemeRegistry, KlineTheme
+from tools.colors import hex_to_rgba
 
-theme = ThemeRegistry.get(name="vintage_ticker")
+theme = ThemeRegistry.get(name="muted_pastel")
 
-code = '002959'
-df = query_latest_bars(code=code, n=30)
+code = '600423'
+stock_info = get_stock_info_by_code(code)
+df = query_latest_bars(code=code, n=50)
 
 add_bbi_to_dataframe(df, inplace=True)
 add_zxdkx_to_dataframe(df, inplace=True)
+add_volume_ma_to_dataframe(df, inplace=True)
 
 print(df.tail(10))
 
@@ -23,12 +27,11 @@ fig = make_subplots(
     rows=2, cols=1,
     shared_xaxes=True,
     vertical_spacing=0.02,
-    row_heights=[0.7, 0.3],
-    specs=[[{"secondary_y": False}], [{"secondary_y": False}]]
+    row_heights=[0.75, (0.25-0.02)]
 )
 
 # 1. 保留原始 date 列用于标签
-dates = df['date'].dt.strftime('%m月%d日').tolist()  # 或 '%Y-%m-%d' 看你喜好
+dates = df['date'].dt.strftime('%m-%d').tolist()  # 或 '%Y-%m-%d' 看你喜好
 
 # 2. 用整数索引（0, 1, 2, ..., N-1）作为 x 坐标
 x_index = list(range(len(df)))
@@ -40,9 +43,13 @@ fig.add_trace(
         high=df['high'],
         low=df['low'],
         close=df['close'],
-        name='日 K 线',
-        increasing=dict(line=dict(color=theme.up_color, width=1)),
-        decreasing=dict(line=dict(color=theme.down_color, width=1))
+        increasing=dict(
+            fillcolor=theme.up_color,
+            line=dict(color=theme.up_color, width=2)),
+        decreasing=dict(
+            fillcolor=theme.down_color,
+            line=dict(color=theme.down_color, width=2)),
+        showlegend=False
     ),
     row=1, col=1
 )
@@ -53,23 +60,61 @@ fig.add_trace(
         y=df['bbi'], 
         mode='lines', 
         name='bbi',
-        line=dict(color=theme.bbi_color, width=1.5, dash='dot')),
+        line=dict(color=theme.bbi_color, width=1.5, dash='dot'),
+        showlegend=True
+    ),
+    row=1, col=1
+)
+
+fig.add_trace(
+    go.Scatter(
+        x=x_index, 
+        y=df['z_white'], 
+        mode='lines', 
+        name='快线',
+        line=dict(color=theme.quick_line_color, width=1, dash='solid'),
+        showlegend=True
+    ),
+    row=1, col=1
+)
+
+fig.add_trace(
+    go.Scatter(
+        x=x_index, 
+        y=df['z_yellow'], 
+        mode='lines', 
+        name='慢线',
+        line=dict(color=theme.slow_line_color, width=1, dash='solid'),
+        showlegend=True
+    ),
     row=1, col=1
 )
 
 colors = [theme.up_color if c > o else theme.down_color for o, c in zip(df['open'], df['close'])]
 fig.add_trace(
     go.Bar(
-        x=df['date'],
+        x=x_index,
         y=df['volume'],
         name='成交量',
-        marker=dict(color=colors, opacity=theme.volume_opacity),
+        marker=dict(color=colors, opacity=1.0),
+        showlegend=False,
+    ),
+    row=2, col=1
+)
+
+fig.add_trace(
+    go.Scatter(
+        x=x_index, 
+        y=df['volume_ma_5'], 
+        mode='lines', 
+        name='volume MA5',
+        line=dict(color=theme.line_color_0, width=1, dash='solid'),
         showlegend=False
     ),
     row=2, col=1
 )
 
-nticks = min(len(dates), 5)
+nticks = min(len(dates), 7)
 step = max(1, len(dates) // nticks)
 tick_indices = list(range(0, len(dates), step))
 tick_labels = [dates[i] for i in tick_indices]
@@ -77,6 +122,8 @@ tick_labels = [dates[i] for i in tick_indices]
 fig.update_xaxes(
     tickvals=tick_indices,
     ticktext=tick_labels,
+    tickangle= -45,
+    tickfont=dict(size=8, color=theme.text_color),
     row=1, col=1
 )
 
@@ -88,43 +135,60 @@ fig.update_xaxes(
     
 fig.update_layout(
     title=dict(
-        text=f'{code} 日K线图',
+        text=f'{stock_info.at[code, 'name']} ({code})',
         x=0.5,
+        y=0.96,
         xanchor='center',
-        font=dict(size=20, color=theme.text_color)
+        font=dict(size=16, color=theme.text_color, family='sans-serif')
     ),
     plot_bgcolor=theme.card_background,
     paper_bgcolor=theme.card_background,
-    font=dict(color=theme.text_color, size=12),
+    font=dict(color=theme.text_color, size=10),
+    showlegend=True,
+    legend=dict(
+        font=dict(size=10, color=theme.text_color),
+        orientation='v',
+        yanchor='middle',
+        y=0.9,
+        xanchor='right',
+        x=1.02,
+        bgcolor=hex_to_rgba(theme.card_background, 0.6)
+    ),
     xaxis=dict(
         showgrid=False,
         zeroline=False,
-        showticklabels=True,
+        showticklabels=False,
         rangeslider_visible=False
     ),
     yaxis=dict(
         title='Price',
+        title_standoff=10,
+        title_font = dict(size=10, color=theme.text_color),
+        tickfont = dict(size=8, color=theme.text_color),
         showgrid=True,
         gridcolor=theme.grid_color,
-        zeroline=False
+        griddash='dot',
+        gridwidth=1,
+        fixedrange=True,
+        zeroline=True,
+        tickformat=".2f"
     ),
     yaxis2=dict(
         title='Volume',
+        title_standoff=6,
+        title_font = dict(size=10, color=theme.text_color),
+        tickfont = dict(size=8, color=theme.text_color),
+        showticklabels=True,
         showgrid=True,
+        griddash='dot',
+        gridwidth=1,
         gridcolor=theme.grid_color,
-        zeroline=False
+        fixedrange=True,
+        zeroline=True,
+        tickformat=".2s"
     ),
-    legend=dict(
-        orientation='h',
-        yanchor='bottom',
-        y=1.02,
-        xanchor='right',
-        x=1,
-        bgcolor='rgba(0,0,0,0)',
-        font=dict(color=theme.text_color)
-    ),
-    margin=dict(l=50, r=50, t=80, b=50),
-    height=1000,
+    margin=dict(l=40, r=30, t=40, b=30),
+    height=500,
     width=600
 )
 

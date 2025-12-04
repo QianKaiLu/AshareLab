@@ -214,3 +214,7 @@ def standard_fig(code: str, n: int = 60, width: int = 600, height: int = 600, th
     )
     
     return fig
+
+if __name__ == "__main__":
+    fig = standard_fig(code='600423', n=60, width=600, height=450, theme_name="vintage_ticker_pro")
+    fig.show()

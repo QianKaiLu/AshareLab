@@ -7,31 +7,35 @@ from jinja2 import Template
 from ai.ai_api_profile import ApiProfile, QWEN_MAX, DEEPSEEK_REASONER
 
 logger = get_analyze_logger()
-co_name = "慢就是稳稳就是快实验室（Lazy-Lab）"
+co_name = "鳗鱼实验室（Lazy-Lab）"
 author = "钱大头"
 
-API_PROFILE: ApiProfile = QWEN_MAX()
+API_PROFILE: ApiProfile = DEEPSEEK_REASONER()
 
 client = OpenAI(
     api_key=API_PROFILE.api_key,
     base_url=API_PROFILE.base_url,
 )
 
-with open(Path(__file__).parent / "kbar_analysis_prompt.jinja") as f:
-    template = Template(f.read())
-    KBAR_ANALYSIS_PROMPT = template.render(co_name=co_name, author=author)
+# with open(Path(__file__).parent / "kbar_analysis_prompt.jinja") as f:
+#     template = Template(f.read())
+#     KBAR_ANALYSIS_PROMPT = template.render(co_name=co_name, author=author)
 
-with open(Path(__file__).parent / "kbar_analysis_prompt_short.jinja") as f:
-    template = Template(f.read())
-    KBAR_ANALYSIS_PROMPT_SHORT = template.render(co_name=co_name, author=author)
+# with open(Path(__file__).parent / "kbar_analysis_prompt_short.jinja") as f:
+#     template = Template(f.read())
+#     KBAR_ANALYSIS_PROMPT_SHORT = template.render(co_name=co_name, author=author)
 
-def analyze_kbar_data_openai(csv_file_path: Path, base_info: dict, recent_news: Any, kline_chart_name: str) -> Optional[str]:
-    if not QIANWEN_API_KEY:
-        raise ValueError("QIANWEN_API_KEY is not set in environment variables.")
+def analyze_kbar_data_openai(csv_file_path: Path, base_info: dict, recent_news: Any, kline_chart_name: str="") -> Optional[str]:
+    if not API_PROFILE.api_key:
+        raise ValueError(f"{API_PROFILE.name} API_KEY is not set in environment variables.")
     
     if not csv_file_path.exists():
         raise FileNotFoundError(f"CSV file not found: {csv_file_path}")
     
+    with open(Path(__file__).parent / "kbar_analysis_prompt.jinja") as f:
+        template = Template(f.read())
+        prompt = template.render(co_name=co_name, author=author, kline_chart_name=kline_chart_name)
+
     try:
         csv_content = csv_file_path.read_text(encoding="utf-8")
         logger.info(f"Read CSV file content from {csv_file_path}")
@@ -41,7 +45,7 @@ def analyze_kbar_data_openai(csv_file_path: Path, base_info: dict, recent_news: 
             messages=[
                 {
                     "role": "system",
-                    "content": KBAR_ANALYSIS_PROMPT,
+                    "content": prompt,
                 },
                 {
                     "role": "user",

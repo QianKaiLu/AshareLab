@@ -12,5 +12,5 @@ from draws.kline_theme import ThemeRegistry, KlineTheme
 from tools.colors import hex_to_rgba
 from draws.kline_fig_factory import standard_fig
 
-fig = standard_fig(code='600423', n=60, width=600, height=600, theme_name="vintage_ticker")
+fig = standard_fig(code='600423', n=60, width=600, height=600, theme_name="vintage_ticker_pro")
 fig.show()

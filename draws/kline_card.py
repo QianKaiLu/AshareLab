@@ -36,7 +36,7 @@ def add_rounded_rectangle_border(
     result = Image.alpha_composite(result, border_layer)
     return result
 
-def make_kline_card(code: str, n: int = 60, width: int = 600, height: int = 500, theme_name: str = "vintage_ticker") -> Image.Image:
+def make_kline_card(code: str, n: int = 60, width: int = 600, height: int = 400, theme_name: str = "vintage_ticker") -> Image.Image:
     fig = standard_fig(code=code, n=n, width=width, height=height, theme_name=theme_name)
     theme = ThemeRegistry.get(name=theme_name)
     img_bytes = fig.to_image(format="png", width=width, height=height, scale=3)

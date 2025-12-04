@@ -360,7 +360,7 @@ ThemeRegistry.register(KlineTheme(
     card_border_color="#C9B8A4",
     text_color="#2C1810",
     font_size=12,
-    text_font="Times New Roman"  # 经典报纸字体
+    text_font="Arial"
 ))
 
 # 老式行情机风格 - 灵感来自老式电报机
@@ -388,5 +388,5 @@ ThemeRegistry.register(KlineTheme(
     card_border_color="#B8A28A",
     text_color="#3E2C1C",     # 深巧克力色
     font_size=12,
-    text_font="Courier New"   # 等宽字体，像老式打印机
+    text_font="Arial"
 ))

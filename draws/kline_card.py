@@ -3,57 +3,52 @@ from plotly.subplots import make_subplots
 import pandas as pd
 from datas.query_stock import query_latest_bars
 from pathlib import Path
-from indicators.kdj import add_kdj_to_dataframe
-from indicators.macd import add_macd_to_dataframe
-from indicators.bbi import add_bbi_to_dataframe
-from indicators.zxdkx import add_zxdkx_to_dataframe
 import plotly.io as pio
-from PIL import Image, ImageOps, ImageDraw
+from PIL import Image, ImageOps, ImageDraw, ImageFile
 import io
+from draws.kline_fig_factory import standard_fig
+from draws.kline_theme import ThemeRegistry, KlineTheme
 
-# 先保存图表到内存中的 PNG
-img_bytes = fig.to_image(format="png", width=600, height=500, scale=2)  # scale 提高清晰度
-
-# 用 PIL 打开图像并处理
-img = Image.open(io.BytesIO(img_bytes))
-
-# ➤ 设置参数：圆角半径、边框颜色、边框宽度
-radius = 20           # 圆角半径
-border_color = "#4a90e2"  # 边框颜色，可以换成 theme 的颜色，如 theme.border_color
-border_width = 4      # 边框宽度
-
-# 创建带透明背景的新画布
-def add_rounded_rectangle_border(image, radius, border_color, border_width):
-    # 创建新图像，带透明背景
-    new_size = (image.width + 2 * border_width, image.height + 2 * border_width)
-    result = Image.new("RGBA", new_size, (0, 0, 0, 0))
-    mask = Image.new("L", new_size, 0)
-    draw_mask = ImageDraw.Draw(mask)
-    draw_mask.rounded_rectangle(
-        [(0, 0), new_size],
-        radius=radius,
-        fill=255,
-        width=border_width
+def add_rounded_rectangle_border(
+    image: Image.Image, radius: int, border_color, border_width: int
+) -> Image.Image:
+    
+    img = image.convert("RGBA")
+    w, h = img.size
+ 
+    mask = Image.new("L", (w, h), 0)
+    ImageDraw.Draw(mask).rounded_rectangle(
+        [(0, 0), (w, h)], radius=radius, fill=255
     )
-    draw_result = ImageDraw.Draw(result)
-    draw_result.rounded_rectangle(
-        [(0, 0), new_size],
-        radius=radius,
+  
+    border_layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    inner_w = w - 2 * border_width
+    inner_h = h - 2 * border_width
+    adjusted_radius = min(radius, inner_w // 2, inner_h // 2)
+    ImageDraw.Draw(border_layer).rounded_rectangle(
+        (border_width, border_width, w - border_width, h - border_width),
+        radius=adjusted_radius,
         outline=border_color,
         width=border_width
     )
 
-    # 粘贴原图
-    result.paste(image, (border_width, border_width), mask=image.convert("RGBA"))
-
-    # 再用 mask 裁剪圆角
-    result.putalpha(mask)
+    result = Image.composite(img, Image.new("RGBA", (w, h), (0, 0, 0, 0)), mask)
+    result = Image.alpha_composite(result, border_layer)
     return result
 
-img_with_border = add_rounded_rectangle_border(img, radius, border_color, border_width)
+def make_kline_card(code: str, n: int = 60, width: int = 600, height: int = 500, theme_name: str = "vintage_ticker") -> Image.Image:
+    fig = standard_fig(code=code, n=n, width=width, height=height, theme_name=theme_name)
+    theme = ThemeRegistry.get(name=theme_name)
+    img_bytes = fig.to_image(format="png", width=width, height=height, scale=3)
+    img = Image.open(io.BytesIO(img_bytes))
+    img = add_rounded_rectangle_border(img, radius=20, border_color=theme.card_border_color, border_width=5)
+    return img
+    
+def save_img_file(img: Image.Image, path: Path):
+    img.save(path, format="PNG")
 
-# 保存最终图片
-output_path = Path(f"{code}_chart.png")
-img_with_border.save(output_path, format="PNG")
 
-print(f"✅ 已保存带圆角边框的图表至: {output_path}")
+if __name__ == "__main__":
+    code = '600423'
+    img = make_kline_card(code=code, n=60, width=600, height=500, theme_name="vintage_ticker")
+    img.show()

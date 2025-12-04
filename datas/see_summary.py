@@ -11,7 +11,7 @@ from indicators.volume_ma import add_volume_ma_to_dataframe
 from draws.kline_theme import ThemeRegistry, KlineTheme
 from tools.colors import hex_to_rgba
 
-theme = ThemeRegistry.get(name="old_ticker_tape")
+theme = ThemeRegistry.get(name="vintage_ticker")
 
 code = '600423'
 stock_info = get_stock_info_by_code(code)
@@ -26,15 +26,15 @@ add_kdj_to_dataframe(df, inplace=True)
 df = df.tail(60)
 
 width = 600
-height = 500
+height = 600
 
 print(df.tail(10))
 
 fig = make_subplots(
     rows=2, cols=1,
     shared_xaxes=True,
-    vertical_spacing=0.05,
-    row_heights=[0.75, (0.25-0.05)]
+    vertical_spacing=0.1,
+    row_heights=[0.7, 0.2]
 )
 
 # 1. 保留原始 date 列用于标签
@@ -152,7 +152,7 @@ fig.update_xaxes(
     
 fig.update_layout(
     title=dict(
-        text=f'{stock_info.at[code, 'name']} ({code})',
+        text=f'{stock_info.at[code, "name"]} ({code})',
         x=0.5,
         y=0.955,
         xanchor='center',

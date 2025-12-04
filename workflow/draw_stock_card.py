@@ -5,9 +5,9 @@ from datas.query_stock import get_stock_info_by_code, get_stock_info_by_name, ge
 import webbrowser
 from datetime import datetime
 
-theme_name = "vintage_ticker"
+theme_name = "old_ticker_tape"
 
-stock_info = get_stock_info_by_name("比亚迪")
+stock_info = get_stock_info_by_name("中远海能")
 code = stock_info.index[0]
 latest_date = get_latest_date_by_code(code) or datetime.now()
 

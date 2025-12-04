@@ -41,7 +41,7 @@ def fetch_stock_bars_parallel(stock_codes: pd.Series, source: str = "akshare"):
     writer_thread.join()
 
 def worker_fetch_stock_and_queue(code: str, result_queue: Queue, source: str = "akshare") -> bool:
-    latest_date = get_latest_date_with_data(code)
+    latest_date = get_latest_date_by_code(code)
     previous_day = pd.to_datetime(EARLIEST_DATE)
 
     if latest_date is not None:

@@ -36,9 +36,8 @@ def standard_fig(code: str, n: int = 60, width: int = 600, height: int = 600, th
         row_heights=[0.7, 0.2]
     )
     
+    # dates = df['date'].dt.strftime('%m-%d').tolist()
     dates = df['date'].dt.strftime('%m-%d').tolist()  # 或 '%Y-%m-%d' 看你喜好
-
-    # 2. 用整数索引（0, 1, 2, ..., N-1）作为 x 坐标
     x_index = list(range(len(df)))
 
     fig.add_trace(
@@ -62,8 +61,8 @@ def standard_fig(code: str, n: int = 60, width: int = 600, height: int = 600, th
     fig.add_trace(
         go.Scatter(
             x=x_index, 
-            y=df['bbi'], 
-            mode='lines', 
+            y=df['bbi'],
+            mode='lines',
             name='bbi',
             line=dict(color=theme.bbi_color, width=1.5, dash='dot'),
             showlegend=True
@@ -132,7 +131,7 @@ def standard_fig(code: str, n: int = 60, width: int = 600, height: int = 600, th
         tickvals=tick_indices,
         ticktext=tick_labels,
         tickangle= -45,
-        tickfont=dict(size=9, color=theme.text_color, family='Arial'),
+        tickfont=dict(size=9, color=theme.text_color, family=theme.text_font),
         ticklen=5,
         tickwidth=1,
         row=1, col=1
@@ -142,7 +141,7 @@ def standard_fig(code: str, n: int = 60, width: int = 600, height: int = 600, th
         tickvals=tick_indices,
         ticktext=tick_labels,
         tickangle= -45,
-        tickfont=dict(size=9, color=theme.text_color, family='Arial'),
+        tickfont=dict(size=9, color=theme.text_color, family=theme.text_font),
         ticklen=5,
         tickwidth=1,
         row=2, col=1
@@ -154,7 +153,7 @@ def standard_fig(code: str, n: int = 60, width: int = 600, height: int = 600, th
             x=0.5,
             y=0.955,
             xanchor='center',
-            font=dict(size=16, color=theme.text_color, family='sans-serif')
+            font=dict(size=16, color=theme.text_color, family=theme.text_font)
         ),
         plot_bgcolor=theme.card_background,
         paper_bgcolor=theme.card_background,

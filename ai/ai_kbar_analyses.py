@@ -10,7 +10,7 @@ logger = get_analyze_logger()
 co_name = "慢就是稳稳就是快实验室（Lazy-Lab）"
 author = "钱大头"
 
-API_PROFILE: ApiProfile = DEEPSEEK_REASONER()
+API_PROFILE: ApiProfile = QWEN_MAX()
 
 client = OpenAI(
     api_key=API_PROFILE.api_key,
@@ -25,7 +25,7 @@ with open(Path(__file__).parent / "kbar_analysis_prompt_short.jinja") as f:
     template = Template(f.read())
     KBAR_ANALYSIS_PROMPT_SHORT = template.render(co_name=co_name, author=author)
 
-def analyze_kbar_data_openai(csv_file_path: Path, base_info: dict, recent_news: Any) -> Optional[str]:
+def analyze_kbar_data_openai(csv_file_path: Path, base_info: dict, recent_news: Any, kline_chart_name: str) -> Optional[str]:
     if not QIANWEN_API_KEY:
         raise ValueError("QIANWEN_API_KEY is not set in environment variables.")
     

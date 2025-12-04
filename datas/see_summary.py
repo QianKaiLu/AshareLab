@@ -10,9 +10,9 @@ from indicators.zxdkx import add_zxdkx_to_dataframe
 from indicators.volume_ma import add_volume_ma_to_dataframe
 from draws.kline_theme import ThemeRegistry, KlineTheme
 from tools.colors import hex_to_rgba
+import akshare as ak
 import markdown
 
-text = """**日线级别**：
-- item 1
-- item 2"""
-print(markdown.markdown(text))
+code = '002959'
+df = ak.stock_news_em(symbol=code)
+print(df)

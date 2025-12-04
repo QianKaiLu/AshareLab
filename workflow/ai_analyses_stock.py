@@ -11,8 +11,8 @@ from tools.path import export_file_path
 logger = get_analyze_logger()
 
 # input parameters
-code = '002594'
-from_date = '20241113'
+code = '002959'
+from_date = '20250102'
 
 stock_info = get_stock_info_by_code(code)
 if stock_info is not None and not stock_info.empty:
@@ -27,9 +27,14 @@ df = query_daily_bars(code=code, from_date=from_date)
 if df is not None and not df.empty:
     path = export_bars_to_csv(df, only_base_info=True)
     try:
+        print("Fetching recent news...")
         recent_news = ak.stock_news_em(symbol=code).to_dict(orient='records')
     except Exception as e:
         recent_news = None
+        logger.warning(f"Error fetching recent news: {e}")
+
+    if recent_news is not None:
+        logger.info(f"Fetched {len(recent_news)} recent news articles.")
 
     if path is not None:
         logger.info("📈 Generating K-line chart image...")

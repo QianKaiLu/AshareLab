@@ -11,8 +11,3 @@ def hex_to_rgba(hex_color: str, alpha: float = 1.0) -> str:
     b = int(hex_color[4:6], 16)
     
     return f"rgba({r}, {g}, {b}, {alpha})"
-
-# ✅ 示例用法：
-print(hex_to_rgba("#D8A7A7"))           # Output: rgba(216, 167, 167, 1.0)
-print(hex_to_rgba("#D8A7A7", 0.5))      # Output: rgba(216, 167, 167, 0.5)
-print(hex_to_rgba("D8A7A7", 0.8))       # Also supports without # → rgba(216, 167, 167, 0.8)

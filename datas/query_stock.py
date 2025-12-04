@@ -196,6 +196,32 @@ def get_stock_info_by_code(code: str) -> pd.DataFrame:
     df.set_index('code', inplace=True)
     return df
 
+def get_stock_info_by_name(name: str) -> pd.DataFrame:
+    """
+    Get stock information for a single stock name.
+    """
+    query = f"SELECT * FROM {STOCK_INFO_TABLE} WHERE name = ?"
+    with get_db_connection() as conn:
+        df = pd.read_sql_query(query, conn, params=(name,))
+
+    if df.empty:
+        return pd.DataFrame()
+    
+    df.set_index('code', inplace=True)
+    return df
+
+def get_stock_code_by_name(name: str) -> Optional[str]:
+    """
+    Get stock code for a given stock name.
+    """
+    query = f"SELECT code FROM {STOCK_INFO_TABLE} WHERE name = ?"
+    with get_db_connection() as conn:
+        result = conn.execute(query, (name,)).fetchone()
+
+    if result is not None:
+        return result[0]
+    return None
+
 def format_stock_info(df: pd.DataFrame, level: str = "medium") -> str:
     if df.empty:
         return "❌ No stock info found"

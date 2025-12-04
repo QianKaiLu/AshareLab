@@ -7,6 +7,10 @@ from tools.log import get_analyze_logger
 import webbrowser
 from tools.export import EXPORT_PATH
 from typing import Optional
+import re
+import base64
+from bs4 import BeautifulSoup
+from urllib.parse import urlparse
 
 logger = get_analyze_logger()
 
@@ -169,10 +173,46 @@ def render_markdown_to_image_file_name(md_content: str, file_name: str, open_fol
     render_markdown_to_image(md_content, image_path, open_folder_after)
     return image_path
 
+def preprocess_markdown(md: str) -> str:
+    """Preprocess markdown content to ensure proper rendering of certain elements."""
+    patterns = [
+        r'(\*\*.*?\*\*)(\s*\n\s*[-*])',
+        r'(###?\s+.*?)(\s*\n\s*[-*])',
+    ]
+    for pattern in patterns:
+        md = re.sub(pattern, r'\1\n\n\2', md)
+
+    return md
+
+def convert_local_images_to_base64(html: str) -> str:
+    soup = BeautifulSoup(html, "html.parser")
+
+    for img in soup.find_all("img"):
+        src = img.get("src", "")
+
+        # 如果是 file:// 或本地路径，则转换
+        parsed = urlparse(src)
+        if src.startswith("file://"):
+            local_path = parsed.path
+        elif os.path.exists(src):
+            local_path = src
+        else:
+            continue  # http 或其他正常 URL 不处理
+
+        try:
+            with open(local_path, "rb") as f:
+                b64 = base64.b64encode(f.read()).decode("utf-8")
+                img["src"] = f"data:image/png;base64,{b64}"
+        except Exception as e:
+            print(f"⚠️ Failed to load image {src}: {e}")
+
+    return str(soup)
+
 def render_markdown_to_image(md_content: str, image_path: Path, open_folder_after: bool = False):
     """Render markdown content to an image using Playwright"""
     try:
         # Convert markdown to HTML
+        md_content = preprocess_markdown(md_content)
         html_body = markdown.markdown(
             md_content,
             extensions=[
@@ -180,6 +220,9 @@ def render_markdown_to_image(md_content: str, image_path: Path, open_folder_afte
                 'fenced_code',
                 'codehilite',
                 'attr_list',
+                'nl2br',
+                'md_in_html',
+                'extra',
             ],
             extension_configs={
                 'codehilite': {'css_class': 'highlight'},
@@ -187,6 +230,7 @@ def render_markdown_to_image(md_content: str, image_path: Path, open_folder_afte
         )
         
         # Create full HTML with styling
+        html_body = convert_local_images_to_base64(html_body)
         html = template.render(content=html_body)
         
         # Use Playwright to render HTML to image
@@ -205,3 +249,11 @@ def render_markdown_to_image(md_content: str, image_path: Path, open_folder_afte
             webbrowser.open(image_path.resolve().as_uri())
     except Exception as e:
         logger.error(f"❌ Failed to render markdown to image {image_path}: {e}")
+
+if __name__ == "__main__":
+    markdown_path = EXPORT_PATH / "比亚迪(002594)_分析报告.md"
+    image_path = EXPORT_PATH / "比亚迪(002594)_分析报告.png"
+    if markdown_path.exists():
+        with open(markdown_path, "r", encoding="utf-8") as f:
+            md_content = f.read()
+        render_markdown_to_image(md_content, image_path, open_folder_after=True)

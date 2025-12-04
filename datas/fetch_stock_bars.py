@@ -10,9 +10,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional, Any
 from datetime import datetime, timedelta
 from datas.create_database import DB_PATH, DAILY_BAR_TABLE, EARLIEST_DATE, get_db_connection
-from datas.query_stock import query_daily_bars, query_latest_bars, get_latest_date_with_data
+from datas.query_stock import query_daily_bars, query_latest_bars, get_latest_date_by_code
 from tools.export import export_bars_to_csv
-import time
+import time 
 from contextlib import closing
 from ai.ai_kbar_analyses import analyze_kbar_data_openai
 from tools.markdown_lab import save_md_to_file_name, render_markdown_to_image_file_name
@@ -295,7 +295,7 @@ def update_daily_bars_for_code(
     if source not in {"akshare", "tushare"}:
         raise ValueError(f"Unsupported source: {source}. Choose from 'akshare', 'tushare'.")
     
-    latest_date = get_latest_date_with_data(code)
+    latest_date = get_latest_date_by_code(code)
     if latest_date is None:
         logger.warning(f"No valid date found for {code}, skipping update.")
         return

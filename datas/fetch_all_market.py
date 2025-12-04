@@ -8,7 +8,7 @@ from queue import Queue
 import threading
 from datas.stock_index_list import hs300_code_list, csi500_code_list
 from datetime import datetime, timedelta
-from datas.query_stock import get_latest_date_with_data, query_all_stock_code_list
+from datas.query_stock import get_latest_date_by_code, query_all_stock_code_list
 from datas.create_database import DB_PATH, DAILY_BAR_TABLE, EARLIEST_DATE, get_db_connection
 import tushare as ts
 from tools.stock_tools import latest_trade_day

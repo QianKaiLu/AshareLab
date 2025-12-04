@@ -146,7 +146,7 @@ def query_latest_bars(
         if conn:
             conn.close()
 
-def get_latest_date_with_data(
+def get_latest_date_by_code(
     code: str
 ) -> Optional[datetime]:
     """
@@ -212,15 +212,14 @@ def get_stock_info_by_name(name: str) -> pd.DataFrame:
 
 def get_stock_code_by_name(name: str) -> Optional[str]:
     """
-    Get stock code for a given stock name.
+    Get stock code for a given stock name (fuzzy match).
     """
-    query = f"SELECT code FROM {STOCK_INFO_TABLE} WHERE name = ?"
+    query = f"SELECT code FROM {STOCK_INFO_TABLE} WHERE name LIKE ?"
+    # 注意：参数中加入通配符，而不是拼进 SQL 语句
     with get_db_connection() as conn:
-        result = conn.execute(query, (name,)).fetchone()
+        result = conn.execute(query, (f"%{name}%",)).fetchone()
 
-    if result is not None:
-        return result[0]
-    return None
+    return result[0] if result else None  # 更简洁的写法
 
 def format_stock_info(df: pd.DataFrame, level: str = "medium") -> str:
     if df.empty:

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: {{ background_color }};
+            padding: 40px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .card-container {
+            width: 800px;
+            background: {{ background_color }};
+            border-radius: 12px;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* 添加细微的阴影效果 */
+        .card-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, 
+                {{ text_color }}20 0%, 
+                {{ text_color }}40 50%, 
+                {{ text_color }}20 100%);
+            border-radius: 12px 12px 0 0;
+        }
+        
+        .header {
+            margin-bottom: {{ '30px' if description else '40px' }};
+            text-align: center;
+        }
+        
+        .title {
+            font-size: 32px;
+            font-weight: 700;
+            color: {{ text_color }};
+            margin-bottom: 16px;
+            line-height: 1.3;
+            letter-spacing: -0.5px;
+        }
+        
+        .description {
+            font-size: 18px;
+            line-height: 1.6;
+            color: {{ text_color }}CC;
+            max-width: 90%;
+            margin: 0 auto;
+            white-space: pre-line;
+            text-align: center;
+        }
+        
+        .images-section {
+            margin: 40px 0;
+        }
+        
+        .image-container {
+            margin-bottom: 30px;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            background: {{ card_background }};
+            border: 1px solid {{ text_color }}10;
+        }
+        
+        .image-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px {{ text_color }}10;
+        }
+        
+        .image-container:last-child {
+            margin-bottom: 0;
+        }
+        
+        .kline-image {
+            width: 100%;
+            height: auto;
+            display: block;
+            max-height: 500px;
+            object-fit: contain;
+        }
+        
+        .image-info {
+            padding: 12px 16px;
+            background: {{ text_color }}03;
+            border-top: 1px solid {{ text_color }}10;
+            font-size: 13px;
+            color: {{ text_color }}99;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .image-index {
+            font-weight: 500;
+        }
+        
+        .image-datetime {
+            font-family: 'Courier New', monospace;
+        }
+        
+        .footer {
+            margin-top: 50px;
+            padding-top: 25px;
+            border-top: 1px solid {{ text_color }}15;
+            text-align: center;
+        }
+        
+        .note {
+            font-size: 14px;
+            line-height: 1.8;
+            color: {{ text_color }}99;
+            white-space: pre-line;
+            max-width: 90%;
+            margin: 0 auto;
+        }
+        
+        .watermark {
+            margin-top: 25px;
+            font-size: 12px;
+            color: {{ text_color }}66;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .watermark::before,
+        .watermark::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: {{ text_color }}15;
+        }
+        
+        .watermark-text {
+            padding: 0 12px;
+            font-style: italic;
+        }
+        
+        /* 添加一些装饰元素 */
+        .decoration-top {
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, {{ text_color }}08 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+        }
+        
+        .decoration-bottom {
+            position: absolute;
+            bottom: -30px;
+            left: -30px;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, {{ text_color }}05 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 0;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 900px) {
+            body {
+                padding: 20px;
+            }
+            
+            .card-container {
+                width: 100%;
+                padding: 30px;
+                border-radius: 10px;
+            }
+            
+            .title {
+                font-size: 28px;
+            }
+            
+            .description {
+                font-size: 16px;
+            }
+            
+            .kline-image {
+                max-height: 400px;
+            }
+        }
+        
+        /* 打印样式 */
+        @media print {
+            body {
+                padding: 0;
+                background: white;
+            }
+            
+            .card-container {
+                width: 100%;
+                border-radius: 0;
+                box-shadow: none;
+            }
+            
+            .image-container:hover {
+                transform: none;
+                box-shadow: none;
+            }
+        }
+        
+        /* 加载动画 */
+        .image-container.loading {
+            position: relative;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .image-container.loading::after {
+            content: '';
+            width: 40px;
+            height: 40px;
+            border: 3px solid {{ text_color }}15;
+            border-top-color: {{ text_color }};
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- 装饰元素 -->
+    <div class="decoration-top"></div>
+    <div class="decoration-bottom"></div>
+    
+    <div class="card-container">
+        <!-- 头部 -->
+        <div class="header">
+            <h1 class="title">{{ title }}</h1>
+            {% if description %}
+            <div class="description">{{ desc }}</div>
+            {% endif %}
+        </div>
+        
+        <!-- 图片区域 -->
+        <div class="images-section">
+            {% for img_base64 in images %}
+            <div class="image-container">
+                <img 
+                    src="data:image/png;base64,{{ img_base64 }}" 
+                    class="kline-image" 
+                    alt="K线图 {{ loop.index }}"
+                    onload="this.parentElement.classList.remove('loading')"
+                    onerror="this.parentElement.innerHTML='<div style=\'padding: 40px; text-align: center; color: {{ text_color }}66;\'>图片加载失败</div>'"
+                >
+                <div class="image-info">
+                    <span class="image-index">图表 {{ loop.index }}/{{ images|length }}</span>
+                    <span class="image-datetime">{{ generation_time }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- 页脚 -->
+        <div class="footer">
+            {% if note %}
+            <div class="note">{{ note }}</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <script>
+        // 为所有图片容器添加加载状态
+        document.addEventListener('DOMContentLoaded', function() {
+            const imageContainers = document.querySelectorAll('.image-container');
+            imageContainers.forEach(container => {
+                const img = container.querySelector('img');
+                if (!img.complete) {
+                    container.classList.add('loading');
+                }
+            });
+        });
+        
+        // 处理图片加载错误
+        document.addEventListener('error', function(e) {
+            if (e.target.tagName === 'IMG') {
+                const container = e.target.closest('.image-container');
+                if (container) {
+                    container.classList.remove('loading');
+                    container.innerHTML = '<div style="padding: 40px; text-align: center; color: #999;">图片加载失败，请刷新重试</div>';
+                }
+            }
+        }, true);
+    </script>
+</body>
+</html>

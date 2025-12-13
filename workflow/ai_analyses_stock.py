@@ -11,7 +11,7 @@ from tools.path import export_file_path
 logger = get_analyze_logger()
 
 # input parameters
-code = '002959'
+code = '601606'
 from_date = '20250102'
 
 stock_info = get_stock_info_by_code(code)

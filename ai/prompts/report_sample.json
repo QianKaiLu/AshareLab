@@ -1,0 +1,117 @@
+{
+  "report_meta": {
+    "report_id": "002959_20251205_lazylab",
+    "title": "小熊电器 (002959) 深度分析",
+    "author": "鳗鱼实验室 (Lazy-Lab)",
+    "generate_time": "2025-12-05T13:56:00+09:00",
+    "disclaimer": "本报告仅供参考，不构成任何投资建议。市场有风险，投资需谨慎。"
+  },
+  "stock_info": {
+    "name": "小熊电器",
+    "code": "002959.SZ",
+    "industry": "小家电",
+    "core_business": "小家电研发、设计、生产和销售",
+    "chart_image_url": "file:///Users/qianqian/stock/AshareLab/output/002959_card.png"
+  },
+  "analysis": {
+    "market_overview": {
+      "title": "股票基本信息与行情摘要",
+      "price_performance": {
+        "trend_tag": "震荡下行",
+        "change_rate": "-6.37%",
+        "description": "自2025年7月1日收盘价47.74元震荡下行至12月4日43.10元。8月下旬冲高至56.41元后回落，近期波动率收敛。"
+      },
+      "volume_characteristics": {
+        "type": "脉冲式 -> 缩量",
+        "description": "8月底冲高伴随巨量（如8月29日767.92万手），近期（11月下旬至12月初）成交量萎缩，市场活跃度下降。"
+      },
+      "summary": "近期股价自高位回落后，进入缩量阴跌的弱势整理阶段，市场关注度与参与热情明显降温。"
+    },
+    "k_line_structure": {
+      "title": "K线与量价结构分析",
+      "key_patterns": [
+        "11月14日 & 17日：连续两根中阴线伴随放量，确认下跌趋势启动。",
+        "11月21日：放量中阴线，收盘44.0元创阶段新低，下跌动能增强。",
+        "11月24日-12月4日：小阴小阳窄幅震荡（43-44.5元），重心下移。"
+      ],
+      "volume_price_logic": "价跌量增（破位时），价稳量缩（盘整时）。",
+      "institutional_action": "高位放量滞涨，近期缩量阴跌，主力无意积极介入，疑似派发后的自然回落。",
+      "summary": "近期市场空头力量占据主导，每一次反弹都遭遇抛压，形成下降趋势。缩量盘整并未出现有效的止跌信号。"
+    },
+    "trend_analysis": {
+      "title": "趋势结构与多周期解析",
+      "trend_direction": "Bearish (下跌趋势)",
+      "ma_system_status": "空头排列 (MA5 < MA10 < MA20 < MA60)",
+      "details": [
+        "股价始终受制于8月29日与9月16日高点形成的下降趋势线下方。",
+        "短期均线死叉中长期均线，对股价构成层层压制。",
+        "日线级别趋势向下，周线级别大概率转为高位宽幅震荡或回调。"
+      ],
+      "summary": "该股正处于日线级别的下跌趋势中，均线系统形成空头排列，所有技术性反弹均受制于均线压力。"
+    },
+    "technical_indicators": {
+      "title": "技术指标综合分析",
+      "signals": [
+        { "name": "MA", "status": "空头", "desc": "MA5(44.0) < MA10(44.8) < MA20(45.5) < MA60(47.2)，标准空头排列。" },
+        { "name": "MACD", "status": "弱势", "desc": "双线零轴下方下行，绿色动能柱扩张，下跌动能未衰竭。" },
+        { "name": "KDJ", "status": "钝化", "desc": "低位超卖但反弹无力，指标在弱势区反复钝化。" }
+      ],
+      "summary": "技术指标形成共振，一致确认当前市场的下跌趋势。任何短期的超卖反弹若无法得到量能配合，都难以扭转颓势。"
+    },
+    "sentiment_behavior": {
+      "title": "市场情绪与行为金融",
+      "sentiment_level": "悲观/犹豫",
+      "cycle_stage": "退潮后期 (绝望期)",
+      "funds_behavior": "主力离场后的自然滑落，套牢盘与短线客多杀多，缺乏组织性承接。",
+      "summary": "投资者情绪处于冰点附近，市场由失望情绪主导。这种阴跌模式最容易消磨持股意志。"
+    },
+    "wyckoff_analysis": {
+      "title": "威科夫结构分析",
+      "current_phase": "Phase D/E (派发后期 -> 下跌阶段)",
+      "structures": [
+        { "type": "UT/UTAD", "desc": "8月底至9月初的天量冲高回落 (56.41元)。" },
+        { "type": "SOW", "desc": "9月跌破50元、48元重要支撑。" },
+        { "type": "No SOS", "desc": "当前43-45元区间缺乏强势吸筹信号。" }
+      ],
+      "conclusion": "主力资金已完成高位派发，当前市场处于“空头掌控”的下跌周期。若跌破40-41元，Markdown阶段将进一步确认。"
+    }
+  },
+  "structured_data": {
+    "support_resistance": [
+      { "type": "resistance", "level_start": 46.0, "level_end": 46.0, "desc": "MA60, 近期反弹高点 (强阻力)" },
+      { "type": "resistance", "level_start": 44.5, "level_end": 45.0, "desc": "MA5/MA10, 平台底部" },
+      { "type": "support", "level_start": 43.0, "level_end": 43.0, "desc": "心理关口, 近期多次测试 (弱支撑)" },
+      { "type": "support", "level_start": 40.0, "level_end": 41.0, "desc": "年初双底, 成交密集区 (核心支撑)" }
+    ],
+    "scenarios": [
+      {
+        "name": "下行破位，寻找强支撑",
+        "probability": 0.55,
+        "trigger": "收盘价有效跌破43元",
+        "target": "40-41元",
+        "strategy": "观望/止损"
+      },
+      {
+        "name": "区间震荡，构筑底部",
+        "probability": 0.35,
+        "trigger": "40-45元反复震荡不创新低",
+        "target": "震荡消化",
+        "strategy": "箱体高抛低吸"
+      },
+      {
+        "name": "放量反转，重拾升势",
+        "probability": 0.10,
+        "trigger": "放量突破46元并站稳",
+        "target": "50元",
+        "strategy": "右侧突破跟随"
+      }
+    ]
+  },
+  "overall_conclusion": {
+    "verdict": "看空 / 防御",
+    "risk_level": "High",
+    "primary_strategy": "防御观察，切勿盲目抄底",
+    "stop_loss_price": 43.0,
+    "summary": "市场最可能的路径是延续弱势，下探寻求更强支撑。操作上应以轻仓观望或防御为主，耐心等待市场自身出现企稳或转强信号。"
+  }
+}

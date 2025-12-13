@@ -6,6 +6,7 @@ from pathlib import Path
 import plotly.io as pio
 from PIL import Image, ImageOps, ImageDraw, ImageFile
 import io
+import base64
 from draws.kline_fig_factory import standard_fig
 from draws.kline_theme import ThemeRegistry, KlineTheme
 
@@ -46,9 +47,18 @@ def make_kline_card(code: str, n: int = 60, width: int = 600, height: int = 400,
     
 def save_img_file(img: Image.Image, path: Path):
     img.save(path, format="PNG")
+    
+def card_to_base64(img: Image.Image) -> str:
+    buffered = io.BytesIO()
+    img.save(buffered, format="PNG")
+    return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
 
 if __name__ == "__main__":
-    code = '600423'
-    img = make_kline_card(code=code, n=60, width=600, height=500, theme_name="vintage_ticker")
-    img.show()
+    # code = '600423'
+    # img = make_kline_card(code=code, n=60, width=600, height=500, theme_name="vintage_ticker")
+    # img.show()
+    
+    codes = ['600423', '600519', '000001']
+    base64_cards = [card_to_base64(make_kline_card(code=code, n=60, width=600, height=450, theme_name="vintage_ticker")) for code in codes]
+    print(base64_cards)

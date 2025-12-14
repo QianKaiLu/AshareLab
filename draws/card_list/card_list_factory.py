@@ -25,7 +25,9 @@ def render_card_list_to_file(output_path: Path, title: str = "", desc: str = "",
     
     theme = ThemeRegistry.get(name=theme_name)
     
-    with open(Path(__file__).parent / "vertical_list_v1.jinja") as f:
+    jinja_name = "vertical_list_v1.jinja"
+    poge_width = 800
+    with open(Path(__file__).parent / jinja_name) as f:
         template = Template(f.read())
         html_content = template.render(
             title=title,
@@ -42,8 +44,8 @@ def render_card_list_to_file(output_path: Path, title: str = "", desc: str = "",
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page(
-            viewport={"width": 600, "height": 2000},
-            device_scale_factor=2
+            viewport={"width": 800, "height": 10000},
+            device_scale_factor=4
         )
         
         # Convert HTML to image

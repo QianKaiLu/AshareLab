@@ -42,13 +42,33 @@ def render_card_list_to_file(output_path: Path, title: str = "", desc: str = "",
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page(
-            viewport={"width": 600, "height": 1200},
+            viewport={"width": 600, "height": 2000},
             device_scale_factor=2
         )
         
         # Convert HTML to image
         page.set_content(html_content)
-        page.screenshot(path=output_path, full_page=True)
+        
+        try:
+            card_container = page.locator(".card-container")
+            card_container.wait_for(state="visible")
+            bbox = card_container.bounding_box()
+            if not bbox:
+                raise ValueError("Card container bounding box is not found.")
+            
+            page.screenshot(
+                path=output_path, 
+                clip={
+                "x": bbox["x"],
+                "y": bbox["y"],
+                "width": bbox["width"],
+                "height": bbox["height"]
+                },
+                type="png"
+                )
+        except Exception as e:
+            page.screenshot(path=output_path, full_page=True)
+        
         browser.close()
         
     logger.info(f"🎴 Card list rendered and saved to: {output_path}")

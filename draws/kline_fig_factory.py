@@ -75,7 +75,7 @@ def standard_fig(code: str, n: int = 60, width: int = 600, height: int = 600, th
             x=x_index, 
             y=df['z_white'], 
             mode='lines', 
-            name='fast line',
+            name='白线',
             line=dict(color=theme.quick_line_color, width=1.2, dash='solid'),
             showlegend=True
         ),
@@ -87,7 +87,7 @@ def standard_fig(code: str, n: int = 60, width: int = 600, height: int = 600, th
             x=x_index, 
             y=df['z_yellow'], 
             mode='lines', 
-            name='slow line',
+            name='黄线',
             line=dict(color=theme.slow_line_color, width=1.2, dash='solid'),
             showlegend=True
         ),

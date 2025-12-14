@@ -9,6 +9,7 @@ import io
 import base64
 from draws.kline_fig_factory import standard_fig
 from draws.kline_theme import ThemeRegistry, KlineTheme
+from draws.figs_factory.ztalk_fig_v2 import ztalk_fig_v2
 
 def add_rounded_rectangle_border(
     image: Image.Image, radius: int, border_color, border_width: int
@@ -37,8 +38,8 @@ def add_rounded_rectangle_border(
     result = Image.alpha_composite(result, border_layer)
     return result
 
-def make_kline_card(code: str, n: int = 60, width: int = 600, height: int = 400, theme_name: str = "vintage_ticker") -> Image.Image:
-    fig = standard_fig(code=code, n=n, width=width, height=height, theme_name=theme_name)
+def make_kline_card(code: str, n: int = 60, width: int = 600, height: int = 800, theme_name: str = "vintage_ticker") -> Image.Image:
+    fig = ztalk_fig_v2(code=code, n=n, width=width, height=height, theme_name=theme_name)
     theme = ThemeRegistry.get(name=theme_name)
     img_bytes = fig.to_image(format="png", width=width, height=height, scale=3)
     img = Image.open(io.BytesIO(img_bytes))

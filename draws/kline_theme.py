@@ -192,8 +192,8 @@ ThemeRegistry.register(KlineTheme(
 # 赛博霓虹 - 荧光色系，高对比度
 ThemeRegistry.register(KlineTheme(
     name="cyber_neon",
-    up_color="#00FF88",       # 荧光绿（涨）
-    down_color="#FF0080",     # 荧光粉（跌）
+    up_color="#FF0080",       # 荧光粉（涨）
+    down_color="#00FF88",     # 荧光绿（跌）
     bbi_color="#FFE600",      # 荧光黄 - 最亮的颜色用于重要指标
     macd_color="#00D4FF",     # 荧光青 - 与主色色相区分
     quick_line_color="#FF7A00", # 橙色 - 明度较高

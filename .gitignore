@@ -206,6 +206,11 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
+# project specific ignores
 database/
 logs/
 output/
+whisper/datas/
+
+# ai models
+models/

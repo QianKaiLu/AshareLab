@@ -4,7 +4,7 @@ import shutil
 import time
 from tools.log import get_analyze_logger
 from typing import Dict, Any, List
-from video_handler import extract_audio_from_video
+from whisper.video_handler import extract_audio_from_video
 from mlx_whisper import transcribe
 
 logger = get_analyze_logger()
@@ -83,14 +83,14 @@ def whisper_to_srt(
     return srt_output_path
 
 if __name__ == "__main__":
-    video_file = Path(__file__).parent / "datas" / "z_talk_1.mp4"
-    audio_file = extract_audio_from_video(video_file, video_file.parent)
+    video_file = Path(__file__).parent / "datas" / "ad_video.mp4"
+    # audio_file = extract_audio_from_video(video_file, video_file.parent)
     output_directory = Path(__file__).parent / "datas"
     srt_file = whisper_to_srt(
-        audio_file,
+        video_file,
         model_size="large-v3",
         output_dir=output_directory,
         language="zh",
-        prompt="股票 分析 财报 投资",
+        prompt="本命年 忌争强 广告",
     )
     logger.info(f"Transcription saved to: {srt_file}")

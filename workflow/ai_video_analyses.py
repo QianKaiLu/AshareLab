@@ -4,13 +4,20 @@ from ai.ai_srt_lab import summarize_srt
 from tools.markdown_lab import save_md_to_file_name, render_markdown_to_image_file_name
 from draws.kline_card import make_kline_card, save_img_file
 from tools.path import export_file_path, EXPORT_PATH
-from whisper.whisper_mlx import whisper_to_srt
-from whisper.video_handler import extract_audio_from_video
+from media_factory.whisper_mlx import whisper_to_srt
+from media_factory.video_handler import extract_audio_from_video
 from ai.prompts.srt_prompts import ModeType
+from media_factory.yt_dlp import yt_dlp_download
 
 logger = get_analyze_logger()
 
-video_path = export_file_path(filename="z_talk_1", format="mp4")
+# video_path = export_file_path(filename="z_double_line", format="mp4")
+# name = video_path.stem
+
+video_url = "https://www.bilibili.com/video/BV1cUqUBvEzY"
+logger.info(f"⬇️ Downloading video from {video_url}...")
+video_path = yt_dlp_download(video_url, output_dir=EXPORT_PATH)
+logger.info(f"✅ Video downloaded to {video_path}")
 name = video_path.stem
 
 logger.info(f"🤖 Starting AI video analysis for {video_path.name}.{video_path.suffix}...")
@@ -20,7 +27,7 @@ audio_path = extract_audio_from_video(video_path, output_dir=EXPORT_PATH)
 logger.info(f"✅ Audio extracted to {audio_path}")
 
 logger.info("📝 Transcribing audio to SRT...")
-to_srt_prompt = "股票 金融 投资 分析 财报"
+to_srt_prompt = name
 language = "zh"
 srt_path = whisper_to_srt(audio_path, output_dir=EXPORT_PATH, language=language, prompt=to_srt_prompt)
 logger.info(f"✅ Transcription completed: {srt_path}")

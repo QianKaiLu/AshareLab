@@ -1,4 +1,4 @@
-import whisper
+import media_factory
 from pathlib import Path
 from datetime import timedelta, datetime
 import shutil
@@ -84,7 +84,7 @@ def whisper_to_srt(audio_path: Path, model_size: str = "base", output_dir: Path 
     
     check_ffmpeg()
 
-    model = whisper.load_model(model_size)
+    model = media_factory.load_model(model_size)
     logger.info(f"Loaded model: {model_size}, num parameters: {sum(p.numel() for p in model.parameters()) / 1e6:.1f}M")
     
     logger.info(f"Transcribing audio file: {audio_path}...")

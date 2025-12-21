@@ -4,7 +4,7 @@ import shutil
 import time
 from tools.log import get_analyze_logger
 from typing import Dict, Any, List
-from whisper.video_handler import extract_audio_from_video
+# from media_factory.video_handler import extract_audio_from_video
 from mlx_whisper import transcribe
 
 logger = get_analyze_logger()

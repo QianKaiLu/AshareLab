@@ -210,7 +210,7 @@ __marimo__/
 database/
 logs/
 output/
-whisper/datas/
+media_factory/datas/
 
 # ai models
 models/

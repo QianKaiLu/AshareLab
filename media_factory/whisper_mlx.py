@@ -62,7 +62,7 @@ def whisper_to_srt(
         language=language,
         prompt=prompt,
         verbose=False,
-        temperature=0.0,
+        temperature=0.2,
     )
 
     segments_list: List[Dict[str, Any]] = result["segments"]

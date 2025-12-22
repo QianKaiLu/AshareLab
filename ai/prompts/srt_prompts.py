@@ -66,7 +66,17 @@ SRT_TO_WASH_SUMMERY_PROMPT = """
 10. 文章尽可能详细，对观点的解释要充分，但避免冗长啰嗦。
 """
 
-ModeType = Literal["summary", "xmind", "key_points", "study_notes", "keyword_index", "qa", "wash_summary"]
+SRT_TO_TRANSLATE_PROMPT = """
+你是一位专业的翻译专家。请将以下 SRT 字幕内容从中文翻译成流畅、地道的英文文章，要求如下：
+1. 理解字幕内容的核心思想，使用自然段落叙述，避免逐句翻译。
+2. 文章应有明确结构：引言 → 主体（可分小节）→ 结语。
+3. 适当补充逻辑连接词、背景说明或过渡句，使行文连贯（但不得编造原视频未提及的事实）。
+4. 去除时间戳、字幕序号、口语化重复（如“呃”、“那个”）、不完整句子。
+5. 文风建议：专业但不晦涩，适合大众阅读；若原视频偏技术，可适度解释术语。
+6. 直接输出纯 Markdown 格式，格式应该丰富错落有致，提升可读性，避免过长的段落影响阅读，但不要包含任何额外说明（如“以下是文章：”）。
+"""
+
+ModeType = Literal["summary", "xmind", "key_points", "study_notes", "keyword_index", "qa", "wash_summary", "translate"]
 
 PROMPT_MAP = {
     "summary": SRT_TO_SUMMARY_LONG_PROMPT,
@@ -76,4 +86,5 @@ PROMPT_MAP = {
     "keyword_index": SRT_TO_KEYWORD_INDEX_PROMPT,
     "qa": SRT_TO_QA_PROMPT,
     "wash_summary": SRT_TO_WASH_SUMMERY_PROMPT,
+    "translate": SRT_TO_TRANSLATE_PROMPT,
 }

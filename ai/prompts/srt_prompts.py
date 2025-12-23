@@ -76,7 +76,16 @@ SRT_TO_TRANSLATE_PROMPT = """
 6. 直接输出纯 Markdown 格式，格式应该丰富错落有致，提升可读性，避免过长的段落影响阅读，但不要包含任何额外说明（如“以下是文章：”）。
 """
 
-ModeType = Literal["summary", "xmind", "key_points", "study_notes", "keyword_index", "qa", "wash_summary", "translate"]
+SRT_TO_LEARNING_PROMPT = """
+请根据我提供的 srt 字幕文件内容，请给出较为详细的总结，分段分级别列出观点、知识点，帮助我后续回顾能快速抓住脉络主线
+- 分段分级别列出观点、知识点并给出解释，帮助我学习。
+- 语言简洁明了，逻辑清晰，适合深入理解视频内容。
+- 直接输出纯 Markdown 格式，格式应该丰富而错落有致，提升可读性，避免过长的段落影响阅读，但不要包含任何额外说明（如“以下是文章：”）。
+- 不要出现“视频中提到”、“作者说”等转述口吻，直接以文章作者身份陈述。
+- 不要出现这是一个 ai 请求的相关表述，也不要提及 srt 等数据来源，输出应该是一篇“独立”的文章。
+"""
+
+ModeType = Literal["summary", "xmind", "key_points", "study_notes", "keyword_index", "qa", "wash_summary", "translate", "learning"]
 
 PROMPT_MAP = {
     "summary": SRT_TO_SUMMARY_LONG_PROMPT,
@@ -87,4 +96,5 @@ PROMPT_MAP = {
     "qa": SRT_TO_QA_PROMPT,
     "wash_summary": SRT_TO_WASH_SUMMERY_PROMPT,
     "translate": SRT_TO_TRANSLATE_PROMPT,
+    "learning": SRT_TO_LEARNING_PROMPT,
 }

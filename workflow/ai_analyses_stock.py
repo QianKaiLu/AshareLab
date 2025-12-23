@@ -4,14 +4,14 @@ from tools.export import export_bars_to_csv
 from tools.log import get_analyze_logger
 from datas.query_stock import get_stock_info_by_code, format_stock_info
 from ai.ai_kbar_analyses import analyze_kbar_data_openai
-from tools.markdown_lab import save_md_to_file_name, render_markdown_to_image_file_name
+from tools.markdown_lab import save_md_to_file, render_markdown_to_image
 from draws.kline_card import make_kline_card, save_img_file
-from tools.path import export_file_path
+from tools.path import export_file_path, EXPORT_PATH
 
 logger = get_analyze_logger()
 
 # input parameters
-code = '601606'
+code = '002970'
 from_date = '20250102'
 
 stock_info = get_stock_info_by_code(code)
@@ -23,9 +23,15 @@ update_daily_bars_for_code(code)
 logger.info("✅ Done updating.")
 
 df = query_daily_bars(code=code, from_date=from_date)
+date = df['date'].max() if not df.empty else None
+dir_name = f"{stock_info.at[code, 'name']}({code})" if not stock_info.empty else code
+if date:
+    dir_name += f"_{date.strftime('%Y%m%d')}"
+WORK_DIR = EXPORT_PATH / dir_name
+WORK_DIR.mkdir(parents=True, exist_ok=True)
 
 if df is not None and not df.empty:
-    path = export_bars_to_csv(df, only_base_info=True)
+    path = export_bars_to_csv(df, only_base_info=True, output_dir=WORK_DIR, open_folder_after=False)
     try:
         print("Fetching recent news...")
         recent_news = ak.stock_news_em(symbol=code).to_dict(orient='records')
@@ -39,7 +45,7 @@ if df is not None and not df.empty:
     if path is not None:
         logger.info("📈 Generating K-line chart image...")
         img = make_kline_card(code=code, n=60, theme_name="vintage_ticker_pro")
-        img_file_path = export_file_path(filename=f"{code}_card", format="png")
+        img_file_path = WORK_DIR / f"{code}_card.png"
         save_img_file(img, img_file_path)
         logger.info(f"💾 Saved K-line chart image to {img_file_path}")
 
@@ -63,8 +69,12 @@ if df is not None and not df.empty:
             file_name = f"{pre_name}_分析报告"
             logger.info(f"📝 Generated markdown report content for {pre_name}")
 
-            save_md_to_file_name(md_content, file_name)
+            save_md_to_file(md_content, WORK_DIR / f"{file_name}.md")
             logger.info(f"📁 Markdown saved as: {file_name}.md")
 
-            render_markdown_to_image_file_name(md_content, file_name, open_folder_after=True)
+            render_markdown_to_image(
+                md_content,
+                WORK_DIR / f"{file_name}.png",
+                open_folder_after=True
+            )
             logger.info(f"🖼️ Rendered and opened image report for {file_name}")

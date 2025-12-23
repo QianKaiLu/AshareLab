@@ -10,7 +10,7 @@ logger = get_analyze_logger()
 co_name = "鳗鱼实验室（Lazy-Lab）"
 author = "钱大头"
 
-API_PROFILE: ApiProfile = DEEPSEEK_REASONER()
+API_PROFILE: ApiProfile = QWEN_MAX()
 
 client = OpenAI(
     api_key=API_PROFILE.api_key,

@@ -15,7 +15,7 @@ logger = get_analyze_logger()
 # video_path = EXPORT_PATH / "11 Lessons From Growing A 7-Figure One Person Business.mp4"
 # name = video_path.stem
 
-video_url = "https://www.bilibili.com/video/BV1E2421L7GL"
+video_url = "https://www.bilibili.com/video/BV1MQU7BHECR"
 logger.info(f"⬇️ Downloading video from {video_url}...")
 video_path = yt_dlp_download(video_url, output_dir=EXPORT_PATH)
 logger.info(f"✅ Video downloaded to {video_path}")

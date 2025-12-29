@@ -3,12 +3,12 @@ from openai import OpenAI
 from pathlib import Path
 from typing import Optional, Literal
 from tools.log import get_analyze_logger
-from ai.ai_api_profile import ApiProfile, QWEN_MAX
+from ai.ai_api_profile import ApiProfile, QWEN_MAX, DEEPSEEK_REASONER
 from ai.prompts.srt_prompts import ModeType, PROMPT_MAP
 
 logger = get_analyze_logger()
 
-API_PROFILE: ApiProfile = QWEN_MAX()
+API_PROFILE: ApiProfile = DEEPSEEK_REASONER()
 
 client = OpenAI(
     api_key=API_PROFILE.api_key,

@@ -11,18 +11,21 @@ logger = get_analyze_logger()
 WORKING_DIR = Path(__file__).parent / "output"
 mode: ModeType = "book"
 
-with ThreadPoolExecutor(max_workers=4) as executor:
+video_paths = list(WORKING_DIR.glob("*.mp4"))
+
+with ThreadPoolExecutor(max_workers=8) as executor:
     future_to_info = {}
 
-    for subdir in WORKING_DIR.iterdir():
-        if not subdir.is_dir():
-            continue
-        video_path = next(subdir.glob("*.mp4"), None)
-        if video_path is None:
+    # for video_path in video_paths[:1]:  # limit to first 1 videos for testing
+    for video_path in video_paths:
+        if not video_path.is_file():
             continue
 
         logger.info(f"🤖 Starting AI video analysis for {video_path.name}...")
         name = video_path.stem
+
+        subdir = WORKING_DIR / name
+        subdir.mkdir(parents=True, exist_ok=True)
         
         # audio extraction and SRT transcription
         audio_path = subdir / f"{name}.wav"
@@ -43,6 +46,8 @@ with ThreadPoolExecutor(max_workers=4) as executor:
             logger.info(f"📝 SRT file already exists at {srt_path}, skipping transcription.")
 
         # submit summary task
+        md_file_path = subdir / f"{name}_summary.md"
+        # if not md_file_path.exists():
         logger.info(f"🧠 Submitting summary task for {name}...")
         future = executor.submit(summarize_srt, srt_file_path=srt_path, srt_content=None, mode=mode, extra_prompt=None)
         future_to_info[future] = (subdir, name)

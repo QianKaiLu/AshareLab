@@ -14,21 +14,21 @@ video_paths: list[Path] = yt_dlp_download_list(list_url, output_dir=EXPORT_PATH)
 logger.info(f"✅ Playlist（{len(video_paths)} videos） downloaded to {EXPORT_PATH}:")
 
 for video_path in video_paths:
-     logger.info(f"{video_path.name}{video_path.suffix}")
+     logger.info(f"{video_path.stem}{video_path.suffix}")
      
 # video_paths = list(EXPORT_PATH.glob("*.mp4"))
 
-for video_path in video_paths:
-    logger.info(f"Processing video: {video_path}")
-    name = video_path.stem
+# for video_path in video_paths:
+#     logger.info(f"Processing video: {video_path}")
+#     name = video_path.stem
 
-    export_dir = EXPORT_PATH / name
-    export_dir.mkdir(parents=True, exist_ok=True)
+#     export_dir = EXPORT_PATH / name
+#     export_dir.mkdir(parents=True, exist_ok=True)
 
-    logger.info(f"📁 Export directory created at {export_dir}")
+#     logger.info(f"📁 Export directory created at {export_dir}")
 
-    new_video_path = export_dir / video_path.name
-    os.rename(video_path, new_video_path)
-    video_path = new_video_path
+#     new_video_path = export_dir / video_path.name
+#     os.rename(video_path, new_video_path)
+#     video_path = new_video_path
 
-    logger.info(f"📹 Video moved to export directory: {video_path}")
+#     logger.info(f"📹 Video moved to export directory: {video_path}")

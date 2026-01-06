@@ -4,7 +4,7 @@ import numpy as np
 
 def volume_ma(
     volume: pd.Series,
-    periods: List[int] = [5, 10],
+    periods: List[int] = [5, 10, 20],
     fillna: bool = False
 ) -> pd.DataFrame:
     """
@@ -14,7 +14,7 @@ def volume_ma(
     
     Args:
         volume: pd.Series of trading volumes
-        periods: list of int, periods for moving averages, default is [5, 10, 20, 30]
+        periods: list of int, periods for moving averages, default is [5, 10, 20]
         fillna: bool, whether to fill NaN values, default is False
     Returns:
         pd.DataFrame: DataFrame with Volume MA columns for each specified period
@@ -31,7 +31,7 @@ def volume_ma(
 def add_volume_ma_to_dataframe(
     df: pd.DataFrame,
     volume_col: str = 'volume',
-    periods: List[int] = [5, 10],
+    periods: List[int] = [5, 10, 20],
     fillna: bool = False,
     inplace: bool = False
 ) -> Optional[pd.DataFrame]:
@@ -41,7 +41,7 @@ def add_volume_ma_to_dataframe(
     Args:
         df: pd.DataFrame containing price data
         volume_col: str, column name for volume, default is 'volume'
-        periods: list of int, periods for moving averages, default is [5, 10]
+        periods: list of int, periods for moving averages, default is [5, 10, 20]
         fillna: bool, whether to fill NaN values, default is False
         inplace: bool, if True modify df in place and return None; if False return modified copy
     Returns:

@@ -369,7 +369,7 @@ def ztalk_fig_v2(code: str, n: int = 60, width: int = 600, height: int = 600, th
         xaxis4=dict(
             showgrid=False,
             zeroline=False,
-            showticklabels=False,
+            showticklabels=True,
             rangeslider_visible=False
         ),
         margin=dict(l=50, r=5, t=60, b=40),

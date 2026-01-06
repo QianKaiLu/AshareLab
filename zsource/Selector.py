@@ -274,12 +274,14 @@ class BBIKDJSelector:
         hist = hist.copy()
         hist["BBI"] = compute_bbi(hist)
         
+        # 涨跌幅限制
         if not passes_day_constraints_today(hist):
             return False
 
         # 0. 收盘价波动幅度约束（最近 max_window 根 K 线）
         win = hist.tail(self.max_window)
         high, low = win["close"].max(), win["close"].min()
+        # 过滤波动过大的股票
         if low <= 0 or (high / low - 1) > self.price_range_pct:           
             return False
 

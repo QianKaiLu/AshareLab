@@ -27,7 +27,13 @@ aidi_scope = Scope(
     note=""
 )
 
-scope = aidi_scope
+sf_scope = Scope(
+    codes="603757,920885".split(","),
+    title="今日 B1",
+    note=""
+)
+
+scope = sf_scope
 codes = scope.codes
 images = [make_kline_card(code=code, n=60, width=600, height=800, theme_name=theme_name) for code in codes]
 

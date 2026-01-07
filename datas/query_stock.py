@@ -67,16 +67,84 @@ def query_daily_bars(
             logger.info(f"No daily bar data found for {std_code} between {from_date} and {to_date}")
             return pd.DataFrame()
 
-        # Log result
-        start_str = df['date'].min().strftime("%Y-%m-%d")
-        end_str = df['date'].max().strftime("%Y-%m-%d")
-        logger.info(f"📌 Queried {len(df)} rows for {std_code} [{start_str} ~ {end_str}]")
-
         return df
 
     except Exception as e:
         logger.error(f"❌ Error querying daily bar data for {code}: {e}", exc_info=True)
         return pd.DataFrame()
+    finally:
+        if conn:
+            conn.close()
+            
+def query_bars_by_days(
+    code: str,
+    days: int,
+    to_date: Optional[str] = None
+) -> pd.DataFrame:
+    """
+    Query daily bar data for the last N trading days up to to_date.
+    
+    Args:
+        code (str): Stock code, e.g. '321', '000321', 'SH600000', '600000.SH'
+        days (int): Number of trading days to query. Must be >= 1.
+        to_date (str, optional): End date as string (format: YYYYMMDD or YYYY-MM-DD). 
+                                 If None, use the latest available date.
+    Returns:
+        pd.DataFrame sorted by date ascending; or None if not found
+    """
+    if days < 1:
+        raise ValueError(f"days must be at least 1, got {days}")
+
+    conn = None
+    try:
+        std_code = to_std_code(code)
+    except Exception as e:
+        logger.warning(f"Invalid stock code '{code}': {e}")
+        return pd.DataFrame()
+
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        
+        params: list[Any] = [std_code]
+
+        query = f"""
+        SELECT *
+        FROM {DAILY_BAR_TABLE}
+        WHERE code = ?
+        """
+
+        if to_date:
+            formatted_to = format_date_input_to_yyyy_mm_dd(to_date)
+            query += " AND date <= ?"
+            params.append(formatted_to)
+
+        query += """
+        ORDER BY date DESC
+        LIMIT ?
+        """
+        params.append(days)
+
+        df = pd.read_sql_query(
+            query, conn,
+            params=tuple(params),
+            parse_dates=['date']
+        )
+
+        if df.empty:
+            logger.info(f"No data found for {std_code} in last {days} days up to {to_date}.")
+            return pd.DataFrame()
+
+        result = df[::-1].reset_index(drop=True)
+
+        if result.empty:
+            return pd.DataFrame()
+
+        return result
+
+    except Exception as e:
+        logger.error(f"❌ Failed to query last {days} bars for {std_code}: {e}", exc_info=True)
+        return pd.DataFrame()
+
     finally:
         if conn:
             conn.close()
@@ -130,11 +198,6 @@ def query_latest_bars(
 
         if result.empty:
             return pd.DataFrame()
-
-        start_str = result['date'].min().strftime("%Y-%m-%d")
-        end_str = result['date'].max().strftime("%Y-%m-%d")
-        count = len(result)
-        logger.info(f"📈 Got last {count} trading day(s) for {std_code} [{start_str} ~ {end_str}]")
 
         return result
 

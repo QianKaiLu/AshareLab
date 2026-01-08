@@ -1,6 +1,6 @@
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from datas.query_stock import query_latest_bars, get_stock_info_by_code
+from datas.query_stock import query_latest_bars, get_stock_info_by_code, query_bars_by_days
 from pathlib import Path
 from indicators.bbi import add_bbi_to_dataframe
 from indicators.zxdkx import add_zxdkx_to_dataframe
@@ -10,12 +10,13 @@ from indicators.macd import add_macd_to_dataframe
 from draws.kline_theme import ThemeRegistry, KlineTheme
 from tools.colors import hex_to_rgba
 from draws.figs_factory.ploty_tools import compute_row_paper_domains, add_row_background
+from typing import Optional
 
-def ztalk_fig_v2(code: str, n: int = 60, width: int = 600, height: int = 600, theme_name: str = "vintage_ticker") -> go.Figure:
+def ztalk_fig_v2(code: str, n: int = 60, width: int = 600, height: int = 600, to_date: Optional[str] = None, theme_name: str = "vintage_ticker") -> go.Figure:
     theme = ThemeRegistry.get(name=theme_name)
     
     stock_info = get_stock_info_by_code(code)
-    df = query_latest_bars(code=code, n=300)
+    df = query_bars_by_days(code=code, days=300, to_date=to_date)
     
     if df.empty:
         raise ValueError(f"No data found for code: {code}")

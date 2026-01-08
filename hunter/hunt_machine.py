@@ -28,6 +28,7 @@ HuntInputLike = str | HuntInput
 class HuntResult:
     code: str
     result_info: Any
+    input: Optional[HuntInputLike]
     stockInfo: pd.DataFrame = field(default_factory=pd.DataFrame, init=False)
     format_info: str = field(default="", init=False)
 
@@ -121,7 +122,7 @@ class HuntMachine:
         try:
             res = analyzer(df)
             if res:
-                return HuntResult(code, res)
+                return HuntResult(code, res, input)
         except Exception as e:
             # logger.debug(f"Analyzer failed for {code}: {e}") # Optional: debug log
             pass

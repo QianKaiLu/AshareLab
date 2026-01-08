@@ -28,7 +28,7 @@ aidi_scope = Scope(
 )
 
 sf_scope = Scope(
-    codes="603757,920885".split(","),
+    codes="000586,000796,002157,002198,002727,002748,300843,600487,600750,600814,688668".split(","),
     title="今日 B1",
     note=""
 )
@@ -37,7 +37,7 @@ scope = sf_scope
 codes = scope.codes
 images = [make_kline_card(code=code, n=60, width=600, height=800, theme_name=theme_name) for code in codes]
 
-date_in_file_name = datetime.now().strftime('%m%d-%H%M')
+date_in_file_name = datetime.now().strftime('%m%d-%H%M%S')
 date_in_title = datetime.now().strftime('%Y-%m-%d')
 file_path = export_file_path(filename=f"list_{date_in_file_name}", format="png")
 

@@ -35,10 +35,10 @@ console_handler.setFormatter(formatter_console)
 
 fetch_file_handler = logging.FileHandler(FETCH_LOG_FILE, encoding='utf-8')
 fetch_file_handler.setFormatter(formatter)
+fetch_file_handler.setLevel(logging.WARN)
 
 fetch_logger.addHandler(console_handler)
 fetch_logger.addHandler(fetch_file_handler)
-
 
 analyze_logger = logging.getLogger("analyze")
 analyze_logger.setLevel(logging.INFO)
@@ -46,6 +46,7 @@ analyze_logger.propagate = False
 
 analyze_file_handler = logging.FileHandler(ANALYZE_LOG_FILE, encoding='utf-8')
 analyze_file_handler.setFormatter(formatter)
+analyze_file_handler.setLevel(logging.WARN)
 
 analyze_logger.addHandler(console_handler)
 analyze_logger.addHandler(analyze_file_handler)

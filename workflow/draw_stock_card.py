@@ -7,8 +7,9 @@ from datetime import datetime
 
 theme_name = "old_ticker_tape"
 
-stock_info = get_stock_info_by_name("中远海能")
-code = stock_info.index[0]
+# stock_info = get_stock_info_by_name("京东方A")
+code = "000725"
+stock_info = get_stock_info_by_code(code)
 latest_date = get_latest_date_by_code(code) or datetime.now()
 
 theme = ThemeRegistry.get(name=theme_name)

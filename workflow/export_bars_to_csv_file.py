@@ -6,9 +6,9 @@ from datas.query_stock import get_stock_info_by_code, format_stock_info
 logger = get_fetch_logger()
 
 # input parameters
-code = '300267'
-from_date = '20250102'
-to_date = None  # None means up to latest available date
+code = '725'
+from_date = '20250602'
+to_date = '20251223'  # None means up to latest available date
 
 stock_info = get_stock_info_by_code(code)
 if stock_info is not None and not stock_info.empty:

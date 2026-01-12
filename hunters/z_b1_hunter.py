@@ -294,8 +294,6 @@ def main():
             batch_results = results[i:i + batch_size]
             date_in_title = datetime.now().strftime('%Y-%m-%d')
             draw_hunt_results(batch_results, title=f"Today b1 - Batch {step}", desc=date_in_title, theme_name="dark_minimal")
-    
-
 
 if __name__ == "__main__":
     main()

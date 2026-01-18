@@ -106,7 +106,7 @@ def hunt_macd_divergence(df: pd.DataFrame) -> Optional[dict]:
 
     # 4. 找出价格和MACD DIF的局部低点
     price_peaks, price_troughs = find_local_extremes(recent_df['close'], window=3)
-    macd_peaks, macd_troughs = find_local_extremes(recent_df['MACD_DIF'], window=3)
+    macd_peaks, macd_troughs = find_local_extremes(recent_df['macd_dif'], window=3)
 
     # 需要至少2个价格低点和2个MACD低点
     if len(price_troughs) < 2 or len(macd_troughs) < 2:
@@ -130,7 +130,7 @@ def hunt_macd_divergence(df: pd.DataFrame) -> Optional[dict]:
             # 如果没有找到，就用价格低点那天的MACD值
             return price_idx
         # 返回MACD DIF最低的那个点
-        return min(candidates, key=lambda x: recent_df.iloc[x]['MACD_DIF'])
+        return min(candidates, key=lambda x: recent_df.iloc[x]['macd_dif'])
 
     prev_macd_idx = find_nearest_macd_trough(prev_price_trough_idx, macd_troughs)
     last_macd_idx = find_nearest_macd_trough(last_price_trough_idx, macd_troughs)
@@ -138,8 +138,8 @@ def hunt_macd_divergence(df: pd.DataFrame) -> Optional[dict]:
     # 7. 判断是否构成背离
     prev_price = recent_df.iloc[prev_price_trough_idx]['close']
     last_price = recent_df.iloc[last_price_trough_idx]['close']
-    prev_macd = recent_df.iloc[prev_macd_idx]['MACD_DIF']
-    last_macd = recent_df.iloc[last_macd_idx]['MACD_DIF']
+    prev_macd = recent_df.iloc[prev_macd_idx]['macd_dif']
+    last_macd = recent_df.iloc[last_macd_idx]['macd_dif']
 
     # 价格创新低（至少低1%）
     price_new_low = last_price < prev_price * 0.99
@@ -185,29 +185,29 @@ def hunt_macd_divergence(df: pd.DataFrame) -> Optional[dict]:
 
     # 已经金叉
     macd_golden = (
-        prev_row['MACD_DIF'] < prev_row['MACD_DEA'] and
-        last_row['MACD_DIF'] >= last_row['MACD_DEA']
+        prev_row['macd_dif'] < prev_row['macd_dea'] and
+        last_row['macd_dif'] >= last_row['macd_dea']
     )
 
     # 或者DIF正在向上接近DEA（距离缩小）
     macd_approaching = (
-        last_row['MACD_DIF'] < last_row['MACD_DEA'] and
-        (last_row['MACD_DEA'] - last_row['MACD_DIF']) <
-        (prev_row['MACD_DEA'] - prev_row['MACD_DIF'])
+        last_row['macd_dif'] < last_row['macd_dea'] and
+        (last_row['macd_dea'] - last_row['macd_dif']) <
+        (prev_row['macd_dea'] - prev_row['macd_dif'])
     )
 
     # 或者已经金叉且保持多头
     macd_bullish = (
-        last_row['MACD_DIF'] > last_row['MACD_DEA'] and
-        last_row['MACD_BAR'] > prev_row['MACD_BAR']
+        last_row['macd_dif'] > last_row['macd_dea'] and
+        last_row['macd_bar'] > prev_row['macd_bar']
     )
 
     if not (macd_golden or macd_approaching or macd_bullish):
         return None
 
     ret['macd_status'] = 'golden_cross' if macd_golden else 'approaching' if macd_approaching else 'bullish'
-    ret['current_macd_dif'] = round(last_row['MACD_DIF'], 4)
-    ret['current_macd_dea'] = round(last_row['MACD_DEA'], 4)
+    ret['current_macd_dif'] = round(last_row['macd_dif'], 4)
+    ret['current_macd_dea'] = round(last_row['macd_dea'], 4)
 
     # 10. RSI超卖确认（加分项）
     if 'rsi' in last_row.index:

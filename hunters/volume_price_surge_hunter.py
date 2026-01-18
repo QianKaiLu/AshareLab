@@ -238,9 +238,9 @@ def hunt_volume_price_surge(df: pd.DataFrame) -> Optional[dict]:
     ret['above_vwap'] = above_vwap
 
     # 14. MACD确认
-    macd_dif = last_row['MACD_DIF']
-    macd_dea = last_row['MACD_DEA']
-    macd_bar = last_row['MACD_BAR']
+    macd_dif = last_row['macd_dif']
+    macd_dea = last_row['macd_dea']
+    macd_bar = last_row['macd_bar']
 
     # MACD应该在零轴之上或即将金叉
     macd_bullish = macd_dif > macd_dea and macd_bar > 0

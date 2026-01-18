@@ -95,23 +95,23 @@ def hunt_golden_cross(df: pd.DataFrame) -> Optional[dict]:
     # 5. 检测MACD金叉（DIF上穿DEA）
     # 要么刚刚金叉，要么已经金叉且DIF和DEA都在上升
     macd_golden = (
-        prev_row['MACD_DIF'] < prev_row['MACD_DEA'] and
-        last_row['MACD_DIF'] >= last_row['MACD_DEA']
+        prev_row['macd_dif'] < prev_row['macd_dea'] and
+        last_row['macd_dif'] >= last_row['macd_dea']
     )
 
     # 或者已经金叉但保持向上（DIF > DEA 且 MACD柱状图为正且增长）
     macd_bullish = (
-        last_row['MACD_DIF'] > last_row['MACD_DEA'] and
-        last_row['MACD_BAR'] > 0 and
-        last_row['MACD_BAR'] > prev_row['MACD_BAR']
+        last_row['macd_dif'] > last_row['macd_dea'] and
+        last_row['macd_bar'] > 0 and
+        last_row['macd_bar'] > prev_row['macd_bar']
     )
 
     if not (macd_golden or macd_bullish):
         return None
 
-    ret['macd_dif'] = round(last_row['MACD_DIF'], 4)
-    ret['macd_dea'] = round(last_row['MACD_DEA'], 4)
-    ret['macd_bar'] = round(last_row['MACD_BAR'], 4)
+    ret['macd_dif'] = round(last_row['macd_dif'], 4)
+    ret['macd_dea'] = round(last_row['macd_dea'], 4)
+    ret['macd_bar'] = round(last_row['macd_bar'], 4)
 
     # 6. 成交量放大检查
     # 最近成交量应该大于20日均量的1.2倍
@@ -179,8 +179,7 @@ def main():
 
     print(f"\n🎉 找到 {len(results)} 只符合黄金交叉买点的股票:")
     for result in results:
-        print(f"{result.code} {result.name}")
-        print(f"  详情: {result.result_info}")
+        print(f"{result.result_info}")
 
     print(f"\n股票代码列表: {','.join(codes)}")
 

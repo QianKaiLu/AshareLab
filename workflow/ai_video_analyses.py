@@ -16,7 +16,7 @@ logger = get_analyze_logger()
 # video_path = EXPORT_PATH / "11 Lessons From Growing A 7-Figure One Person Business.mp4"
 # name = video_path.stem
 
-video_url = "https://www.bilibili.com/video/BV1C21pBJErw/?spm_id_from=333.1387.favlist.content.click&vd_source=442a5d658bc897c6e7d62a5abe9ddb13"
+video_url = "https://www.bilibili.com/video/BV1dA411D7P6/?spm_id_from=333.788.videopod.episodes&vd_source=4ddb3dd9c5a76a676f0d3f9e1fdad402&p=14"
 logger.info(f"⬇️ Downloading video from {video_url}...")
 video_path = yt_dlp_download(video_url, output_dir=EXPORT_PATH)
 logger.info(f"✅ Video downloaded to {video_path}")
@@ -54,9 +54,9 @@ else:
     logger.info(f"✅ Transcription completed: {srt_path}")
 
 logger.info("🧠 Summarizing SRT content with AI...")
-mode: ModeType = "book"
-extra_prompt = "如果是英文，请使用中文总结输出；文章作者为 鳗鱼实验室（Lazy-Lab）。"
-summary = summarize_srt(srt_file_path=srt_path, mode=mode, extra_prompt=None)
+mode: ModeType = "summary"
+extra_prompt = "这是一个英语语法教学视频，请基于这个前提来生成内容。"
+summary = summarize_srt(srt_file_path=srt_path, mode=mode, extra_prompt=extra_prompt)
 logger.info(f"✅ Summary completed.")
 
 if summary:

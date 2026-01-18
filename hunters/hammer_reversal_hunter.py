@@ -261,8 +261,8 @@ def hunt_hammer_reversal(df: pd.DataFrame) -> Optional[dict]:
 
     # 9. MACD辅助确认
     # MACD在低位或即将金叉
-    last_macd_dif = last_row['MACD_DIF']
-    last_macd_dea = last_row['MACD_DEA']
+    last_macd_dif = last_row['macd_dif']
+    last_macd_dea = last_row['macd_dea']
 
     ret['macd_dif'] = round(last_macd_dif, 4)
     ret['macd_dea'] = round(last_macd_dea, 4)

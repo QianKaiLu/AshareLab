@@ -31,12 +31,15 @@ class HuntResult:
     input: Optional[HuntInputLike]
     stockInfo: pd.DataFrame = field(default_factory=pd.DataFrame, init=False)
     format_info: str = field(default="", init=False)
+    name: str = field(default="", init=False)
 
     def __post_init__(self):
         if self.stockInfo.empty:
             self.stockInfo = get_stock_info_by_code(self.code)
         if not self.format_info:
             self.format_info = format_stock_info(self.stockInfo, level='brief')
+        if not self.name:
+            self.name = self.stockInfo['name'].values[0] if not self.stockInfo.empty else ""
             
     def __repr__(self):
         return self.format_info

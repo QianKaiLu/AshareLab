@@ -110,9 +110,6 @@ def hunt_break_platform(df: pd.DataFrame) -> Optional[dict]:
 
     ret = {}
 
-    # 1. 添加成交量均线
-    add_volume_ma_to_dataframe(df, periods=[5, 10, 20], inplace=True)
-
     # 2. 寻找横盘平台
     platform_info = find_platform(df, min_days=10, max_days=40, max_amplitude=0.10)
 

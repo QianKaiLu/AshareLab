@@ -9,5 +9,6 @@
         "**/*.pyc": true,
         "**/.pytest_cache": true,
         "**/.mypy_cache": true
-    }
+    },
+    "python.analysis.typeCheckingMode": "off"
 }

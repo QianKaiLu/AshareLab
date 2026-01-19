@@ -17,6 +17,7 @@ DATABASE_DIR = Path(__file__).parent.parent / "database"
 hs300_list_path = DATABASE_DIR / "hs300_stock_list.csv"
 csi500_list_path = DATABASE_DIR / "csi500_stock_list.csv"
 csi2000_list_path = DATABASE_DIR / "csi2000_stock_list.csv"
+csi_a500_list_path = DATABASE_DIR / "csi_a500_stock_list.csv"
 dummy_path = DATABASE_DIR / ".dummy"
 
 update_interval_days = 30  # update every 30 days
@@ -77,7 +78,7 @@ def fetch_index_stock_list():
         done = False
 
     logger.info("Updating CSI500 lists...")
-    df_500 = ak.index_stock_cons(symbol="399905")
+    df_500 = ak.index_stock_cons(symbol="000905")
     if not df_500.empty:
         df_500 = df_500.rename(columns=column_mapping)
         df_500.to_csv(csi500_list_path, index=False)
@@ -91,6 +92,15 @@ def fetch_index_stock_list():
         df_2000 = df_2000.rename(columns=column_mapping)
         df_2000.to_csv(csi2000_list_path, index=False)
         logger.info(f"Done with {len(df_2000)} entries.")
+    else:
+        done = False
+        
+    logger.info("Updating CSIA500 lists...")
+    df_a500 = ak.index_stock_cons(symbol="000510")
+    if not df_a500.empty:
+        df_a500 = df_a500.rename(columns=column_mapping)
+        df_a500.to_csv(csi_a500_list_path, index=False)
+        logger.info(f"Done with {len(df_a500)} entries.")
     else:
         done = False
 
@@ -146,6 +156,22 @@ def csi2000_code_list() -> pd.Series:
         return df["code"].map(to_std_code)
     else:
         logger.warning("CSI2000 stock list file does not exist.")
+        return pd.Series()
+
+def csi_a500_code_list() -> pd.Series:
+    """Get a pandas Series of CSIA500 constituent stock codes.
+
+    Triggers an update if the local list is outdated or missing.
+
+    Returns:
+        A Series containing stock codes (e.g., '600000'), or empty Series if failed.
+    """
+    update_index_stock_list()
+    if csi_a500_list_path.exists():
+        df = pd.read_csv(csi_a500_list_path, dtype={"code": "string"})
+        return df["code"].map(to_std_code)
+    else:
+        logger.warning("CSIA500 stock list file does not exist.")
         return pd.Series()
 
 if __name__ == "__main__":

@@ -32,7 +32,8 @@ def is_bbi_deriv_uptrend(
         seg = bbi.iloc[-w:]
         norm = seg / seg.iloc[0]
         diffs = np.diff(norm.values)
-        if np.quantile(diffs, q_threshold) >= 0:
+        quantile_value = np.quantile(diffs, q_threshold)
+        if quantile_value >= 0:
             return True
     return False
 

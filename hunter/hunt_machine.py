@@ -66,8 +66,17 @@ class HuntResult:
         return [res for res in left if res.code in right_codes]
 
 class HuntMachine:
-    def __init__(self, max_workers: int = 8):
+    def __init__(self, max_workers: int = 8, on_result_found: Optional[Callable[[HuntResult], None]] = None):
+        """
+        Initialize HuntMachine.
+
+        Args:
+            max_workers: Number of concurrent workers for parallel processing
+            on_result_found: Optional callback function that gets called immediately when a match is found.
+                           The callback receives a HuntResult object as parameter.
+        """
         self.max_workers = max_workers
+        self.on_result_found = on_result_found
 
     def hunt(self, analyzer: Callable[[pd.DataFrame], Any], min_bars: int = 500, hunt_pool: Optional[List[HuntInputLike]] = None) -> List[HuntResult]:
         """
@@ -103,6 +112,12 @@ class HuntMachine:
                     result: Optional[HuntResult] = future.result()
                     if result:
                         results.append(result)
+                        # Trigger callback immediately when a result is found
+                        if self.on_result_found:
+                            try:
+                                self.on_result_found(result)
+                            except Exception as callback_error:
+                                logger.error(f"Error in callback for {code}: {callback_error}")
                 except Exception as e:
                     logger.error(f"Error processing {code}: {e}")
                     

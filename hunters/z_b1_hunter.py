@@ -10,6 +10,7 @@ from indicators.volume_ma import add_volume_ma_to_dataframe
 from hunter.filters.is_bbi_deriv_uptrend import is_bbi_deriv_uptrend
 from hunter.hunt_machine import HuntMachine, HuntResult, HuntInputLike, HuntInput
 from hunters.hunt_output import draw_hunt_results
+from hunter.hunt_pools import hs300_csi500_hunt_pool
 from datetime import datetime
 
 logger = get_analyze_logger()
@@ -378,38 +379,40 @@ def main():
 
     hunter = HuntMachine(max_workers=12, on_result_found=print_result)
     
-    # 执行狩猎
-    results: list[HuntResult] = hunter.hunt(hunt_b1, min_bars=500, hunt_pool=ten_perfect_pool)
+    pool = hs300_csi500_hunt_pool()
+    
+    # Execute hunt
+    results: list[HuntResult] = hunter.hunt(hunt_b1, min_bars=500, hunt_pool=pool)
     
     if not results:
-        print("未找到符合选股条件的股票。")
+        print("No stocks found that meet the criteria.")
         return
 
-    # 处理结果
+    # Process results
     codes: list[str] = [result.code for result in results]
     
-    print(f"\n🎉 找到 {len(results)} 只符合条件的股票：")
+    print(f"\n🎉 Found {len(results)} stocks in {len(pool)}:")
     for result in results:
         print(result.format_info)
         print(result.result_info)
-    print(f"股票代码列表：{','.join(codes)}")
+    print(f"Stock code list: {','.join(codes)}")
     
-    print(f"详细结果：")
+    print(f"Detailed results:")
     for result in results:
         print(result)
     
     # 绘图
-    if len(results) < 10:
-        date_in_title = datetime.now().strftime('%Y-%m-%d')
-        draw_hunt_results(results, title="今日 B1 策略", desc=date_in_title, theme_name="dark_minimal")
-    else:
-        batch_size = 10
-        step = 0
-        for i in range(0, len(results), batch_size):
-            step += 1
-            batch_results = results[i:i + batch_size]
-            date_in_title = datetime.now().strftime('%Y-%m-%d')
-            draw_hunt_results(batch_results, title=f"今日 B1 策略 - 第 {step} 批", desc=date_in_title, theme_name="dark_minimal")
+    # if len(results) < 10:
+    #     date_in_title = datetime.now().strftime('%Y-%m-%d')
+    #     draw_hunt_results(results, title="今日 B1 策略", desc=date_in_title, theme_name="dark_minimal")
+    # else:
+    #     batch_size = 10
+    #     step = 0
+    #     for i in range(0, len(results), batch_size):
+    #         step += 1
+    #         batch_results = results[i:i + batch_size]
+    #         date_in_title = datetime.now().strftime('%Y-%m-%d')
+    #         draw_hunt_results(batch_results, title=f"今日 B1 策略 - 第 {step} 批", desc=date_in_title, theme_name="dark_minimal")
 
 if __name__ == "__main__":
     main()

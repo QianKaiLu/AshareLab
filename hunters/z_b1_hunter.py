@@ -38,8 +38,6 @@ vol_ratio_threshold = 1.2
 # 突破后下跌日成交量上限（相对于突破期间最大成交量的比例）
 vol_shrink_threshold = 0.6  
 
-# B1 策略猎手
-
 def hunt_b1(df: pd.DataFrame) -> Optional[dict]:
     ret = {}
     if df is None or df.empty:
@@ -138,8 +136,8 @@ def hunt_b1(df: pd.DataFrame) -> Optional[dict]:
         curr_idx = recent_df.index[i]
         
         # 当前日必须是上涨日
-        curr_price = df.at[curr_idx, 'close']
-        prev_price = df.at[curr_idx - 1, 'close']
+        curr_price: float = df.at[curr_idx, 'close']
+        prev_price: float = df.at[curr_idx - 1, 'close']
         if curr_price < prev_price:
             continue
         
@@ -309,16 +307,14 @@ def up_down_volume(df: pd.DataFrame, target_pos) -> tuple[float, float]:
     Returns:
         tuple: (上涨日总成交量, 下跌日总成交量)
     """
-    temp_df = df[['close', 'volume']].copy()
-    temp_df['change'] = temp_df['close'].diff()
+    temp_df = df.loc[df.index >= target_pos][['open', 'close', 'volume']].copy()
+    temp_df['change'] = temp_df['close'] - temp_df['open']
     
-    df_after = temp_df.loc[temp_df.index >= target_pos]
-    
-    if len(df_after) < 1:
+    if len(temp_df) < 1:
         return 0.0, 0.0
     
-    up_vol = df_after[df_after['change'] > 0]['volume'].sum()
-    down_vol = df_after[df_after['change'] < 0]['volume'].sum()
+    up_vol = temp_df[temp_df['change'] > 0]['volume'].sum()
+    down_vol = temp_df[temp_df['change'] < 0]['volume'].sum()
     
     return float(up_vol), float(down_vol)
 
@@ -382,7 +378,7 @@ def main():
     pool = hs300_csi500_hunt_pool()
     
     # Execute hunt
-    results: list[HuntResult] = hunter.hunt(hunt_b1, min_bars=500, hunt_pool=pool)
+    results: list[HuntResult] = hunter.hunt(hunt_b1, min_bars=500, hunt_pool=["600390"])
     
     if not results:
         print("No stocks found that meet the criteria.")

@@ -1,3 +1,4 @@
+from venv import logger
 from tools.path import export_file_path
 from draws.kline_card import make_kline_card, save_img_file
 from draws.kline_theme import ThemeRegistry, KlineTheme
@@ -8,7 +9,7 @@ from datetime import datetime
 theme_name = "old_ticker_tape"
 
 # stock_info = get_stock_info_by_name("京东方A")
-code = "000725"
+code = "600390"
 stock_info = get_stock_info_by_code(code)
 latest_date = get_latest_date_by_code(code) or datetime.now()
 
@@ -19,4 +20,5 @@ img = make_kline_card(code=code, n=60, width=600, height=500, theme_name=theme_n
 file_path = export_file_path(filename=f"{name}({code})_{latest_date.strftime('%Y%m%d')}_card", format="png")
 
 save_img_file(img, file_path)
+print(f"Saved card to {file_path}")
 webbrowser.open(file_path.resolve().as_uri())

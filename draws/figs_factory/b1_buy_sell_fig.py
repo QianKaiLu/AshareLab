@@ -11,8 +11,26 @@ from draws.kline_theme import ThemeRegistry, KlineTheme
 from tools.colors import hex_to_rgba
 from draws.figs_factory.ploty_tools import compute_row_paper_domains, add_row_background
 from typing import Optional
+import numpy as np
+from dataclasses import dataclass, field
+from enum import Enum
 
-def ztalk_fig_v2(code: str, n: int = 60, width: int = 600, height: int = 600, to_date: Optional[str] = None, theme_name: str = "vintage_ticker") -> go.Figure:
+class TradeSide(Enum):
+    BUY = "buy"
+    SELL = "sell"
+
+class DrawType(Enum):
+    TagText = "tag_text"
+    VerticalLine = "line"
+
+@dataclass
+class TradeSignal:
+    date: str
+    side: TradeSide = TradeSide.BUY
+    price: Optional[float] = None
+    draw_type: DrawType = DrawType.TagText
+    
+def b1_buy_sell_fig(code: str, n: int = 60, width: int = 600, height: int = 600, to_date: Optional[str] = None, trade_signals: Optional[list[TradeSignal]] = None, theme_name: str = "vintage_ticker") -> go.Figure:
     theme = ThemeRegistry.get(name=theme_name)
     
     stock_info = get_stock_info_by_code(code)
@@ -33,16 +51,16 @@ def ztalk_fig_v2(code: str, n: int = 60, width: int = 600, height: int = 600, to
     df = df.tail(n)
 
     vertical_spacing = 0.05
-    row_heights = [0.5, 0.15, 0.2, 0.15]
+    row_heights = [0.6, 0.2, 0.18]
     fig = make_subplots(
-        rows=4, cols=1,
+        rows=3, cols=1,
         shared_xaxes=True,
         vertical_spacing=vertical_spacing,
         row_heights=row_heights
     )
     
     # dates = df['date'].dt.strftime('%m-%d').tolist()
-    dates = df['date'].dt.strftime('%m-%d').tolist()  # 或 '%Y-%m-%d' 看你喜好
+    dates = df['date'].dt.strftime('%m-%d').tolist()
     x_index = list(range(len(df)))
 
     smoothing = 1.0
@@ -68,22 +86,10 @@ def ztalk_fig_v2(code: str, n: int = 60, width: int = 600, height: int = 600, to
     fig.add_trace(
         go.Scatter(
             x=x_index, 
-            y=df['bbi'],
-            mode='lines',
-            name='bbi',
-            line=dict(color=theme.bbi_color, width=1.5, dash='dot', shape='spline', smoothing=smoothing),
-            showlegend=True
-        ),
-        row=1, col=1
-    )
-
-    fig.add_trace(
-        go.Scatter(
-            x=x_index, 
             y=df['z_white'], 
             mode='lines', 
             name='白线',
-            line=dict(color=theme.quick_line_color, width=1.2, dash='solid', shape='spline', smoothing=smoothing),
+            line=dict(color=theme.quick_line_color, width=1.2, dash='dot', shape='spline', smoothing=smoothing),
             showlegend=True
         ),
         row=1, col=1
@@ -100,6 +106,34 @@ def ztalk_fig_v2(code: str, n: int = 60, width: int = 600, height: int = 600, to
         ),
         row=1, col=1
     )
+
+    if trade_signals:
+        # 构建日期到索引的映射（df 的 date 是 datetime）
+        date_to_index = {
+            date.strftime('%Y-%m-%d'): i 
+            for i, date in enumerate(df['date'])
+        }
+
+        for signal in trade_signals:
+            if signal.date in date_to_index:
+                x = date_to_index[signal.date]
+                if signal.price is not None:
+                    y = signal.price
+                else:
+                    y = df['high'].iloc[x] if signal.side == TradeSide.BUY else df['low'].iloc[x]
+                text = "B" if signal.side == TradeSide.BUY else "S"
+                color = "green" if signal.side == TradeSide.BUY else "red"
+                
+                fig.add_annotation(
+                    x=x, y=y,
+                    text=text,
+                    showarrow=False,
+                    font=dict(color="white", size=10, weight="bold"),
+                    bgcolor=color,
+                    borderpad=2,  # 内边距
+                    ax=0, ay=0,
+                    row=1, col=1
+                )
 
     # Vol
     colors = [theme.up_color if c > o else theme.down_color for o, c in zip(df['open'], df['close'])]
@@ -139,70 +173,9 @@ def ztalk_fig_v2(code: str, n: int = 60, width: int = 600, height: int = 600, to
         xshift=5,
         row=2, col=1
     )
-    
-    # macd
-    macd_colors = [theme.up_color if val >= 0 else theme.down_color for val in df['macd_bar']]
-    fig.add_trace(
-        go.Bar(
-            x=x_index, 
-            y=df['macd_bar'], 
-            name='MACD Histogram', 
-            marker=dict(
-                color=macd_colors, 
-                opacity=1.0,
-                line=dict(width=0)
-            ),
-            width=0.3,
-            showlegend=False
-            ),
-        row=3, col=1
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=x_index, 
-            y=df['macd_dif'], 
-            mode='lines', 
-            name='DIF', 
-            line=dict(color=theme.line_color_0, width=1.2, shape='spline', smoothing=smoothing), 
-            showlegend=False
-            ),
-        row=3, col=1
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=x_index, 
-            y=df['macd_dea'], 
-            mode='lines', 
-            name='DEA', 
-            line=dict(color=theme.line_color_1, width=1.2, shape='spline', smoothing=smoothing), 
-            showlegend=False
-            ),
-        row=3, col=1
-    )
-    
-    last_idx = len(df) - 1
-    fig.add_annotation(
-        x=x_index[last_idx], 
-        y=df['macd_dif'].iloc[-1],
-        text="DIF",
-        showarrow=False,
-        xanchor='left',
-        font=dict(color=theme.line_color_0, size=10),
-        xshift=5,
-        row=3, col=1
-    )
-    fig.add_annotation(
-        x=x_index[last_idx], 
-        y=df['macd_dea'].iloc[-1],
-        text="DEA",
-        showarrow=False,
-        xanchor='left',
-        font=dict(color=theme.line_color_1, size=10),
-        xshift=5,
-        row=3, col=1
-    )
         
     # kdj
+    last_idx = len(df) - 1
     fig.add_trace(
         go.Scatter(
             x=x_index, 
@@ -211,7 +184,7 @@ def ztalk_fig_v2(code: str, n: int = 60, width: int = 600, height: int = 600, to
             name='K', 
             line=dict(color=theme.line_color_0, width=1, dash='dot', shape='spline', smoothing=smoothing), 
             showlegend=False),
-        row=4, col=1
+        row=3, col=1
     )
     fig.add_trace(
         go.Scatter(
@@ -222,7 +195,7 @@ def ztalk_fig_v2(code: str, n: int = 60, width: int = 600, height: int = 600, to
             line=dict(color=theme.line_color_1, width=1, dash='dot',shape='spline', smoothing=smoothing), 
             showlegend=False
             ),
-        row=4, col=1
+        row=3, col=1
     )
     fig.add_trace(
         go.Scatter(
@@ -233,7 +206,7 @@ def ztalk_fig_v2(code: str, n: int = 60, width: int = 600, height: int = 600, to
             line=dict(color=theme.line_color_2, width=1, shape='spline', smoothing=smoothing), 
             showlegend=False
             ),
-        row=4, col=1
+        row=3, col=1
     )
     fig.add_annotation(
         x=x_index[last_idx], 
@@ -243,7 +216,7 @@ def ztalk_fig_v2(code: str, n: int = 60, width: int = 600, height: int = 600, to
         xanchor='left',
         font=dict(color=theme.line_color_0, size=10),
         xshift=5,
-        row=4, col=1
+        row=3, col=1
     )
     fig.add_annotation(
         x=x_index[last_idx], 
@@ -253,7 +226,7 @@ def ztalk_fig_v2(code: str, n: int = 60, width: int = 600, height: int = 600, to
         xanchor='left',
         font=dict(color=theme.line_color_1, size=10),
         xshift=5,
-        row=4, col=1
+        row=3, col=1
     )
     fig.add_annotation(
         x=x_index[last_idx], 
@@ -263,12 +236,10 @@ def ztalk_fig_v2(code: str, n: int = 60, width: int = 600, height: int = 600, to
         xanchor='left',
         font=dict(color=theme.line_color_2, size=10),
         xshift=5,
-        row=4, col=1
+        row=3, col=1
     )
 
-    nticks = min(len(dates), 10)
-    step = max(1, len(dates) // nticks)
-    tick_indices = list(range(0, len(dates), step))
+    tick_indices = np.linspace(0, len(dates) - 1, num=min(10, len(dates)), endpoint=True, dtype=int)
     tick_labels = [dates[i] for i in tick_indices]
 
     fig.update_xaxes(
@@ -278,7 +249,7 @@ def ztalk_fig_v2(code: str, n: int = 60, width: int = 600, height: int = 600, to
         tickfont=dict(size=9, color=theme.text_color, family=theme.text_font),
         ticklen=5,
         tickwidth=1,
-        row=4, col=1
+        row=3, col=1
     )
     
     fig.update_layout(
@@ -343,20 +314,6 @@ def ztalk_fig_v2(code: str, n: int = 60, width: int = 600, height: int = 600, to
             tickformat=".2s"
         ),
         yaxis3=dict(
-            title='MACD', 
-            title_standoff=6, 
-            title_font = dict(size=10, color=theme.text_color),
-            tickfont = dict(size=9, color=theme.text_color, family="Courier New, monospace"),
-            nticks=4,
-            showgrid=True,
-            gridcolor=theme.grid_color, 
-            griddash='dot',
-            zeroline=False,
-            zerolinecolor=theme.grid_color,
-            zerolinewidth=0.5,
-            fixedrange=True
-            ),
-        yaxis4=dict(
             title='KDJ', 
             title_standoff=6, 
             title_font = dict(size=10, color=theme.text_color),
@@ -367,7 +324,7 @@ def ztalk_fig_v2(code: str, n: int = 60, width: int = 600, height: int = 600, to
             zeroline=False,
             fixedrange=True
             ),
-        xaxis4=dict(
+        xaxis3=dict(
             showgrid=False,
             zeroline=False,
             showticklabels=True,
@@ -381,5 +338,9 @@ def ztalk_fig_v2(code: str, n: int = 60, width: int = 600, height: int = 600, to
     return fig
 
 if __name__ == "__main__":
-    fig = ztalk_fig_v2(code='002970', n=60, width=600, height=800, theme_name="desert_dusk")
+    trade_signals = [
+        TradeSignal(date="2025-11-12", side=TradeSide.BUY, draw_type=DrawType.VerticalLine),
+        TradeSignal(date="2026-01-20", side=TradeSide.SELL, draw_type=DrawType.TagText)
+    ]
+    fig = b1_buy_sell_fig(code='002970', n=60, width=600, height=800, trade_signals=trade_signals, theme_name="desert_dusk")
     fig.show()

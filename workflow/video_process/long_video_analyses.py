@@ -13,7 +13,7 @@ import os
 
 logger = get_analyze_logger()
 
-video_path = EXPORT_PATH / "2025-10-06 三大高爆发力的B2买入法-弹幕版3.mp4"
+video_path = EXPORT_PATH / "jcdsp0.mp4"
 name = video_path.stem
 
 # video_url = "https://www.bilibili.com/video/BV1ZBkxB6EA6?spm_id_from=333.788.recommend_more_video.-1&trackid=web_related_0.router-related-2206419-kqnfh.1768739942987.291&vd_source=442a5d658bc897c6e7d62a5abe9ddb13"

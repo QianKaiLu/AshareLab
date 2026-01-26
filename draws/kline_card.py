@@ -47,7 +47,7 @@ def make_kline_card(code: str, n: int = 60, width: int = 600, height: int = 800,
     img = add_rounded_rectangle_border(img, radius=20, border_color=theme.card_border_color, border_width=5)
     return img
     
-def save_img_file(img: Image.Image, path: Path):
+def save_img_file(img: Image.Image, path: Path) -> None:
     img.save(path, format="PNG")
     
 def card_to_base64(img: Image.Image) -> str:

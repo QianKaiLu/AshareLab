@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 import pandas as pd
 
-def ms_timestamp_to_date(timestamp):
+def ms_timestamp_to_date(timestamp) -> Optional[str]:
     """
     Convert milliseconds timestamp to date string in 'YYYY-MM-DD' format.
     """

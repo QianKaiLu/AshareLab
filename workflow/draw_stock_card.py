@@ -9,7 +9,7 @@ from datetime import datetime
 theme_name = "old_ticker_tape"
 
 # stock_info = get_stock_info_by_name("京东方A")
-code = "600390"
+code = "601869"
 stock_info = get_stock_info_by_code(code)
 latest_date = get_latest_date_by_code(code) or datetime.now()
 

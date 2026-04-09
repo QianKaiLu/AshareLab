@@ -7,7 +7,7 @@ from datetime import datetime
 from draws.card_list.card_list_factory import render_card_list_to_file
 from dataclasses import dataclass, field
 
-theme_name = "dark_minimal"
+theme_name = "deep_ocean"
 
 @dataclass
 class Scope:
@@ -28,7 +28,7 @@ aidi_scope = Scope(
 )
 
 sf_scope = Scope(
-    codes="300459,300840,300251,000983,300963,603757,600755".split(","),
+    codes="603988,688396,603015,300101,301043".split(","),
     title="今日 B1",
     note=""
 )

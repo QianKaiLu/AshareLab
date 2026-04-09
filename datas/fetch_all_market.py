@@ -48,7 +48,7 @@ def worker_fetch_stock_and_queue(code: str, result_queue: Queue, source: str = "
         to_date = latest_trade_day()
 
         if latest_date.date() >= to_date:
-            logger.info(f"No update needed for {code}, latest date {latest_date.date()} is up-to-date.")
+            # logger.info(f"No update needed for {code}, latest date {latest_date.date()} is up-to-date.")
             return True
         previous_day = latest_date - pd.Timedelta(days=30)
         

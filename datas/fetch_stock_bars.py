@@ -111,7 +111,7 @@ def fetch_daily_bar_from_akshare(
 
         start_str = df['date'].min().strftime("%Y-%m-%d")
         end_str = df['date'].max().strftime("%Y-%m-%d")
-        logger.info(f"Fetched {len(df)} daily bars for {code} [{start_str} ~ {end_str}]")
+        # logger.info(f"Fetched {len(df)} daily bars for {code} [{start_str} ~ {end_str}]")
 
         return df
     except Exception as e:
@@ -220,7 +220,7 @@ def fetch_daily_bar_from_tushare(
 
         start_str = df['date'].min().strftime("%Y-%m-%d")
         end_str = df['date'].max().strftime("%Y-%m-%d")
-        logger.info(f"Fetched {len(df)} daily bars for {code} [{start_str} ~ {end_str}]")
+        # logger.info(f"Fetched {len(df)} daily bars for {code} [{start_str} ~ {end_str}]")
 
         return df
     except Exception as e:
@@ -278,7 +278,7 @@ def save_daily_bars_to_database(df: pd.DataFrame):
                 method=upsert_method,
                 chunksize=5000
             )
-            logger.info(f"💾 Upserted {len(write_df)} records into {DAILY_BAR_TABLE}")
+            # logger.info(f"💾 Upserted {len(write_df)} records into {DAILY_BAR_TABLE}")
         except Exception as e:
             logger.error(f"💔 Failed to upsert bars: {e}", exc_info=True)
 
@@ -303,7 +303,7 @@ def update_daily_bars_for_code(
     to_date = latest_trade_day()
     
     if latest_date.date() >= to_date:
-        logger.info(f"No update needed for {code}, latest date {latest_date.date()} is up-to-date.")
+        # logger.info(f"No update needed for {code}, latest date {latest_date.date()} is up-to-date.")
         return
 
     previous_day = latest_date - pd.Timedelta(days=5)

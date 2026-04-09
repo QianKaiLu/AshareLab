@@ -148,8 +148,8 @@ ThemeRegistry.register(KlineTheme(
 # 深海幽蓝 - 深色背景配合明亮线条，科技感强
 ThemeRegistry.register(KlineTheme(
     name="deep_ocean",
-    up_color="#00B4D8",       # 明亮的青蓝（涨）
-    down_color="#FF6B6B",     # 珊瑚红（跌）
+    up_color="#FF6B6B",       # 明亮的青蓝（涨）
+    down_color="#00B4D8",     # 珊瑚红（跌）
     bbi_color="#FFD166",      # 金黄 - 与主色形成强对比
     macd_color="#9D4EDD",     # 紫色 - 明显区别于主色
     quick_line_color="#4CC9F0", # 浅蓝 - 快速线

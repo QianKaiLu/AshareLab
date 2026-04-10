@@ -14,6 +14,7 @@ from typing import Optional
 import numpy as np
 from dataclasses import dataclass, field
 from enum import Enum
+import pandas as pd
 
 class TradeSide(Enum):
     BUY = "buy"
@@ -108,33 +109,37 @@ def b1_buy_sell_fig(code: str, n: int = 60, width: int = 600, height: int = 600,
     )
 
     if trade_signals:
-        # 构建日期到索引的映射（df 的 date 是 datetime）
-        date_to_index = {
-            date.strftime('%Y-%m-%d'): i 
-            for i, date in enumerate(df['date'])
-        }
-
         for signal in trade_signals:
-            if signal.date in date_to_index:
-                x = date_to_index[signal.date]
+            target_date = pd.to_datetime(signal.date)
+            target_indexs = df.index[df['date'] == target_date]
+            if not target_indexs.empty:
+                x = target_indexs[0]
                 if signal.price is not None:
                     y = signal.price
                 else:
-                    y = df['high'].iloc[x] if signal.side == TradeSide.BUY else df['low'].iloc[x]
-                text = "B" if signal.side == TradeSide.BUY else "S"
-                color = "green" if signal.side == TradeSide.BUY else "red"
+                    y = df.at[x, 'open'] if signal.side == TradeSide.BUY else df.at[x, 'close']
                 
-                fig.add_annotation(
-                    x=x, y=y,
-                    text=text,
-                    showarrow=False,
-                    font=dict(color="white", size=10, weight="bold"),
-                    bgcolor=color,
-                    borderpad=2,  # 内边距
-                    ax=0, ay=0,
-                    row=1, col=1
-                )
-
+                if signal.draw_type == DrawType.VerticalLine:
+                    fig.add_vline(
+                        x=x,
+                        line=dict(color="green" if signal.side == TradeSide.BUY else "red", width=1, dash="dot"),
+                        row=1, col=1
+                    )
+                elif signal.draw_type == DrawType.TagText:
+                    text = "Buy" if signal.side == TradeSide.BUY else "Sell"
+                    color = "green" if signal.side == TradeSide.BUY else "red"
+                    
+                    fig.add_annotation(
+                        x=x, y=y,
+                        text=text,
+                        showarrow=False,
+                        font=dict(color="white", size=10, weight="bold"),
+                        bgcolor=color,
+                        borderpad=2,  # 内边距
+                        ax=0, ay=0,
+                        row=1, col=1
+                    )
+                    
     # Vol
     colors = [theme.up_color if c > o else theme.down_color for o, c in zip(df['open'], df['close'])]
     fig.add_trace(

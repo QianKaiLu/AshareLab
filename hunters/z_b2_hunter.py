@@ -15,32 +15,8 @@ from datetime import datetime
 
 logger = get_analyze_logger()
 
-# KDJ 指标中 J 值的阈值
-kdj_threshold = 13  
-# 检查日允许的最大价格涨幅（百分比）
-max_up_pct = 0.018  
-# 检查日允许的最大价格跌幅（百分比）
-min_down_pct = -0.02  
-# 如果 J 值趋于平缓，则其必须低于此值
-kdj_up_threshold = 20  
-# 长期成本线（黄线）的阈值（以收盘价与黄线的比值表示）
-yellow_line_threshold = 0.99  
-# 在最近 N 个交易日内寻找放量突破点
-search_window = 30  
-# 突破前的盘整天数
-consolidation_days = 5  
-# 盘整期间价格波动范围上限（相对于最低价的百分比）
-consolidation_box_pct = 0.3  
-# 突破时所需成交量倍数（相对于盘整期均量）
-explosion_vol_multiplier = 2  
-# 突破后阳线成交量与阴线成交量的比值要求（"红肥绿瘦"）
-vol_ratio_threshold = 1.2  
-# 突破后下跌日成交量上限（相对于突破期间最大成交量的比例）
-vol_shrink_threshold = 0.6  
 
-# LOG_FAIL_REASONS = True
-
-def hunt_b1(df: pd.DataFrame) -> Optional[dict]:
+def hunt_b2(df: pd.DataFrame) -> Optional[dict]:
     # 处理空数据
     if df is None or df.empty:
         logger.warning("DataFrame 为空或为 None。")
@@ -354,7 +330,7 @@ def main():
         logger.info(f"{result.format_info}")
 
     hunter = HuntMachine(max_workers=20, on_result_found=print_result)
-    pool = target_pool
+    pool = ten_perfect_pool
     
     # 执行选股
     results: list[HuntResult] = hunter.hunt(hunt_b1, min_bars=500, hunt_pool=None)

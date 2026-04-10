@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(pip3 show:*)",
+      "Bash(ls /Users/qianqian/stock/AshareLab/notion/*.txt /Users/qianqian/stock/AshareLab/notion/*.toml /Users/qianqian/stock/AshareLab/notion/*.cfg)",
+      "Bash(python:*)",
+      "Bash(pip list:*)",
+      "Bash(pip install:*)",
+      "Read(//Users/qianqian/stock/AshareLab/**)",
+      "Bash(grep -r \"def.*->\" /Users/qianqian/stock/AshareLab/tools/*.py)"
+    ]
+  }
+}

@@ -1,47 +1,38 @@
 import os
-from notion_client import Client, AsyncClient
 from dotenv import load_dotenv
 import asyncio
+from notion_client_wrapper import NotionClient
+from url_to_markdown import batch_url_to_markdown
+from tools.log import get_analyze_logger
 
 load_dotenv()
 NOTION_TOKEN = os.getenv("NOTION_TOKEN", default="")
-notion = Client(auth=NOTION_TOKEN)
 
-def verify_notion_connection():
-    try:
-        response = notion.users.me()
-        print("Successfully connected to Notion!")
-        print(f"User ID: {response['id']}")
-        print(f"User Name: {response['name']}")
-    except Exception as e:
-        print("Failed to connect to Notion.")
-        print(f"Error: {e}")
+notionClient = NotionClient(token=NOTION_TOKEN)
+logger = get_analyze_logger()
 
-async def verify_notion_connection_async() -> bool:
-    async_notion = AsyncClient(auth=NOTION_TOKEN)
-    try:
-        response = await async_notion.users.me()
-        print(response)
-        if response['id'] is not None:
-            return True
-        else:
-            return False
-
-    except Exception as e:
-        return False
-    
-def fetch_notion_databases(database_id: str = None):
-    query_payload = {
-        "database_id": database_id,
-        "filter": {
-            "and":
-        },
-        "sorts":
-    }
-    
-    # 调用 Database Query 接口 
-    response = notion.databases.query(**query_payload)
-    print(response)
+async def test():
+    test_urls = [
+        "https://mp.weixin.qq.com/s/voh2WPGcU2J990qZZk4row",
+        # "https://www.ruanyifeng.com/blog/2024/07/weekly-issue-308.html",
+    ]
+    results = await batch_url_to_markdown(test_urls[0])
+    r = results[0]
+    if r.success:
+        logger.info(f"Successfully fetched and converted URL to markdown:")
+        logger.info(f"  Title: {r.title}")
+        logger.info(f"  Length: {len(r.markdown)} chars")
+        markdown = r.markdown
+        # logger.info(f"  Markdown preview:\n{markdown[:500]}...")
+        
+        result = notionClient.create_page_from_markdown(
+            markdown=markdown,
+            parent_page_id="32225008aa4280a3a9b2e7f956e88286",
+            title=r.title)
+        
+        logger.info(f"Notion page creation result: {result}")
+    else:
+        logger.error(f"  Error: {r.error}")
 
 if __name__ == "__main__":
-    fetch_notion_databases(database_id='349b4139bc644bf2884ecc28959bdacc')
+    asyncio.run(test())

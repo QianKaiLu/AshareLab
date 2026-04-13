@@ -4,6 +4,7 @@ import asyncio
 from notion.notion_client import NotionClient
 from url_to_markdown import batch_url_to_markdown
 from tools.log import get_analyze_logger
+from markdown.markdown_ai_flush import markdown_ai_flush
 
 load_dotenv()
 NOTION_TOKEN = os.getenv("NOTION_TOKEN", default="")
@@ -22,11 +23,16 @@ async def test():
         logger.info(f"Successfully fetched and converted URL to markdown:")
         logger.info(f"  Title: {r.title}")
         logger.info(f"  Length: {len(r.markdown)} chars")
-        markdown = r.markdown
-        # logger.info(f"  Markdown preview:\n{markdown[:500]}...")
+        
+        ai_result = markdown_ai_flush(r.markdown)
+        if ai_result:
+            logger.info(f"Successfully flushed markdown content with AI. Length: {len(ai_result)} chars")
+            r.markdown = ai_result
+        else:
+            logger.warning(f"AI flushing returned no content, using original markdown.")
         
         result = notionClient.create_page_from_markdown(
-            markdown=markdown,
+            markdown=r.markdown,
             parent_page_id="2f625008aa42803397fed440bca00ae9",
             title=r.title)
         logger.info(f"Notion page creation result: {result}")

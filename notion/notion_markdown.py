@@ -6,8 +6,6 @@ Markdown loading and preprocessing utilities.
 import re
 from pathlib import Path
 from typing import Union, Optional
-from notion_client import AsyncClient
-
 
 def load_markdown(source: Union[str, Path]) -> str:
     # 如果是 Path 对象，直接按路径处理

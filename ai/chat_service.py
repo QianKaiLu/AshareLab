@@ -25,6 +25,8 @@ class ChatResult:
     model: str = ""
     usage: Optional[dict] = None
     finish_reason: str = ""
+    success: bool = True 
+    error_message: Optional[str] = None
 
 
 def chat(
@@ -33,25 +35,16 @@ def chat(
     profile: Optional[ApiProfile] = None,
     config: Optional[ChatConfig] = None,
 ) -> ChatResult:
-    """
-    Unified AI chat interface.
-
-    Args:
-        prompt: System message text.
-        contents: List of strings, each becomes an independent user message.
-        profile: API provider config. Defaults to QWEN_MAX().
-        config: Runtime options (stream, thinking, print, etc.). Defaults to ChatConfig().
-
-    Returns:
-        ChatResult with content, optional thinking_content, model, usage, finish_reason.
-    """
     if profile is None:
         profile = QWEN_MAX()
     if config is None:
         config = ChatConfig()
 
     if not profile.api_key:
-        raise ValueError(f"{profile.name} API_KEY is not set in environment variables.")
+        return ChatResult(
+            success=False,
+            error_message=f"{profile.name} API_KEY is not set in environment variables."
+        )
 
     client = OpenAI(api_key=profile.api_key, base_url=profile.base_url)
 
@@ -65,10 +58,15 @@ def chat(
     if config.max_tokens is not None:
         extra_params["max_tokens"] = config.max_tokens
 
-    if config.stream:
-        return _chat_stream(client, profile, messages, config, extra_params)
-    else:
-        return _chat_sync(client, profile, messages, config, extra_params)
+    try:
+        if config.stream:
+            return _chat_stream(client, profile, messages, config, extra_params)
+        else:
+            return _chat_sync(client, profile, messages, config, extra_params)
+    except Exception as e:
+        error_msg = f"AI call failed: {type(e).__name__}: {e}"
+        logger.error(error_msg)
+        return ChatResult(success=False, error_message=error_msg)
 
 
 def _chat_sync(
@@ -148,7 +146,7 @@ def _chat_stream(
         if delta.content:
             content += delta.content
             if config.print_output:
-                logger.info(f"\rReceived data length: {len(content):<10}", end="", flush=True)
+                print(f"\rAI gate received data length: {len(content):<10}", end="", flush=True)
 
         if config.thinking:
             reasoning = getattr(delta, "reasoning_content", None)

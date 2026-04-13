@@ -8,7 +8,9 @@
       "Bash(pip list:*)",
       "Bash(pip install:*)",
       "Read(//Users/qianqian/stock/AshareLab/**)",
-      "Bash(grep -r \"def.*->\" /Users/qianqian/stock/AshareLab/tools/*.py)"
+      "Bash(grep -r \"def.*->\" /Users/qianqian/stock/AshareLab/tools/*.py)",
+      "Bash(/opt/homebrew/Caskroom/miniforge/base/envs/stock/bin/python -c \"from notion import NotionClient, AsyncNotionClient; print\\('package import: OK'\\)\")",
+      "Bash(/opt/homebrew/Caskroom/miniforge/base/envs/stock/bin/python:*)"
     ]
   }
 }

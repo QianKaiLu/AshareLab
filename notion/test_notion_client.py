@@ -1,286 +1,173 @@
 """
 test_notion_client.py
-Test script for Notion API client wrapper.
 
 Usage:
-    1. Set NOTION_TOKEN in .env file
-    2. Set TEST_PAGE_ID to a valid parent page ID
-    3. Run: python notion/test_notion_client.py
+    1. Set NOTION_TOKEN in .env
+    2. Set TEST_PAGE_ID below
+    3. python3 -m notion.test_notion_client       (from project root)
 """
 
 import os
+import sys
 import asyncio
+import logging
 from pathlib import Path
+
 from dotenv import load_dotenv
 
-# Add parent directory to path for imports
-import sys
-sys.path.append(str(Path(__file__).parent.parent))
+# Add project root so ``from notion import ...`` works when run as script
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from notion import NotionClient, AsyncNotionClient, NotionPageRequest, NotionParent
 
-# Load environment variables
 load_dotenv()
 NOTION_TOKEN = os.getenv("NOTION_TOKEN", "")
 
-# IMPORTANT: Replace with your actual parent page ID
+# ⬇️ Replace with a real parent page ID to run live tests
 TEST_PAGE_ID = "YOUR_PAGE_ID_HERE"
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(message)s")
+
+
+# ---------------------------------------------------------------------------
+# Tests
+# ---------------------------------------------------------------------------
+
+def _skip() -> bool:
+    if not NOTION_TOKEN:
+        print("  skipped (no NOTION_TOKEN)")
+        return True
+    if TEST_PAGE_ID == "YOUR_PAGE_ID_HERE":
+        print("  skipped (set TEST_PAGE_ID)")
+        return True
+    return False
 
 
 def test_sync_basic():
-    """Test synchronous client with basic markdown string."""
-    print("\n=== Test 1: Sync Client - Basic Markdown ===")
-
-    if not NOTION_TOKEN:
-        print("❌ NOTION_TOKEN not found in .env")
+    print("\n--- sync: basic markdown ---")
+    if _skip():
         return
 
-    if TEST_PAGE_ID == "YOUR_PAGE_ID_HERE":
-        print("⚠️  Please set TEST_PAGE_ID in test_notion_client.py")
+    with NotionClient(NOTION_TOKEN) as client:
+        result = client.create_page_from_markdown(
+            markdown="# Sync Test\n\nHello from sync client.\n\n- a\n- b\n- c",
+            parent_page_id=TEST_PAGE_ID,
+        )
+    print(f"  {'OK' if result.success else 'FAIL'}  {result.page_id or result.error}")
+
+
+def test_sync_explicit_title():
+    print("\n--- sync: explicit title ---")
+    if _skip():
         return
 
-    client = NotionClient(NOTION_TOKEN)
-
-    markdown = """# Test Page from Sync Client
-
-This is a test page created by the NotionClient.
-
-## Features
-
-- Markdown support
-- Automatic title extraction
-- Error handling
-
-## Code Example
-
-```python
-client = NotionClient(token)
-result = client.create_page_from_markdown(markdown, parent_page_id="...")
-```
-
-**Status:** ✅ Working
-"""
-
-    result = client.create_page_from_markdown(
-        markdown=markdown,
-        parent_page_id=TEST_PAGE_ID
-    )
-
-    if result.success:
-        print(f"✅ Sync test passed")
-        print(f"   Page ID: {result.page_id}")
-        print(f"   URL: {result.url}")
-        print(f"   Title: {result.title}")
-    else:
-        print(f"❌ Sync test failed: {result.error}")
-
-
-def test_sync_with_title():
-    """Test synchronous client with explicit title."""
-    print("\n=== Test 2: Sync Client - Explicit Title ===")
-
-    if not NOTION_TOKEN or TEST_PAGE_ID == "YOUR_PAGE_ID_HERE":
-        print("⚠️  Skipping (configure NOTION_TOKEN and TEST_PAGE_ID)")
-        return
-
-    client = NotionClient(NOTION_TOKEN)
-
-    markdown = """This page has no H1 heading.
-
-But it has an explicit title set via the API parameter.
-
-- Item 1
-- Item 2
-- Item 3
-"""
-
-    result = client.create_page_from_markdown(
-        markdown=markdown,
-        parent_page_id=TEST_PAGE_ID,
-        title="Custom Title Test"
-    )
-
-    if result.success:
-        print(f"✅ Title test passed")
-        print(f"   Page ID: {result.page_id}")
-        print(f"   Title: {result.title}")
-    else:
-        print(f"❌ Title test failed: {result.error}")
+    with NotionClient(NOTION_TOKEN) as client:
+        result = client.create_page_from_markdown(
+            markdown="No H1 heading here.\n\nJust some content.",
+            parent_page_id=TEST_PAGE_ID,
+            title="Explicit Title",
+        )
+    print(f"  {'OK' if result.success else 'FAIL'}  {result.page_id or result.error}")
 
 
 def test_sync_from_file():
-    """Test synchronous client loading markdown from file."""
-    print("\n=== Test 3: Sync Client - Load from File ===")
-
-    if not NOTION_TOKEN or TEST_PAGE_ID == "YOUR_PAGE_ID_HERE":
-        print("⚠️  Skipping (configure NOTION_TOKEN and TEST_PAGE_ID)")
+    print("\n--- sync: from file ---")
+    if _skip():
         return
 
-    # Create a temporary markdown file
-    test_file = Path(__file__).parent / "test_temp.md"
-    test_file.write_text("""# File-based Test
-
-This content was loaded from a markdown file.
-
-## Details
-
-- File path: test_temp.md
-- Loaded automatically by the client
-- Cleaned up after test
-""", encoding='utf-8')
-
+    tmp = Path(__file__).parent / "_test_tmp.md"
+    tmp.write_text("# File Test\n\nLoaded from disk.", encoding="utf-8")
     try:
-        client = NotionClient(NOTION_TOKEN)
-
-        result = client.create_page_from_markdown(
-            markdown=test_file,
-            parent_page_id=TEST_PAGE_ID
-        )
-
-        if result.success:
-            print(f"✅ File test passed")
-            print(f"   Page ID: {result.page_id}")
-            print(f"   Title: {result.title}")
-        else:
-            print(f"❌ File test failed: {result.error}")
+        with NotionClient(NOTION_TOKEN) as client:
+            result = client.create_page_from_markdown(
+                markdown=tmp, parent_page_id=TEST_PAGE_ID,
+            )
+        print(f"  {'OK' if result.success else 'FAIL'}  {result.page_id or result.error}")
     finally:
-        # Clean up temp file
-        if test_file.exists():
-            test_file.unlink()
+        tmp.unlink(missing_ok=True)
 
 
 async def test_async_basic():
-    """Test asynchronous client."""
-    print("\n=== Test 4: Async Client - Basic ===")
-
-    if not NOTION_TOKEN or TEST_PAGE_ID == "YOUR_PAGE_ID_HERE":
-        print("⚠️  Skipping (configure NOTION_TOKEN and TEST_PAGE_ID)")
+    print("\n--- async: basic ---")
+    if _skip():
         return
 
-    client = AsyncNotionClient(NOTION_TOKEN)
-
-    markdown = """# Async Test Page
-
-This page was created using the AsyncNotionClient.
-
-## Async Features
-
-- Non-blocking I/O
-- Batch processing support
-- Concurrent page creation
-
-**Created:** via async/await
-"""
-
-    result = await client.create_page_from_markdown(
-        markdown=markdown,
-        parent_page_id=TEST_PAGE_ID
-    )
-
-    if result.success:
-        print(f"✅ Async test passed")
-        print(f"   Page ID: {result.page_id}")
-        print(f"   URL: {result.url}")
-    else:
-        print(f"❌ Async test failed: {result.error}")
+    async with AsyncNotionClient(NOTION_TOKEN) as client:
+        result = await client.create_page_from_markdown(
+            markdown="# Async Test\n\nHello from async client.",
+            parent_page_id=TEST_PAGE_ID,
+        )
+    print(f"  {'OK' if result.success else 'FAIL'}  {result.page_id or result.error}")
 
 
 async def test_async_batch():
-    """Test asynchronous batch creation."""
-    print("\n=== Test 5: Async Client - Batch Creation ===")
-
-    if not NOTION_TOKEN or TEST_PAGE_ID == "YOUR_PAGE_ID_HERE":
-        print("⚠️  Skipping (configure NOTION_TOKEN and TEST_PAGE_ID)")
+    print("\n--- async: batch (3 pages) ---")
+    if _skip():
         return
 
-    client = AsyncNotionClient(NOTION_TOKEN)
+    async with AsyncNotionClient(NOTION_TOKEN) as client:
+        reqs = [
+            NotionPageRequest(
+                markdown=f"# Batch {i+1}\n\nPage {i+1} of 3.",
+                parent=NotionParent(type="page_id", id=TEST_PAGE_ID),
+            )
+            for i in range(3)
+        ]
+        results = await client.batch_create_pages(reqs)
 
-    # Create 3 pages concurrently
-    requests = [
-        NotionPageRequest(
-            markdown=f"# Batch Test {i+1}\n\nThis is page {i+1} of 3 created concurrently.",
-            parent=NotionParent(type="page_id", id=TEST_PAGE_ID),
-            title=f"Batch Page {i+1}"
-        )
-        for i in range(3)
-    ]
-
-    results = await client.batch_create_pages(requests, max_concurrent=3)
-
-    success_count = sum(1 for r in results if r.success)
-    print(f"✅ Batch test: {success_count}/{len(results)} pages created")
-
-    for i, result in enumerate(results):
-        if result.success:
-            print(f"   Page {i+1}: {result.page_id}")
-        else:
-            print(f"   Page {i+1}: Failed - {result.error}")
+    ok = sum(r.success for r in results)
+    print(f"  {ok}/{len(results)} created")
 
 
 def test_error_handling():
-    """Test error handling with invalid parameters."""
-    print("\n=== Test 6: Error Handling ===")
-
+    print("\n--- error handling ---")
     if not NOTION_TOKEN:
-        print("⚠️  Skipping (configure NOTION_TOKEN)")
+        print("  skipped (no NOTION_TOKEN)")
         return
 
     client = NotionClient(NOTION_TOKEN)
 
-    # Test 1: No parent specified
+    # no parent → ValueError
     try:
-        result = client.create_page_from_markdown(
-            markdown="# Test",
-            parent_page_id=None,
-            parent_data_source_id=None
-        )
-        print(f"   Test 1 (no parent): {'❌ Should have raised error' if result.success else '✅ Correctly failed'}")
-    except ValueError as e:
-        print(f"   Test 1 (no parent): ✅ Correctly raised ValueError")
+        client.create_page_from_markdown(markdown="# x")
+        print("  no-parent check: FAIL (no exception)")
+    except ValueError:
+        print("  no-parent check: OK")
 
-    # Test 2: Both parents specified
+    # both parents → ValueError
     try:
-        result = client.create_page_from_markdown(
-            markdown="# Test",
-            parent_page_id="123",
-            parent_data_source_id="456"
+        client.create_page_from_markdown(
+            markdown="# x", parent_page_id="a", parent_data_source_id="b",
         )
-        print(f"   Test 2 (both parents): {'❌ Should have raised error' if result.success else '✅ Correctly failed'}")
-    except ValueError as e:
-        print(f"   Test 2 (both parents): ✅ Correctly raised ValueError")
+        print("  both-parents check: FAIL (no exception)")
+    except ValueError:
+        print("  both-parents check: OK")
 
-    # Test 3: Invalid page ID (should return error result, not raise)
+    # invalid page id → API error in result
     result = client.create_page_from_markdown(
-        markdown="# Test",
-        parent_page_id="invalid-id-12345"
+        markdown="# x", parent_page_id="0000000000000000",
     )
-    if not result.success and result.error:
-        print(f"   Test 3 (invalid ID): ✅ Returned error result")
-    else:
-        print(f"   Test 3 (invalid ID): ❌ Should have failed")
+    print(f"  invalid-id check: {'OK' if not result.success else 'FAIL'}")
 
+    client.close()
+
+
+# ---------------------------------------------------------------------------
 
 def main():
-    """Run all tests."""
-    print("=" * 60)
-    print("Notion Client Test Suite")
-    print("=" * 60)
+    print("=" * 50)
+    print("Notion Client Tests")
+    print("=" * 50)
 
-    # Sync tests
     test_sync_basic()
-    test_sync_with_title()
+    test_sync_explicit_title()
     test_sync_from_file()
-
-    # Async tests
     asyncio.run(test_async_basic())
     asyncio.run(test_async_batch())
-
-    # Error handling
     test_error_handling()
 
-    print("\n" + "=" * 60)
-    print("Test suite completed")
-    print("=" * 60)
+    print("\n" + "=" * 50)
+    print("Done")
 
 
 if __name__ == "__main__":

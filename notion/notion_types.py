@@ -3,8 +3,8 @@ notion_types.py
 Type definitions and dataclasses for Notion API integration.
 """
 
-from dataclasses import dataclass
-from typing import Optional, Literal
+from dataclasses import dataclass, field
+from typing import Optional, Literal, Any
 
 
 @dataclass
@@ -26,15 +26,26 @@ class NotionParent:
     id: str
 
     def to_dict(self) -> dict:
-        """Convert to Notion API format."""
-        return {"type": self.type, self.type: self.id}
+        return {self.type: self.id}
 
 
 @dataclass
 class NotionPageRequest:
-    """Request parameters for creating a Notion page."""
+    """Batch request item for creating a Notion page."""
 
     markdown: str
     parent: NotionParent
     title: Optional[str] = None
     properties: Optional[dict] = None
+
+
+@dataclass
+class NotionAPIError:
+    """Parsed Notion API error response."""
+
+    status: int
+    code: str = ""
+    message: str = ""
+
+    def __str__(self) -> str:
+        return f"[{self.status}] {self.code}: {self.message}"

@@ -1,11 +1,12 @@
 """
-Notion API integration package for AshareLab.
+Notion API integration package.
 
-Provides sync and async clients for creating Notion pages from markdown content.
+Built on httpx – no notion-client dependency.
 """
 
-from .notion_client_wrapper import NotionClient, AsyncNotionClient
-from .notion_types import NotionPageResult, NotionParent, NotionPageRequest
+from notion.notion_client import NotionClient, AsyncNotionClient
+from notion_types import NotionPageResult, NotionParent, NotionPageRequest
+    
 
 __all__ = [
     "NotionClient",

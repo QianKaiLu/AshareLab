@@ -1,14 +1,14 @@
 import os
 from dotenv import load_dotenv
 import asyncio
-from notion_client_wrapper import NotionClient
+from notion.notion_client import NotionClient
 from url_to_markdown import batch_url_to_markdown
 from tools.log import get_analyze_logger
 
 load_dotenv()
 NOTION_TOKEN = os.getenv("NOTION_TOKEN", default="")
 
-notionClient = NotionClient(token=NOTION_TOKEN)
+notionClient = NotionClient(token=NOTION_TOKEN, timeout=30)
 logger = get_analyze_logger()
 
 async def test():
@@ -27,9 +27,8 @@ async def test():
         
         result = notionClient.create_page_from_markdown(
             markdown=markdown,
-            parent_page_id="32225008aa4280a3a9b2e7f956e88286",
+            parent_page_id="2f625008aa42803397fed440bca00ae9",
             title=r.title)
-        
         logger.info(f"Notion page creation result: {result}")
     else:
         logger.error(f"  Error: {r.error}")

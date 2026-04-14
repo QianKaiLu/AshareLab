@@ -11,8 +11,8 @@ from tools.path import export_file_path, EXPORT_PATH
 logger = get_analyze_logger()
 
 # input parameters
-code = '002970'
-from_date = '20250102'
+code = '603757'
+from_date = '20250602'
 
 stock_info = get_stock_info_by_code(code)
 if stock_info is not None and not stock_info.empty:

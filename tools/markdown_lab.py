@@ -10,7 +10,7 @@ from typing import Optional
 import re
 import base64
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 
 logger = get_analyze_logger()
 
@@ -184,27 +184,31 @@ def preprocess_markdown(md: str) -> str:
 
     return md
 
+
 def convert_local_images_to_base64(html: str) -> str:
     soup = BeautifulSoup(html, "html.parser")
 
     for img in soup.find_all("img"):
         src = img.get("src", "")
 
-        # 如果是 file:// 或本地路径，则转换
-        parsed = urlparse(src)
+        local_path = None
         if src.startswith("file://"):
-            local_path = parsed.path
+            raw_path = urlparse(src).path
+            local_path = unquote(raw_path)
         elif os.path.exists(src):
             local_path = src
         else:
-            continue  # http 或其他正常 URL 不处理
+            continue
 
-        try:
-            with open(local_path, "rb") as f:
-                b64 = base64.b64encode(f.read()).decode("utf-8")
-                img["src"] = f"data:image/png;base64,{b64}"
-        except Exception as e:
-            print(f"⚠️ Failed to load image {src}: {e}")
+        if local_path and os.path.exists(local_path):
+            try:
+                with open(local_path, "rb") as f:
+                    b64 = base64.b64encode(f.read()).decode("utf-8")
+                    img["src"] = f"data:image/png;base64,{b64}"
+            except Exception as e:
+                print(f"⚠️ Failed to load image {src}: {e}")
+        else:
+            print(f"⚠️ Image file not found: {local_path or src}")
 
     return str(soup)
 

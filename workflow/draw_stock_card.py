@@ -6,11 +6,15 @@ from datas.query_stock import get_stock_info_by_code, get_stock_info_by_name, ge
 import webbrowser
 from datetime import datetime
 
-theme_name = "old_ticker_tape"
+theme_name = "deep_ocean"
 
-# stock_info = get_stock_info_by_name("京东方A")
-code = "002970"
+# stock_info = get_stock_info_by_name("大元泵业")
+# info = stock_info.index[0]
+# code = stock_info.at[info, 'code']
+
+code = "603757"
 stock_info = get_stock_info_by_code(code)
+
 latest_date = get_latest_date_by_code(code) or datetime.now()
 
 theme = ThemeRegistry.get(name=theme_name)

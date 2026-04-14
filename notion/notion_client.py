@@ -9,6 +9,8 @@ import asyncio
 from tools.log import get_analyze_logger
 from pathlib import Path
 from typing import Optional, Union
+import emoji
+import random
 
 import httpx
 
@@ -66,6 +68,8 @@ def _build_payload(
         payload["properties"] = {
             "title": {"title": [{"text": {"content": title}}]}
         }
+        
+    payload["icon"] = {"type": "emoji", "emoji": _random_emoji()}
 
     return payload
 
@@ -91,6 +95,19 @@ def _parse_success(resp: httpx.Response, title: Optional[str]) -> NotionPageResu
         success=True,
     )
 
+# ---------------------------------------------------------------------------
+# Utility functions
+# ---------------------------------------------------------------------------
+
+_VALID_EMOJIS = [
+    e for e in emoji.EMOJI_DATA.keys()
+    if "\u200d" not in e
+    and not any(0x1F3FB <= ord(c) <= 0x1F3FF for c in e)
+    and len(e) <= 2
+]
+
+def _random_emoji() -> str:
+    return random.choice(_VALID_EMOJIS)
 
 # ---------------------------------------------------------------------------
 # Sync client

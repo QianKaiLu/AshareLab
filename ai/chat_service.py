@@ -53,6 +53,7 @@ def chat(
         messages.append({"role": "user", "content": item})
 
     extra_params: dict = {}
+    extra_params["extra_body"] = {"enable_thinking": config.thinking}
     if config.temperature is not None:
         extra_params["temperature"] = config.temperature
     if config.max_tokens is not None:
@@ -152,6 +153,8 @@ def _chat_stream(
             reasoning = getattr(delta, "reasoning_content", None)
             if reasoning:
                 thinking_content += reasoning
+                if config.print_output:
+                    print(f"\rAI gate thinking data length: {len(thinking_content):<10}", end="", flush=True)
 
         if chunk.choices[0].finish_reason:
             finish_reason = chunk.choices[0].finish_reason

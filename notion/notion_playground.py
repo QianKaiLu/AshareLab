@@ -14,7 +14,7 @@ logger = get_analyze_logger()
 
 async def test():
     test_urls = [
-        "https://mp.weixin.qq.com/s/aPC5ZgIey1bmFx9Y93G3nw",
+        "https://mp.weixin.qq.com/s/9dIlQIZpdRoKdgnm5A3u0A",
         # "https://www.ruanyifeng.com/blog/2024/07/weekly-issue-308.html",
     ]
     results = await batch_url_to_markdown(test_urls[0])

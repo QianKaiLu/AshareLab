@@ -60,14 +60,13 @@ def _build_payload(
     is_database: bool,
 ) -> dict:
     payload: dict = {"parent": parent, "markdown": md_content}
+    properties = properties or {}
 
-    if properties:
-        payload["properties"] = properties
-    elif title and is_database:
-        payload["properties"] = {
-            "title": {"title": [{"text": {"content": title}}]}
-        }
-        
+    if title:
+        if "title" not in properties:
+            properties["title"] = {"title": [{"text": {"content": title}}]}
+    
+    payload["properties"] = properties
     payload["icon"] = {"type": "emoji", "emoji": random_emoji()}
 
     return payload

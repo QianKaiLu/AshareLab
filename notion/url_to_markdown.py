@@ -175,7 +175,7 @@ async def fetch_page_html(url: str, page: Page, timeout_ms: int = 30000) -> str:
 
     # 滚动触发懒加载
     await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-    await page.wait_for_timeout(1500)
+    await page.wait_for_timeout(2500)
 
     return await page.content()
 
@@ -241,13 +241,14 @@ def _extract_metadata(html: str, url: str) -> dict:
 
 
 def build_markdown(article_html: str, metadata: dict, url: str) -> str:
-    """组装最终 Markdown：元数据头 + 正文。"""
+    """组装最终 Markdown：增加防盗链元数据 + 元数据头 + 正文。"""
     article_html = _fix_relative_urls(article_html, url)
     body = _html_to_markdown(article_html)
     if not body:
         return ""
 
     parts: list[str] = []
+    
     title = metadata.get("title")
     if title:
         parts.append(f"# {title}\n")
@@ -259,10 +260,13 @@ def build_markdown(article_html: str, metadata: dict, url: str) -> str:
         meta_lines.append(f"**Date**: {metadata['date']}")
     if metadata.get("sitename"):
         meta_lines.append(f"**Source**: {metadata['sitename']}")
+    meta_lines.append(f"**Link**: {url}")
     if meta_lines:
         parts.append("> " + "  \n> ".join(meta_lines) + "\n")
+    
     if parts:
         parts.append("---\n")
+
     parts.append(body)
 
     return "\n".join(parts)

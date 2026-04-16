@@ -9,12 +9,12 @@ import asyncio
 from tools.log import get_analyze_logger
 from pathlib import Path
 from typing import Optional, Union
-from emoji import random_emoji
+from notion.emoji import random_emoji
 
 import httpx
 
-from notion_types import NotionPageResult, NotionPageRequest, NotionAPIError
-from notion_markdown import (
+from notion.notion_types import NotionPageResult, NotionPageRequest, NotionAPIError
+from notion.notion_markdown import (
     load_markdown,
     extract_title_from_markdown,
     prepare_markdown_for_notion,

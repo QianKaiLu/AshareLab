@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 import asyncio
 from notion.notion_client import NotionClient
-from url_to_markdown import batch_url_to_markdown
+from notion.url_to_markdown import batch_url_to_markdown
 from tools.log import get_analyze_logger
 from markdown_lab.markdown_ai_flush import markdown_ai_flush
 

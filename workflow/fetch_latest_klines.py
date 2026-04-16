@@ -4,7 +4,6 @@ from tools.log import get_fetch_logger
 from datas.query_stock import query_all_stock_code_list
 from datas.fetch_all_market import fetch_stock_bars_parallel
 
-
 logger = get_fetch_logger()
 start_time = time.time()
 

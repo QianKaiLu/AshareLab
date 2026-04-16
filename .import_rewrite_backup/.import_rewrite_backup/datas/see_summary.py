@@ -11,7 +11,7 @@ from indicators.volume_ma import add_volume_ma_to_dataframe
 from draws.kline_theme import ThemeRegistry, KlineTheme
 from tools.colors import hex_to_rgba
 import akshare as ak
-import tools.markdown_lab
+import markdown_lab
 
 code = '002959'
 df = ak.stock_news_em(symbol=code)

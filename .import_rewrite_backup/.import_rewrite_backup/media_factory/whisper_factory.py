@@ -6,7 +6,7 @@ import torch
 import time
 from tools.log import get_analyze_logger
 from typing import Dict, Any
-from media_factory.video_handler import extract_audio_from_video
+from video_handler import extract_audio_from_video
 
 logger = get_analyze_logger()
 

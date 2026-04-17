@@ -13,7 +13,7 @@ from notion.emoji import random_emoji
 
 import httpx
 
-from notion.notion_types import NotionPageResult, NotionPageRequest, NotionAPIError
+from notion.notion_types import NotionPageResult, NotionPageRequest, NotionAPIError, NotionChildPage
 from notion.notion_markdown import (
     load_markdown,
     extract_title_from_markdown,
@@ -252,6 +252,111 @@ class AsyncNotionClient:
                 )
 
         return list(await asyncio.gather(*[_worker(r) for r in requests]))
+
+    # -- query pages ---------------------------------------------------------
+
+    async def get_block_children(
+        self,
+        block_id: str,
+        page_size: int = 100,
+    ) -> list[dict]:
+        """Get all children blocks of a block (with pagination).
+
+        Args:
+            block_id: Block/page ID.
+            page_size: Results per page (max 100).
+
+        Returns:
+            List of block objects.
+        """
+        all_results = []
+        cursor = None
+
+        while True:
+            url = f"{BASE_URL}/blocks/{block_id}/children"
+            params = {"page_size": page_size}
+            if cursor:
+                params["start_cursor"] = cursor
+
+            try:
+                resp = await self._http.get(url, params=params)
+                resp.raise_for_status()
+                data = resp.json()
+
+                all_results.extend(data.get("results", []))
+
+                if not data.get("has_more", False):
+                    break
+                cursor = data.get("next_cursor")
+
+            except httpx.HTTPStatusError as e:
+                logger.error("Failed to get block children: %s", _parse_error(e.response))
+                raise
+            except Exception as e:
+                logger.error("Failed to get block children: %s", e, exc_info=True)
+                raise
+
+        return all_results
+
+    async def get_child_pages(
+        self,
+        page_id: str,
+        recursive: bool = False,
+    ) -> list[NotionChildPage]:
+        """Get all child pages under a page.
+
+        Args:
+            page_id: Parent page ID.
+            recursive: If True, recursively fetch nested child pages.
+
+        Returns:
+            List of NotionChildPage objects.
+        """
+        children = await self.get_block_children(page_id)
+        child_pages = [b for b in children if b.get("type") == "child_page"]
+
+        results = []
+        for page_block in child_pages:
+            child_page = NotionChildPage(
+                id=page_block["id"],
+                title=page_block.get("child_page", {}).get("title", "Untitled"),
+                has_children=page_block.get("has_children", False),
+                parent_id=page_id,
+            )
+
+            if recursive and child_page.has_children:
+                child_page.children = await self.get_child_pages(
+                    child_page.id,
+                    recursive=True,
+                )
+
+            results.append(child_page)
+
+        return results
+
+    async def get_all_child_pages_flat(
+        self,
+        page_id: str,
+    ) -> list[NotionChildPage]:
+        """Get all child pages recursively in a flat list.
+
+        Args:
+            page_id: Parent page ID.
+
+        Returns:
+            Flat list of all nested child pages.
+        """
+        all_pages = []
+
+        async def _collect(pid: str):
+            pages = await self.get_child_pages(pid, recursive=False)
+            for page in pages:
+                all_pages.append(page)
+                if page.has_children:
+                    await _collect(page.id)
+
+        await _collect(page_id)
+        return all_pages
 
     # -- lifecycle -----------------------------------------------------------
 

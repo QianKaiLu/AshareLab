@@ -49,3 +49,23 @@ class NotionAPIError:
 
     def __str__(self) -> str:
         return f"[{self.status}] {self.code}: {self.message}"
+
+
+@dataclass
+class NotionChildPage:
+    """Represents a child page in Notion."""
+
+    id: str
+    title: str
+    has_children: bool
+    parent_id: str
+    children: list["NotionChildPage"] = field(default_factory=list)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "title": self.title,
+            "has_children": self.has_children,
+            "parent_id": self.parent_id,
+            "children": [c.to_dict() for c in self.children],
+        }

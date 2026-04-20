@@ -162,7 +162,120 @@ class NotionClient:
             logger.error("Failed to create page: %s", e, exc_info=True)
             return NotionPageResult(error=str(e), success=False)
 
-    # -- lifecycle -----------------------------------------------------------
+    def batch_create_pages(
+        self,
+        requests: list[NotionPageRequest],
+        max_concurrent: int = 3,  # 保留参数名以对齐异步接口，但同步中实际为串行或简单限流
+    ) -> list[NotionPageResult]:
+        """Create multiple pages sequentially (synchronous version of async batch).
+
+        Note: Since this is synchronous, it does not run concurrently.
+        However, we respect `max_concurrent` by optionally adding delays
+        to avoid hitting rate limits (Notion allows ~3 req/s).
+
+        Args:
+            requests: Page creation requests.
+            max_concurrent: Treated as rate-limit hint; adds delay if >0.
+        """
+        import time
+
+        results = []
+        delay = 1.0 / max_concurrent if max_concurrent > 0 else 0.0
+
+        for req in requests:
+            result = self.create_page_from_markdown(
+                markdown=req.markdown,
+                parent_page_id=req.parent.id if req.parent.type == "page_id" else None,
+                parent_data_source_id=req.parent.id if req.parent.type == "data_source_id" else None,
+                title=req.title,
+                properties=req.properties,
+            )
+            results.append(result)
+
+            if delay > 0:
+                time.sleep(delay)  # 简单节流，避免触发 429
+
+        return results
+    
+    def get_block_children(
+        self,
+        block_id: str,
+        page_size: int = 100,
+    ) -> list[dict]:
+        """Get all children blocks of a block (with pagination)."""
+        all_results = []
+        cursor = None
+
+        while True:
+            url = f"/blocks/{block_id}/children"
+            params = {"page_size": page_size}
+            if cursor:
+                params["start_cursor"] = cursor
+
+            try:
+                resp = self._http.get(url, params=params)
+                resp.raise_for_status()
+                data = resp.json()
+
+                all_results.extend(data.get("results", []))
+
+                if not data.get("has_more", False):
+                    break
+                cursor = data.get("next_cursor")
+
+            except httpx.HTTPStatusError as e:
+                logger.error("Failed to get block children: %s", _parse_error(e.response))
+                raise
+            except Exception as e:
+                logger.error("Failed to get block children: %s", e, exc_info=True)
+                raise
+
+        return all_results
+
+    def get_child_pages(
+        self,
+        page_id: str,
+        recursive: bool = False,
+    ) -> list[NotionChildPage]:
+        """Get all child pages under a page."""
+        children = self.get_block_children(page_id)
+        child_pages = [b for b in children if b.get("type") == "child_page"]
+
+        results = []
+        for page_block in child_pages:
+            child_page = NotionChildPage(
+                id=page_block["id"],
+                title=page_block.get("child_page", {}).get("title", "Untitled"),
+                has_children=page_block.get("has_children", False),
+                parent_id=page_id,
+            )
+
+            if recursive and child_page.has_children:
+                child_page.children = self.get_child_pages(
+                    child_page.id,
+                    recursive=True,
+                )
+
+            results.append(child_page)
+
+        return results
+    
+    def get_all_child_pages_flat(
+        self,
+        page_id: str,
+    ) -> list[NotionChildPage]:
+        """Get all child pages recursively in a flat list."""
+        all_pages = []
+
+        def _collect(pid: str):
+            pages = self.get_child_pages(pid, recursive=False)
+            for page in pages:
+                all_pages.append(page)
+                if page.has_children:
+                    _collect(page.id)
+
+        _collect(page_id)
+        return all_pages
 
     def close(self):
         self._http.close()
@@ -172,7 +285,6 @@ class NotionClient:
 
     def __exit__(self, *exc):
         self.close()
-
 
 # ---------------------------------------------------------------------------
 # Async client

@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional
 
-from ai.ai_api_profile import DEEPSEEK_REASONER
+from ai.ai_api_profile import ApiProfile, DEEPSEEK_REASONER
 from ai.chat_service import chat, ChatConfig
 from ai.prompts.srt_prompts import ModeType, PROMPT_MAP
 from tools.log import get_analyze_logger
@@ -14,6 +14,7 @@ def summarize_srt(
     srt_content: Optional[str] = None,
     mode: ModeType = "summary",
     extra_prompt: Optional[str] = None,
+    profile: Optional[ApiProfile] = None,
 ) -> Optional[str]:
     """
     Summarizes or converts SRT content using the specified AI model.
@@ -23,6 +24,7 @@ def summarize_srt(
         srt_content: Raw SRT content as a string. Takes precedence over srt_file_path.
         mode: Output mode (summary, xmind, key_points, etc.).
         extra_prompt: Additional instructions appended to the system prompt.
+        profile: AI ApiProfile to use. Defaults to DEEPSEEK_REASONER.
 
     Returns:
         Generated markdown content, or None on error.
@@ -45,11 +47,14 @@ def summarize_srt(
     if extra_prompt:
         system_prompt = f"{system_prompt}\n\n附加要求：\n{extra_prompt}"
 
+    if profile is None:
+        profile = DEEPSEEK_REASONER()
+
     try:
         result = chat(
             prompt=system_prompt,
             contents=[f"SRT 字幕内容：\n\n{srt_content}"],
-            profile=DEEPSEEK_REASONER(),
+            profile=profile,
             config=ChatConfig(print_output=True),
         )
         return result.content.strip() if result.content else None

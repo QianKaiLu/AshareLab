@@ -13,6 +13,8 @@
 
 import argparse
 import logging
+import shutil
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -161,13 +163,39 @@ def fmt_size(path: Path) -> str:
         return "?"
 
 
+def _relocate_into_subdir(path: Path, subdir: Path) -> Path:
+    """将文件移动到 subdir 子目录下，返回新路径。已在目标目录则原样返回。"""
+    subdir.mkdir(parents=True, exist_ok=True)
+    if path.parent.resolve() == subdir.resolve():
+        return path
+    target = subdir / path.name
+    if target.exists():
+        return target
+    return Path(shutil.move(str(path), str(target)))
+
+
+def _open_folder(log: logging.Logger, folder: Path) -> None:
+    """在系统文件管理器中打开文件夹（跨平台）。失败仅警告，不中断流程。"""
+    try:
+        if sys.platform == "darwin":
+            subprocess.run(["open", str(folder)], check=False)
+        elif sys.platform.startswith("win"):
+            import os
+            os.startfile(str(folder))  # type: ignore[attr-defined]
+        else:
+            subprocess.run(["xdg-open", str(folder)], check=False)
+        log.info(f"  📂 已打开文件夹: {folder}")
+    except Exception as e:
+        log.warning(f"  ⚠  无法自动打开文件夹: {e}")
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # CLI 参数解析
 # ══════════════════════════════════════════════════════════════════════════════
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="视频处理工具：下载视频 → 提取音频 → 语音转字幕（SRT）",
+        description="视频处理工具：下载 → 提取音频 → 语音转字幕（SRT）→ 转换为文章（Markdown）",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例:
@@ -245,6 +273,12 @@ def parse_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
+        "--skip-article",
+        action="store_true",
+        help="跳过字幕转文章步骤（仅生成 SRT，不调用 AI）",
+    )
+
+    parser.add_argument(
         "--audio-only",
         action="store_true",
         help="直接下载音频而非完整视频（使用 yt-dlp 的音频下载）",
@@ -254,6 +288,12 @@ def parse_args() -> argparse.Namespace:
         "--no-long-mode",
         action="store_true",
         help="关闭长音频分段转录，一次性转录整个音频（适用于较短音频）",
+    )
+
+    parser.add_argument(
+        "--no-open",
+        action="store_true",
+        help="处理完成后不自动打开输出文件夹",
     )
 
     parser.add_argument(
@@ -272,13 +312,13 @@ def parse_args() -> argparse.Namespace:
 def _step_download(log: logging.Logger, args: argparse.Namespace,
                    output_dir: Path, timer: StageTimer) -> tuple[Path | None, Path | None]:
     """
-    [1/3] 获取视频源。
+    [1/4] 获取视频源。
 
     Returns:
         (video_path, audio_path): 正常模式返回 (video_path, None);
         audio-only 模式返回 (None, audio_path)
     """
-    timer.begin(1, 3, "下载视频", "📥")
+    timer.begin(1, 4, "下载视频", "📥")
 
     # ── 跳过下载，使用本地文件 ──
     if args.skip_download:
@@ -286,6 +326,10 @@ def _step_download(log: logging.Logger, args: argparse.Namespace,
         existing: list[Path] = []
         for ext in video_exts:
             existing.extend(output_dir.glob(ext))
+        # 顶层没有则递归查子目录（兼容已归档到视频名子文件夹的情况）
+        if not existing:
+            for ext in video_exts:
+                existing.extend(output_dir.glob(f"*/{ext}"))
         if not existing:
             log.error(f"  ✘  在 {output_dir} 中未找到视频文件")
             log.error(f"     支持的格式: {', '.join(video_exts)}")
@@ -317,7 +361,7 @@ def _step_extract_audio(log: logging.Logger, args: argparse.Namespace,
                         audio_from_dl: Path | None,
                         timer: StageTimer) -> Path:
     """
-    [2/3] 获取音频。
+    [2/4] 获取音频。
 
     优先级：
       1. 已通过 audio-only 下载的音频
@@ -325,7 +369,7 @@ def _step_extract_audio(log: logging.Logger, args: argparse.Namespace,
       3. 已有 .wav 缓存（根据视频名推断）
       4. 从视频提取
     """
-    timer.begin(2, 3, "提取音频", "🎵")
+    timer.begin(2, 4, "提取音频", "🎵")
 
     # 情况 A：audio-only 模式已下载
     if audio_from_dl is not None:
@@ -366,9 +410,9 @@ def _step_transcribe(log: logging.Logger, args: argparse.Namespace,
                      output_dir: Path, audio_path: Path,
                      timer: StageTimer) -> Path | None:
     """
-    [3/3] 语音转字幕（Whisper）。
+    [3/4] 语音转字幕（Whisper）。
     """
-    timer.begin(3, 3, "语音转字幕", "📝")
+    timer.begin(3, 4, "语音转字幕", "📝")
 
     if args.skip_transcribe:
         timer.skip("--skip-transcribe")
@@ -422,12 +466,53 @@ def _step_transcribe(log: logging.Logger, args: argparse.Namespace,
     return srt_path
 
 
+def _step_article(log: logging.Logger, args: argparse.Namespace,
+                  srt_path: Path | None, timer: StageTimer) -> Path | None:
+    """
+    [4/4] SRT 字幕转 Markdown 文章。
+    """
+    timer.begin(4, 4, "字幕转文章", "📄")
+
+    if args.skip_article:
+        timer.skip("--skip-article")
+        return None
+
+    if srt_path is None:
+        timer.skip("没有可用 SRT")
+        return None
+
+    md_path = srt_path.with_suffix(".md")
+    if md_path.exists():
+        log.progress(f"    文件: {md_path.name}  ({fmt_size(md_path)})")
+        timer.done("文章已存在")
+        return md_path
+
+    from ai.ai_api_profile import DEEPSEEK_FLASH
+    from ai.ai_srt_lab import summarize_srt
+
+    log.progress(f"    字幕: {srt_path.name}  ({fmt_size(srt_path)})")
+    log.progress("    模型: deepseek-flash")
+
+    article = summarize_srt(
+        srt_file_path=srt_path,
+        mode="article",
+        profile=DEEPSEEK_FLASH(),
+    )
+    if not article:
+        raise RuntimeError("AI 字幕转文章失败")
+
+    md_path.write_text(article.strip() + "\n", encoding="utf-8")
+    log.progress(f"    输出: {md_path.name}  ({fmt_size(md_path)})")
+    timer.done()
+    return md_path
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # 流水线编排
 # ══════════════════════════════════════════════════════════════════════════════
 
 def run_pipeline(args: argparse.Namespace, log: logging.Logger) -> dict:
-    """执行完整流水线：下载 → 提取音频 → 转录。"""
+    """执行完整流水线：下载 → 提取音频 → 转录 → 字幕转文章。"""
     output_dir = Path(args.output_dir).expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -444,24 +529,42 @@ def run_pipeline(args: argparse.Namespace, log: logging.Logger) -> dict:
 
     # ── 执行各阶段 ──
     video_path, audio_from_dl = _step_download(log, args, output_dir, timer)
-    audio_path = _step_extract_audio(log, args, output_dir, video_path, audio_from_dl, timer)
-    srt_path = _step_transcribe(log, args, output_dir, audio_path, timer)
+
+    # ── 按视频名建立子目录，后续所有产物都落到这里 ──
+    source = video_path or audio_from_dl
+    work_dir = output_dir
+    if source is not None:
+        work_dir = output_dir / source.stem
+        video_path = _relocate_into_subdir(video_path, work_dir) if video_path else None
+        audio_from_dl = _relocate_into_subdir(audio_from_dl, work_dir) if audio_from_dl else None
+        if work_dir != output_dir:
+            log.info(f"  📁 工作子目录: {work_dir.name}/")
+
+    audio_path = _step_extract_audio(log, args, work_dir, video_path, audio_from_dl, timer)
+    srt_path = _step_transcribe(log, args, work_dir, audio_path, timer)
+    md_path = _step_article(log, args, srt_path, timer)
 
     # ── 完成摘要 ──
     total_elapsed = time.time() - total_start
-    _print_summary(log, output_dir, video_path, audio_path, srt_path, total_elapsed)
+    _print_summary(log, work_dir, video_path, audio_path, srt_path, md_path, total_elapsed)
+
+    # ── 自动打开输出文件夹 ──
+    if not args.no_open:
+        _open_folder(log, work_dir)
 
     return {
         "video_path": video_path,
         "audio_path": audio_path,
         "srt_path": srt_path,
-        "output_dir": output_dir,
+        "md_path": md_path,
+        "output_dir": work_dir,
     }
 
 
 def _print_summary(log: logging.Logger, output_dir: Path,
                    video_path: Path | None, audio_path: Path | None,
-                   srt_path: Path | None, total_elapsed: float) -> None:
+                   srt_path: Path | None, md_path: Path | None,
+                   total_elapsed: float) -> None:
     """打印处理结果摘要。"""
     log.info("")
     log.stage("  ╔══════════════════════════════════════════╗")
@@ -475,11 +578,14 @@ def _print_summary(log: logging.Logger, output_dir: Path,
         log.info(f"  ▶  音频文件: {audio_path.name}  ({fmt_size(audio_path)})")
     if srt_path:
         log.info(f"  ▶  字幕文件: {srt_path.name}  ({fmt_size(srt_path)})")
+    if md_path:
+        log.info(f"  ▶  文章文件: {md_path.name}  ({fmt_size(md_path)})")
     log.success(f"  ▶  总耗时: {total_elapsed:.1f}s")
 
-    if srt_path and srt_path.exists():
+    final = md_path or srt_path
+    if final and final.exists():
         log.info("")
-        log.info(f"  💡 下一步: 可用任意文本编辑器打开 {srt_path.name}")
+        log.info(f"  💡 下一步: 可用任意文本编辑器打开 {final.name}")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

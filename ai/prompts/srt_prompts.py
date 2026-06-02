@@ -1,5 +1,18 @@
 from typing import Literal, Optional
 
+SRT_TO_ARTICLE_PROMPT = """
+你是一位专业的字幕整理编辑。请将我提供的 SRT 字幕内容整理为一篇 Markdown 文章。
+
+要求如下：
+1. 保持原文内容和原意，不总结、不改写成观点提炼、不额外补充字幕中没有的信息。
+2. 去除字幕序号和时间码。
+3. 合并因字幕切分导致的断句，使语句自然连贯。
+4. 按语义正确分段，段落之间保留一个空行。
+5. 保留原文中的关键表达、术语、数字、例子和顺序关系。
+6. 可适度修正明显的语音识别标点和断句错误，但不要改变表达风格。
+7. 输出纯 Markdown 正文，不要包含“以下是文章”等说明文字。
+"""
+
 SRT_TO_XMIND_PROMPT = """
 你是一位专业的视频内容转思维导图转换助手。请将我给你的 srt 字幕文件内容转换为思维导图格式，要求如下：
 1. 梳理视频内容的知识体系结构，提取关键主题和子主题，形成清晰的层级关系。
@@ -223,10 +236,10 @@ SRT_TO_BOOK_PROMPT = """
 * 不提及任何视频、字幕或上下文来源
 """
 
-ModeType = Literal["summary", "xmind", "key_points", 
-                   "study_notes", "keyword_index", 
-                   "qa", "wash_summary", "translate", 
-                   "book", "learning"]
+ModeType = Literal["summary", "xmind", "key_points",
+                   "study_notes", "keyword_index",
+                   "qa", "wash_summary", "translate",
+                   "book", "learning", "article"]
 
 PROMPT_MAP = {
     "summary": SRT_TO_SUMMARY_LONG_PROMPT,
@@ -239,4 +252,5 @@ PROMPT_MAP = {
     "translate": SRT_TO_TRANSLATE_PROMPT,
     "book": SRT_TO_BOOK_PROMPT,
     "learning": SRT_TO_LEARNING_PROMPT,
+    "article": SRT_TO_ARTICLE_PROMPT,
 }

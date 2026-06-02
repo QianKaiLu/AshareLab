@@ -1,6 +1,6 @@
-# video-process — 视频下载 & 语音转字幕 CLI 工具
+# video-process — 视频下载 & 语音转字幕 & AI 文章转换 CLI 工具
 
-对任意视频 URL 执行完整流水线：**下载 → 提取音频 → Whisper 语音转字幕（SRT）**。
+对任意视频 URL 执行完整流水线：**下载 → 提取音频 → Whisper 语音转字幕（SRT）→ AI 转 Markdown 文章**。
 
 ## 安装
 
@@ -31,8 +31,11 @@ video-process <视频URL> [选项]
 ### 基本示例
 
 ```bash
-# 最简单的用法：下载 B 站视频，提取音频，转录为 SRT
+# 最简单的用法：下载 B 站视频，提取音频，转录为 SRT，AI 转为 Markdown 文章
 video-process https://www.bilibili.com/video/BV1xxXXXXXXX
+
+# 只转录，不调用 AI
+video-process https://www.bilibili.com/video/BV1xxXXXXXXX --skip-article
 
 # 指定输出目录
 video-process https://www.bilibili.com/video/BV1xxXXXXXXX -o ~/my_work_dir
@@ -110,8 +113,10 @@ video-process https://www.bilibili.com/video/BV1xxXXXXXXX -v
 | `--skip-download` | 跳过下载，使用已有视频 | 关闭 |
 | `--skip-audio-extract` | 跳过音频提取，使用已有 wav | 关闭 |
 | `--skip-transcribe` | 跳过转录（仅下载+提取） | 关闭 |
+| `--skip-article` | 跳过字幕转 Markdown 文章（不调用 AI） | 关闭 |
 | `--audio-only` | 直接下载音频而非完整视频 | 关闭 |
 | `--no-long-mode` | 关闭长音频分段，一次转录全部 | 关闭 |
+| `--no-open` | 处理完成后不自动打开输出文件夹 | 关闭 |
 | `-v, --verbose` | 显示详细日志（含调试信息） | 关闭 |
 
 ### Whisper 模型选择
@@ -128,14 +133,18 @@ video-process https://www.bilibili.com/video/BV1xxXXXXXXX -v
 
 ## 输出
 
-所有文件保存在 `--output-dir` 目录下：
+每个视频的产物会归到 `--output-dir` 下、**以视频名命名的子文件夹**中：
 
 ```
 ~/stock/ashare_datas/
-├── 视频标题.mp4          # 下载的视频（或 .mp3 如果 --audio-only）
-├── 视频标题.wav          # 提取的音频（PCM 16-bit 单声道）
-└── 视频标题.srt          # 转录字幕文件
+└── 视频标题/                # 以视频名命名的子文件夹
+    ├── 视频标题.mp4          # 下载的视频（或 .mp3 如果 --audio-only）
+    ├── 视频标题.wav          # 提取的音频（PCM 16-bit 单声道）
+    ├── 视频标题.srt          # 转录字幕文件
+    └── 视频标题.md           # AI 根据 SRT 整理出的 Markdown 文章
 ```
+
+> 处理完成后会自动用系统文件管理器打开该子文件夹（macOS `open` / Windows / Linux `xdg-open`）。加 `--no-open` 可关闭此行为。
 
 ### SRT 字幕格式
 
@@ -156,11 +165,11 @@ video-process https://www.bilibili.com/video/BV1xxXXXXXXX -v
 ## 流水线步骤
 
 ```
-┌──────────┐     ┌──────────┐     ┌──────────┐
-│ 1. 下载  │ ──▶ │ 2. 提取  │ ──▶ │ 3. 转录  │
-│ yt-dlp   │     │ moviepy  │     │ mlx-whisper│
-│   → mp4  │     │   → wav  │     │   → srt   │
-└──────────┘     └──────────┘     └──────────┘
+┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
+│ 1. 下载  │ ──▶ │ 2. 提取  │ ──▶ │ 3. 转录  │ ──▶ │ 4. 转文章 │
+│ yt-dlp   │     │ moviepy  │     │ mlx-whisper│    │   AI     │
+│   → mp4  │     │   → wav  │     │   → srt   │    │   → md   │
+└──────────┘     └──────────┘     └──────────┘     └──────────┘
 ```
 
 - **长音频自动分段**：超过 `--segment-minutes` 分钟的音频会被自动切分为多个片段、分别转录后合并，避免内存溢出。

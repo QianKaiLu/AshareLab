@@ -15,12 +15,13 @@
 ## 功能
 
 ### 字幕后处理
-- AI 总结：复用 `ai/ai_srt_lab.py` 的 `summarize_srt`，转录完自动生成摘要
+- [x] AI 转文章：复用 `ai/ai_srt_lab.py` 的 `summarize_srt`（`article` 模式），转录完自动生成 Markdown 文章，使用 DeepSeek Flash profile
+- AI 总结：支持 summary / book / learning 等多模式输出
 - 字幕纠错：用 AI 对转录结果做一遍纠错/润色
 
 ### 输出格式增强
 - 支持导出为带时间戳的 Markdown
-- 支持导出纯文本（去掉时间码）
+- 支持导出纯文本（去掉时间码，无 AI 处理）
 
 ### 批量处理
 - 支持传入 URL 列表文件，批量处理多个视频

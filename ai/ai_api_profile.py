@@ -30,4 +30,8 @@ def DOUBAO_Seed_2_0_mini() -> ApiProfile:
     return ApiProfile("doubao-seed-2-0-mini-260215", DOUBAO_API_KEY, "https://ark.cn-beijing.volces.com/api/v3", "doubao-seed-2-0-mini-260215")
 
 def DEEPSEEK_REASONER() -> ApiProfile:
-    return ApiProfile("deepseek-reasoner", DEEPSEEK_API_KEY, "https://api.deepseek.com", "deepseek-reasoner")
+    return ApiProfile("deepseek-reasoner", DEEPSEEK_API_KEY, "https://api.deepseek.com", "deepseek-v4-pro")
+
+def DEEPSEEK_FLASH() -> ApiProfile:
+    # 非推理快速模型，适合字幕整理等轻量、长文本任务
+    return ApiProfile("deepseek-flash", DEEPSEEK_API_KEY, "https://api.deepseek.com", "deepseek-v4-flash")

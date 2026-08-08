@@ -28,7 +28,7 @@ class TokenRateLimiter:
 
 
 _rate_limiters = {
-    token: TokenRateLimiter(max_calls=40, period=60)
+    token: TokenRateLimiter(max_calls=45, period=60)
     for token in TUSHARE_TOKENS
 }
 

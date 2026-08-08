@@ -2,257 +2,125 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## 项目概览
 
-AshareLab is a comprehensive Chinese A-share stock analysis system that combines market data fetching, technical analysis, AI-powered insights, and visualization. The system is built around a SQLite database (`database/ashare_data.db`) and supports parallel processing workflows.
+AshareLab 是 A 股分析 + 媒体处理的个人工具集，两条相对独立的主线共用一套基础设施（日志、路径、AI 接口）：
 
-## Common Development Commands
+1. **股票分析**：行情抓取 → SQLite → 技术指标 → 选股策略（hunter）→ K 线卡片 / AI 研报
+2. **内容流水线**：视频下载 → Whisper 转字幕 → AI 整理成 Markdown → 写入 Notion
 
-### Environment Setup
+## 运行环境
+
+代码必须在 conda `stock` 环境下运行。非交互调用统一用：
+
 ```bash
-# Create and activate virtual environment
-python -m venv .venv && source .venv/bin/activate  # macOS/Linux
-# or
-python -m venv .venv && .venv\Scripts\activate     # Windows
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Install CLI tool (optional)
-pip install -e .
+conda run -n stock python <script.py>
+conda run -n stock video-process "<url>" --no-open
+conda run -n stock qk-notion write <source> -p <page_id>
 ```
 
-### Data Management
+脚本以模块路径导入（`from datas.query_stock import ...`），所以直接运行时需要项目根在 `PYTHONPATH` 上。`.vscode/settings.json` 已配置终端 `PYTHONPATH=${workspaceFolder}`；命令行下用 `python -m workflow.hunt_both` 或 `PYTHONPATH=. python workflow/hunt_both.py`。部分 `workflow/` 脚本自己 `sys.path.append` 了根目录，可直接跑。
+
+安装 CLI：`pip install -e .`（注册 `video-process`、`qk-notion`）。
+
+## 常用命令
+
 ```bash
-# Fetch/update all market data (parallel, uses ThreadPoolExecutor with 8 workers)
-python datas/fetch_all_market.py
+# 数据更新（先做这步，其余分析都依赖本地库）
+conda run -n stock python datas/create_database.py      # 建表 / 迁移
+conda run -n stock python datas/fetch_all_market.py     # 全市场并行抓取
+conda run -n stock python workflow/fetch_latest_klines.py
 
-# Fetch latest K-lines for all stocks
-python workflow/fetch_latest_klines.py
+# 选股
+conda run -n stock python workflow/hunt_breakout_pullback.py
+conda run -n stock python workflow/hunt_wyckoff.py
+conda run -n stock python workflow/hunt_both.py         # 两策略取交集
 
-# Create or rebuild database schema
-python datas/create_database.py
+# 可视化 / AI
+conda run -n stock python workflow/draw_stock_cards.py
+conda run -n stock python workflow/ai_analyses_stock.py
+
+# 视频 → 文章
+conda run -n stock video-process "<视频URL>" --no-open
 ```
 
-### Running Analysis Workflows
-```bash
-# Run hunting strategies (finds stock candidates)
-python workflow/hunt_breakout_pullback.py    # Low volume pullback strategy
-python workflow/hunt_wyckoff.py              # Wyckoff accumulation patterns
-python workflow/hunt_both.py                 # Combined strategies with intersection
+**没有测试套件**：仓库里既无 `tests/` 目录也无 pytest 配置。新增测试需要自己搭 `tests/` 并加 pytest 配置。验证改动目前靠直接跑对应的 `workflow/` 脚本看输出。
 
-# Generate stock visualization cards
-python workflow/draw_stock_cards.py
+## 架构要点
 
-# AI-powered stock analysis (requires API key in .env)
-python workflow/ai_analyses_stock.py
+### 数据层
 
-# Video analysis pipeline (download → transcribe → summarize)
-python workflow/ai_video_analyses.py
-```
+所有查询都走 `datas/query_stock.py`，不要在别处写裸 SQL。库固定在 `database/ashare_data.db`（WAL 模式，约 2.4G，不入 git）。
 
-### Testing
-```bash
-# Run all tests
-pytest
+- 价格一律**前复权（qfq）**，表 `stock_bars_daily_qfq`；基础信息表 `stock_base_info`
+- 日期以字符串 `YYYYMMDD` 存储，日期运算用 `tools/times.py`
+- 抓取以 AKShare 为主、Tushare 兜底；Tushare 限流靠 `config.py` 里的 token 数组 + `tools/tushare_rate_limiter.py` 轮换
+- 批量写入用「队列 + 单写线程」模式，避免多线程写 SQLite
 
-# Run specific test with console output
-pytest -k hunt_machine -s
+### 指标层
 
-# Run tests for a specific module
-pytest tests/test_<module>.py -v
-```
+`indicators/` 每个模块提供 `add_<name>_to_dataframe(df, inplace=True)`，就地给 DataFrame 加列。分析前先加指标，再判断信号：
 
-### CLI Tool
-```bash
-# After pip install -e .
-stock-info --help
-```
-
-## High-Level Architecture
-
-### Data Flow Pipeline
-
-```
-Data Sources (AKShare/Tushare)
-    ↓
-Fetchers (datas/fetch_stock_bars.py)
-    ↓
-SQLite Database (database/ashare_data.db)
-    ↓ query_stock.py
-DataFrames + Technical Indicators
-    ↓
-Hunters/Workflows/Visualizations/AI Analysis
-    ↓
-Output (CSV/Images/Markdown Reports)
-```
-
-### Core Module Organization
-
-**datas/**: Data fetching and database operations
-- `create_database.py`: Schema management with WAL mode
-- `fetch_stock_bars.py`: Unified fetching logic with fallback (AKShare → Tushare)
-- `fetch_all_market.py`: Parallel batch fetcher with queue-based writer pattern
-- `query_stock.py`: Central query interface for all data access
-- Database: Two main tables (`stock_base_info`, `stock_bars_daily_qfq`)
-
-**hunter/**: Stock scanning and strategy framework
-- `hunt_machine.py`: Generic parallel scanning engine using ThreadPoolExecutor
-- Strategy modules return `HuntResult` objects with stock metadata
-- Strategies are pure functions accepting DataFrames, returning truthy values or dicts
-
-**workflow/**: Ready-to-run orchestration scripts
-- Compose multiple modules into complete pipelines
-- All artifacts output to `output/` directory
-- Support both batch and targeted analysis
-
-**indicators/**: Technical indicator implementations
-- Each indicator has standalone function + DataFrame integration pattern
-- Use `inplace=True` for memory efficiency
-- All indicators work with standard OHLCV column names
-
-**draws/**: Multi-layer visualization system
-- Theme layer: `kline_theme.py` with ThemeRegistry
-- Figure factories: `kline_fig_factory.py` (standard 2-panel, ztalk 4-panel)
-- Card rendering: `kline_card.py` (Plotly → PIL → Base64)
-- Uses Plotly for chart generation with high DPI rendering
-
-**ai/**: AI analysis components
-- OpenAI-compatible API interface (supports QianWen, DeepSeek, etc.)
-- Jinja2 template-based prompts in `ai/prompts/`
-- Multimodal support (CSV data + chart images + news articles)
-- Streaming markdown output
-
-**media_factory/**: Video processing pipeline
-- `yt_dlp.py`: Video downloader (Bilibili, YouTube support)
-- `video_handler.py`: Audio extraction via moviepy
-- `whisper_mlx.py`: Apple Silicon-optimized speech-to-text
-- Integration with AI for transcript summarization
-
-**tools/**: Cross-cutting utilities
-- Logging: `get_fetch_logger()`, `get_analyze_logger()` → `logs/`
-- Path management: `EXPORT_PATH` for output artifacts
-- Stock code formatting: `to_std_code()`, `to_dot_ex_code()`
-- Rate limiting: Tushare token rotation system
-
-### Key Technical Patterns
-
-**Database Access Pattern**:
-- All queries go through `datas/query_stock.py`
-- UPSERT logic for efficient incremental updates
-- Queue-based writer for concurrent batch operations
-- Forward adjustment (前复权/qfq) is standard
-
-**Indicator Integration Pattern**:
 ```python
-# Always add indicators before analysis
-from indicators.macd import add_macd_to_dataframe
-from indicators.kdj import add_kdj_to_dataframe
-
-df = query_daily_bars(code, start_date, end_date)
-add_macd_to_dataframe(df, inplace=True)
-add_kdj_to_dataframe(df, inplace=True)
-# Now df has MACD_DIF, MACD_DEA, MACD_BAR, K, D, J columns
+df = query_bars_by_days(code, days=500)
+add_kdj_to_dataframe(df, inplace=True)      # → kdj_k / kdj_d / kdj_j
+add_macd_to_dataframe(df, inplace=True)     # → MACD_DIF / MACD_DEA / MACD_BAR
 ```
 
-**Strategy Implementation Pattern**:
+现有指标：`macd`、`kdj`、`rsi`、`bbi`、`volume_ma`、`zxdkx`。
+
+### 选股框架：hunter 与 hunters 的分工
+
+**这是最容易搞混的地方**，两个目录不是历史遗留，职责不同：
+
+- `hunter/` = 引擎与基础件。`hunt_machine.py` 定义 `HuntMachine`（ThreadPoolExecutor 并行扫描）、`HuntInput`（惰性取数）、`HuntResult`（带 `union` / `intersection` 静态方法用于组合策略）；`hunt_pools.py` 提供股票池（全市场 / hs300 / hs300+csi500 / 加 csi2000）；`filters/` 是可复用的条件判断
+- `hunters/` = 具体策略实现，如 `z_b1_hunter.py`、`z_b2_hunter.py`、`macd_divergence_hunter.py`。它们 import `hunter/` 的引擎，并用 `hunters/hunt_output.py` 的 `draw_hunt_results()` 出图
+
+策略函数是纯函数：吃 DataFrame，命中返回 dict（附带指标值），不命中返回 `None` / `False`。
+
 ```python
-def analyze_my_strategy(code: str, min_bars: int = 120) -> dict | bool:
-    """
-    Analyzer function for HuntMachine.
-
-    Returns:
-        dict: {metric1: value1, ...} if conditions met
-        False/None: if no signal
-    """
-    bars = query_latest_bars(code, limit=min_bars)
-    if len(bars) < min_bars:
-        return False
-
-    add_indicators_to_dataframe(bars, inplace=True)
-
-    # Your logic here
-    if conditions_met:
-        return {"price": bars.iloc[-1]["close"], "signal": "buy"}
-    return False
+def hunt_xxx(df: pd.DataFrame) -> Optional[dict]:
+    if df is None or df.empty:
+        return None
+    add_kdj_to_dataframe(df, inplace=True)
+    ...
+    return {"kdj_j": j_val} if matched else None
 ```
 
-**Workflow Composition Pattern**:
-```python
-# 1. Fetch/update data
-from datas.fetch_stock_bars import update_daily_bars_for_code
+并发规模：抓数据 8 workers，扫描 20 workers。
 
-# 2. Query with indicators
-from datas.query_stock import query_latest_bars
-from indicators.macd import add_macd_to_dataframe
+### 绘图层
 
-# 3. Generate visualization
-from draws.kline_card import create_kline_card_image
+`draws/` 分三层：主题（`kline_theme.py` 的 ThemeRegistry）→ 图工厂（`kline_fig_factory.py`，2 面板标准图 / 4 面板 ztalk 图）→ 卡片渲染（`kline_card.py`，Plotly → PIL → Base64）。`card_list.py` 拼多股卡片墙。
 
-# 4. AI analysis (optional)
-from ai.ai_kbar_analyses import analyze_stock_with_ai
+### AI 层
 
-# 5. Export results
-from tools.export import export_to_csv, save_markdown_report
-```
+`ai/ai_api_profile.py` 用工厂函数返回 `ApiProfile`（OpenAI 兼容协议），可选千问 / DeepSeek / 豆包。选模型时注意成本与场景：字幕整理这类长文本轻任务用 `DEEPSEEK_FLASH()`，研报推理用 `DEEPSEEK_REASONER()` 或 `QWEN_MAX()`。
 
-**Concurrency Pattern**:
-- Use `ThreadPoolExecutor` for I/O-bound operations (data fetching, scanning)
-- Use queue-based writer when multiple threads need to write to SQLite
-- Default worker count: 8 for data fetching, 20 for hunting
+提示词两种形态：K 线分析用 `ai/*.jinja` 模板，字幕处理用 `ai/prompts/srt_prompts.py` 里的常量（`SRT_TO_ARTICLE_PROMPT`、`SRT_TO_KEY_POINTS_PROMPT` 等，按用途选）。
 
-## Configuration and Secrets
+### 媒体流水线
 
-**Environment Variables** (`.env` file):
-- `TUSHARE_TOKEN`: Tushare API token (or use token rotation in `config.py`)
-- `QIANWEN_API_KEY`: QianWen AI API key
-- Additional API keys as needed
+`media_factory/` 是能力层：`yt_dlp.py` 下载（B 站需 Chrome cookie）、`video_handler.py` 抽音频、`whisper_mlx.py` 转录（仅 Apple Silicon）。长音频由 `whisper_to_srt_long()` 自动切段转录再 `merge_srt_files()` 合并，避免爆内存。
 
-**Configuration Files**:
-- `config.py`: Central config (API keys, Tushare tokens array)
-- `ai/config.py`: AI API profiles and model configurations
+`cli/video_process/main.py` 把这些串成 4 步流水线（下载 → 抽音频 → 转录 → AI 成文），**每步都检查产物是否已存在，存在即跳过**，所以中断后重跑等于续传。详细参数见 `cli/video_process/README.md`。
 
-**Database Location**:
-- Fixed path: `database/ashare_data.db` (2.4 GB typical size)
-- Uses WAL mode for concurrent read performance
+### Notion
 
-## Important Implementation Details
+`notion/` 提供同步（`notion_sync_client.py`）和异步（`notion_async_client.py`）两套客户端，`notion_markdown.py` 负责 Markdown → Notion blocks。`cli/qk_notion/main.py` 暴露 `write` / `children` / `batch` 三个子命令，输入类型（URL / 文件 / stdin / 纯文本）自动识别。
 
-**Stock Code Formats**:
-- Standard format: 6-digit string (e.g., "000001")
-- Tushare format: includes exchange suffix (e.g., "000001.SZ")
-- Use `tools/stock_tools.py` for conversions
+## 约定
 
-**Date Handling**:
-- Database stores dates as strings (YYYYMMDD format)
-- Use `tools/times.py` for date operations
-- Always work with trading days, not calendar days
+- 日志用 `tools/log.py` 的 `get_fetch_logger()`（抓取）/ `get_analyze_logger()`（分析），输出到 `logs/`，不要自建 logger。CLI 有自己的彩色 logger（控制台无时间戳，文件记 WARNING+）
+- 产物统一落 `output/`，路径用 `tools/path.py` 的 `EXPORT_PATH` / `export_file_path()`
+- 股票代码两种格式：6 位标准码（`000001`）和带交易所后缀（`000001.SZ`），转换用 `tools/stock_tools.py`
+- PEP 8 + 类型标注；提交信息简短现在时（`volume ma`、`latest trade day`）
+- `output/`、`logs/`、`database/*.db` 不入 git
 
-**Data Adjustment**:
-- All price data uses forward adjustment (前复权/qfq)
-- This is critical for technical analysis accuracy
-- Never mix adjusted and unadjusted data
+## 密钥
 
-**Rate Limiting**:
-- Tushare has strict rate limits; token rotation system in `config.py`
-- AKShare is primary source (fewer restrictions)
-- Implement retry logic with exponential backoff for production workflows
+`.env` 存 `QIANWEN_API_KEY`、`DEEPSEEK_API_KEY`、`DOUBAO_API_KEY`、`NOTION_TOKEN`，由 `config.py` / `ai/ai_api_profile.py` 读取。注意 `config.py` 里的 Tushare token 数组是硬编码明文，新增 token 别沿用这个做法。
 
-**Output Management**:
-- All generated artifacts go to `output/` directory
-- Log files accumulate in `logs/` (rotate/trim regularly)
-- Don't commit large CSV files or database to git
+## 已知问题
 
-## Testing Considerations
-
-- Tests assume `database/ashare_data.db` exists with data
-- Run `python datas/fetch_all_market.py` before running tests
-- Mock `query_all_stock_code_list` to limit test runtime
-- Integration tests exercise real database queries
-
-## Coding Conventions
-
-- Follow PEP 8: snake_case for functions/modules, CamelCase for classes
-- Use type hints consistently
-- Use project loggers from `tools.log` instead of creating new ones
-- Commit messages: present tense, concise (e.g., "add macd indicator", "fix volume calculation")
+`setup.py` 的 `stock-info` 入口指向 `tools.cli:main`，该模块不存在；实际实现在 `cli/stock_info.py:75`。安装后运行 `stock-info` 会失败。

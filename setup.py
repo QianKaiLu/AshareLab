@@ -10,6 +10,7 @@ setup(
         "console_scripts": [
             "stock-info=tools.cli:main",
             "video-process=cli.video_process.main:main",
+            "qk-notion=cli.qk_notion.main:main",
         ]
     },
     author="qiankai",

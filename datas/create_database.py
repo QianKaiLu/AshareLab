@@ -98,6 +98,7 @@ def prepare_database(recreate: bool = False):
         conn.commit()
 
 if __name__ == "__main__":
+    # prepare_database(recreate=True)
     with get_db_connection() as conn:
         conn.execute('PRAGMA journal_mode=WAL;')
         conn.execute('PRAGMA synchronous=NORMAL;')

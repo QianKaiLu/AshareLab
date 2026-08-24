@@ -38,6 +38,12 @@ MIN_CODE_LIST_SIZE = 5000
 # 超过说明代码表有问题，宁可跳过也不能误删历史行情
 MAX_DELIST_PER_SYNC = 30
 
+# 无行情源支持的品种，直接不入池：
+# 689 = 科创板 CDR（存托凭证，如 689009 九号公司）。东财返回 RemoteDisconnected、
+# 新浪返回 "No value to decode"，每轮日更都会白试两次且永远失败。
+# 注意只排 689，正常科创板是 688（614 只），不能误伤。
+UNSUPPORTED_CODE_PREFIXES = ("689",)
+
 _InfoRow = namedtuple("_InfoRow", ["code", "name"])
 
 
@@ -78,17 +84,40 @@ def sync_stock_pool(dry_run: bool = False,
                 "skipped": f"代码表仅 {got} 条"}
 
     fresh: dict[str, str] = {}
+    skipped_unsupported = 0
     for row in fresh_df.itertuples():
         try:
-            fresh[to_std_code(str(row.code))] = row.name
+            code = to_std_code(str(row.code))
         except Exception as e:
             logger.warning(f"跳过异常代码 {row.code}: {e}")
+            continue
+        if code.startswith(UNSUPPORTED_CODE_PREFIXES):
+            skipped_unsupported += 1
+            continue
+        fresh[code] = row.name
+
+    if skipped_unsupported:
+        logger.info(f"跳过 {skipped_unsupported} 只无行情源支持的品种"
+                    f"（前缀 {UNSUPPORTED_CODE_PREFIXES}）")
 
     with get_db_connection() as conn:
         existing = {r[0] for r in conn.execute(f"SELECT code FROM {STOCK_INFO_TABLE}")}
 
+    # 已在池中的不支持品种单独清理：走 delisted 会把「品种不支持」记成「已退市」，
+    # 而且它们本就没有行情，不该占用退市删除上限
+    purged = sorted(c for c in existing if c.startswith(UNSUPPORTED_CODE_PREFIXES))
+    if purged and not dry_run:
+        placeholders = ','.join('?' for _ in purged)
+        with get_db_connection() as conn:
+            conn.execute(
+                f"DELETE FROM {DAILY_BAR_TABLE} WHERE code IN ({placeholders})", purged)
+            conn.execute(
+                f"DELETE FROM {STOCK_INFO_TABLE} WHERE code IN ({placeholders})", purged)
+            conn.commit()
+        existing -= set(purged)
+
     added = sorted(set(fresh) - existing)
-    delisted = sorted(existing - set(fresh))
+    delisted = sorted(existing - set(fresh) - set(purged))
 
     # ---- 剔除退市：先卡阈值，再连带删掉行情
     deleted_bars = 0
@@ -153,7 +182,7 @@ def sync_stock_pool(dry_run: bool = False,
         POOL_SYNC_MARKER.touch()
 
     return {"added": added, "delisted": delisted, "deleted_bars": deleted_bars,
-            "renamed": renamed, "total": total}
+            "renamed": renamed, "purged": purged, "total": total}
 
 
 def refresh_missing_details(limit: Optional[int] = None) -> tuple[int, int]:

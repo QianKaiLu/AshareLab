@@ -78,6 +78,9 @@ def run() -> int:
             logger.info(f"{prefix}退市 {len(result['delisted'])} 只"
                         + (f": {result['delisted']}，连带删除 {result['deleted_bars']} 行行情"
                            if result['delisted'] else ""))
+            if result.get("purged"):
+                logger.info(f"{prefix}清理无行情源品种 {len(result['purged'])} 只: "
+                            f"{result['purged']}")
             if result.get("renamed"):
                 logger.info(f"{prefix}简称更新 {result['renamed']} 只")
             logger.info(f"{prefix}池子共 {result['total']} 只")

@@ -1,9 +1,9 @@
 ---
-name: qk-daily-update
-description: A 股日常行情更新流水线。同步股票池（补新股/剔退市，每周一次）→ 增量抓日线 → 回填换手率 → 数据质量校验。触发场景：(1) 用户说「更新行情」「拉最新数据」「日更」「同步股票数据」「更新数据库」(2) 用户说「刷新股票池」「补新股」「剔退市」(3) 用户输入 /qk-daily-update (4) 用户在做选股/画图/研报前发现数据不是最新。支持 --force-pool、--skip-pool、--dry-run 参数。
+name: qk-stock-daily-update
+description: A 股日常行情更新流水线。同步股票池（补新股/剔退市，每周一次）→ 增量抓日线 → 回填换手率 → 数据质量校验。触发场景：(1) 用户说「更新行情」「拉最新数据」「日更」「同步股票数据」「更新数据库」(2) 用户说「刷新股票池」「补新股」「剔退市」(3) 用户输入 /qk-stock-daily-update (4) 用户在做选股/画图/研报前发现数据不是最新。支持 --force-pool、--skip-pool、--dry-run 参数。
 ---
 
-# QK Daily Update — A 股行情日更流水线
+# QK Stock Daily Update — A 股行情日更流水线
 
 ## 概述
 
@@ -22,16 +22,35 @@ description: A 股日常行情更新流水线。同步股票池（补新股/剔�
 校验：最新日期 / 落后股票数 / OHLC 异常 / 涨跌幅异常 / 换手率空值
 ```
 
+## 运行环境（必读）
+
+**所有命令必须切到 conda `stock` 环境**，否则 akshare / tushare / baostock 全部 ImportError。
+两种写法，非交互场景一律用第一种：
+
+```bash
+# 推荐：conda run 直接指定环境，不改变当前 shell
+conda run --live-stream -n stock python <script.py>
+
+# 交互式终端里也可以先激活
+conda activate stock
+```
+
+另外项目脚本以模块路径导入（`from datas.query_stock import ...`），
+所以必须让项目根在 `PYTHONPATH` 上：命令前加 `PYTHONPATH=.`，且工作目录为项目根。
+
+两个必需参数缺一不可：
+
+- `PYTHONPATH=.` — 缺了会 `ModuleNotFoundError: No module named 'datas'`
+- `--live-stream` — 缺了 `conda run` 会缓冲全部输出到进程结束，日志一直是 0 字节，看起来像卡死
+
 ## 调用方式
 
-必须在 conda `stock` 环境下运行。耗时较长（通常 3-10 分钟，视落后天数），**必须后台跑**：
+耗时视落后天数而定（当天已更新约 35 秒，落后一周约 3-10 分钟），**必须后台跑**：
 
 ```bash
 cd /Users/qianqian/stock/AshareLab
 PYTHONPATH=. conda run --live-stream -n stock python workflow/daily_update.py > logs/daily_$(date +%Y%m%d).log 2>&1
 ```
-
-`--live-stream` 是必需的：不加时 `conda run` 会缓冲全部输出到进程结束，日志一直是 0 字节，看起来像卡死。
 
 ## 参数
 
@@ -76,32 +95,42 @@ sqlite3 database/ashare_data.db "SELECT COUNT(*) FROM (SELECT code FROM stock_ba
 ```
 用户: 更新一下行情
 ```
-→ 后台跑 `workflow/daily_update.py`，完成后报告校验结果
+→ 后台跑上面「调用方式」里的完整命令，完成后报告校验结果
 
 ### 场景 2：只想看池子会怎么变
 
 ```
 用户: 看看有没有新股或退市的
 ```
-→ `python workflow/daily_update.py --dry-run`
+→ `PYTHONPATH=. conda run --live-stream -n stock python workflow/daily_update.py --dry-run`
 
 ### 场景 3：新股上市了要立刻拉
 
 ```
 用户: 今天有新股上市，把数据补上
 ```
-→ `python workflow/daily_update.py --force-pool`
+→ `PYTHONPATH=. conda run --live-stream -n stock python workflow/daily_update.py --force-pool`
 
 ### 场景 4：校验报了数据质量异常
 
 日志出现 `⚠ 数据质量异常（OHLC N 行 / 涨跌幅 M 行）`：
 
-→ 跑 `python workflow/repair_negative_prices.py --dry-run` 看范围，确认后去掉 `--dry-run` 执行
+→ 先看范围，确认后去掉 `--dry-run` 执行：
+
+```bash
+PYTHONPATH=. conda run --live-stream -n stock python workflow/repair_negative_prices.py --dry-run
+```
 
 ### 场景 5：库损坏或要重建
 
-→ 用 `workflow/rebuild_database.py`（可重入，只清日线保留池子），约 27 分钟。
-**重建前先备份**：`cp database/ashare_data.db database/ashare_data.db.bak-$(date +%Y%m%d)`
+**重建前先备份**（2.5G，约 10 秒）：
+
+```bash
+cp database/ashare_data.db database/ashare_data.db.bak-$(date +%Y%m%d)
+PYTHONPATH=. conda run --live-stream -n stock python workflow/rebuild_database.py
+```
+
+可重入（只清日线、保留池子），约 27 分钟。
 
 ## 相关脚本
 

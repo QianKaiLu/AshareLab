@@ -2,7 +2,13 @@ from tqdm import tqdm
 import pandas as pd
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datas.fetch_stock_bars import logger, fetch_daily_bar_from_akshare, fetch_daily_bar_from_tushare, save_daily_bars_to_database
+from datas.fetch_stock_bars import (
+    logger,
+    fetch_daily_bar_from_akshare,
+    fetch_daily_bar_from_tushare,
+    save_daily_bars_to_database,
+    ExDividendDetected,
+)
 from queue import Queue
 import threading
 from datetime import datetime, timedelta
@@ -13,9 +19,6 @@ from tools.stock_tools import latest_trade_day
 # 东财 / tushare 都扛不住高并发，8 workers 无间隔会把接口打崩（RemoteDisconnected）
 REQUEST_DELAY = 0.5  # seconds between requests to avoid burst rate limits
 FETCH_WORKERS = 3
-# 主板跌停 -10%，-10.5% 以下必为除权跳空；注册制 ±20% 的正常波动会误报，
-# 但误报只是多走一次 akshare qfq，结果仍然正确
-DIVIDEND_GAP_PCT = -10.5
 
 
 def fetch_stock_bars_parallel(stock_codes, source: str = "tushare") -> list:
@@ -83,14 +86,15 @@ def worker_fetch_stock_and_queue(code: str, result_queue: Queue, source: str = "
             df = fetch_daily_bar_from_akshare(code=code, from_date=latest_date.strftime("%Y%m%d"))
         else:
             last_adjusted_close = float(last_bars['close'].iloc[-1])
-            df = fetch_daily_bar_from_tushare(
-                code=code, from_date=latest_date.strftime("%Y%m%d"),
-                last_adjusted_close=last_adjusted_close)
-            if df is not None and df['change_pct'].min() < DIVIDEND_GAP_PCT:
-                logger.warning(
-                    f"{code}: 疑似除权跳空 change_pct={df['change_pct'].min():.2f}%, 改走 akshare qfq")
-                df = fetch_daily_bar_from_akshare(
-                    code=code, from_date=latest_date.strftime("%Y%m%d"))
+            try:
+                df = fetch_daily_bar_from_tushare(
+                    code=code, from_date=latest_date.strftime("%Y%m%d"),
+                    last_adjusted_close=last_adjusted_close)
+            except ExDividendDetected as e:
+                # 除权使库中整条历史的复权基准失效，补增量会在锚点处留下断层，
+                # 必须用 qfq 源从头重取覆盖历史。
+                logger.warning(f"{e}，改走 akshare qfq 全量重取")
+                df = fetch_daily_bar_from_akshare(code=code, from_date=EARLIEST_DATE)
         if df is not None and not df.empty:
             result_queue.put(df)
             return True

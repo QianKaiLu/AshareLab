@@ -3,7 +3,7 @@ import sqlite3
 import pandas as pd
 from pathlib import Path
 from tools.log import get_fetch_logger
-from tools.stock_tools import get_exchange_by_code, to_dot_ex_code, MARKED_CLOSE_HOUR, latest_trade_day
+from tools.stock_tools import get_exchange_by_code, to_dot_ex_code, to_std_code, MARKED_CLOSE_HOUR, latest_trade_day
 from tools.times import ms_timestamp_to_date
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -19,7 +19,7 @@ from tools.markdown_lab import save_md_to_file_name, render_markdown_to_image_fi
 from datas.query_stock import get_stock_info_by_code
 import tushare as ts
 from ratelimit import limits, sleep_and_retry
-from tools.tushare_rate_limiter import tushare_token_rate_limiter
+from tools.tushare_rate_limiter import tushare_token_rate_limiter, tushare_slow_token
 
 logger = get_fetch_logger()
 FETCH_WORKERS = 10
@@ -27,6 +27,28 @@ FETCH_WORKERS = 10
 # eastmoney 被限流/封禁时连续失败的计数，达到阈值后直接走新浪源，避免每只股票都白试一次东财
 _eastmoney_failures = 0
 _EASTMONEY_BREAKER = 10
+
+# 价格保留 2 位小数，两次舍入最大误差 0.01，取 0.011 作为 pre_close 比对容差
+PRE_CLOSE_TOLERANCE = 0.011
+
+
+class ExDividendDetected(Exception):
+    """tushare 增量窗口内检测到除权。
+
+    库中历史是以某个基准日计算的 qfq 序列，除权后该基准整体失效——
+    只补增量会在锚点处留下断点，必须用 qfq 源全量重取覆盖历史。
+    """
+
+    def __init__(self, code: str, date: str, prev_close: float, pre_close: float):
+        self.code = code
+        self.date = date
+        self.prev_close = prev_close
+        self.pre_close = pre_close
+        adjust_pct = (pre_close / prev_close - 1) * 100 if prev_close else float('nan')
+        super().__init__(
+            f"{code}: {date} 除权，前收 {prev_close:.2f} → pre_close {pre_close:.2f} "
+            f"({adjust_pct:+.2f}%)"
+        )
 
 def fetch_daily_bar_from_akshare(
     code: str,
@@ -213,13 +235,16 @@ def fetch_daily_bar_from_tushare(
 ) -> Optional[pd.DataFrame]:
     """
     Fetch daily stock bars from tushare.
-    前复权不调 adj_factor 接口（官方限流 1 次/分钟，全市场不可行）。
+    前复权不调 adj_factor 接口（官方限流 1 次/分钟，且反复触发会被惩罚成 1 次/小时）。
     要求 from_date 为库中最新交易日：窗口最旧一根即锚点日，
     scale = last_adjusted_close / 锚点日原始收盘，窗口内各根按此整体缩放——
-    锚点日恒等于库中 qfq 值，锚点日之后保持真实涨跌幅（含除权跳空），
+    锚点日恒等于库中 qfq 值，锚点日之后保持真实涨跌幅，
     与库中历史（以同一基准日计算）无缝拼接。
-    窗口跨大额除权时由调用方检测后改走 akshare。
+    窗口内若发生除权则抛 ExDividendDetected，由调用方改走 qfq 源全量重取。
     last_adjusted_close 为 None（首次全量）时返回原始价，调用方应改用 akshare qfq。
+
+    不返回 turnover_rate：tushare daily 接口无此字段，换手率由
+    backfill_turnover_rate() 走 daily_basic 按交易日批量回填。
     """
     if from_date is None:
         from_date = EARLIEST_DATE
@@ -247,15 +272,34 @@ def fetch_daily_bar_from_tushare(
 
             df = df.sort_values('trade_date').reset_index(drop=True)
 
+            # tushare daily 无振幅字段，按 (high-low)/pre_close 补算（与 akshare 口径一致）。
+            # 必须在缩放前算：振幅是比值，缩放后 high/low 变了而 pre_close 没变，
+            # 结果会被整体乘上 scale。
+            df['amplitude'] = ((df['high'] - df['low']) / df['pre_close'] * 100).round(2)
+
+            # 除权检测：正常交易日 pre_close 等于前一日收盘，除权日则是扣除分红/送转后的价格。
+            # 窗口首根是锚点日（已在库中），故只需检查其后各根。
+            # 不能看 pct_chg：tushare 的涨跌幅本身以 pre_close 为基准，除权日也是连续的，
+            # 无论阈值取多少都检测不到（实测 33 个除权事件全部漏过）。
+            if adjust == "qfq" and last_adjusted_close is not None and len(df) > 1:
+                prev_close = df['close'].shift(1)
+                gap = (df['pre_close'] - prev_close).abs()
+                mismatched = df.index[(gap > PRE_CLOSE_TOLERANCE) & prev_close.notna()]
+                if len(mismatched):
+                    i = mismatched[0]
+                    raise ExDividendDetected(
+                        code=code,
+                        date=str(df.at[i, 'trade_date']),
+                        prev_close=float(prev_close.loc[i]),
+                        pre_close=float(df.at[i, 'pre_close']),
+                    )
+
             if adjust == "qfq" and last_adjusted_close is not None:
                 raw_anchor_close = float(df['close'].iloc[0])
                 if raw_anchor_close > 0:
                     scale = last_adjusted_close / raw_anchor_close
                     for col in ['open', 'high', 'low', 'close', 'change']:
                         df[col] = df[col] * scale
-
-            # tushare daily 无振幅字段，按 (high-low)/pre_close 补算（与 akshare 口径一致）
-            df['amplitude'] = ((df['high'] - df['low']) / df['pre_close'] * 100).round(2)
 
             column_mapping = {
                 'trade_date': 'date',
@@ -316,6 +360,9 @@ def fetch_daily_bar_from_tushare(
 
             return df
 
+        except ExDividendDetected:
+            # 不是错误，是给调用方的信号：重试也只会拿到同样的数据
+            raise
         except Exception as e:
             msg = str(e)
             if '频率超限' in msg or '每分钟' in msg or '每小时' in msg:
@@ -383,6 +430,86 @@ def save_daily_bars_to_database(df: pd.DataFrame):
             # logger.info(f"💾 Upserted {len(write_df)} records into {DAILY_BAR_TABLE}")
         except Exception as e:
             logger.error(f"💔 Failed to upsert bars: {e}", exc_info=True)
+
+
+def find_dates_missing_turnover_rate(min_missing: int = 100) -> list[str]:
+    """找出换手率大面积缺失的交易日，返回 YYYYMMDD 升序列表。
+
+    停牌等原因导致个别股票换手率为空属正常（每日约十几只），
+    min_missing 用来只挑出整日缺失的日期——那是 tushare daily 写入留下的空洞。
+    """
+    query = f"""
+        SELECT date, COUNT(*) AS missing
+        FROM {DAILY_BAR_TABLE}
+        WHERE turnover_rate IS NULL
+        GROUP BY date
+        HAVING COUNT(*) >= ?
+        ORDER BY date
+    """
+    with get_db_connection() as conn:
+        rows = conn.execute(query, (min_missing,)).fetchall()
+
+    return [str(row[0]).replace('-', '') for row in rows]
+
+
+def backfill_turnover_rate(dates: list[str], max_wait_per_date: int = 120) -> int:
+    """用 tushare daily_basic 按交易日批量回填换手率，返回更新的行数。
+
+    tushare daily 接口不返回换手率，但 daily_basic 可以按 trade_date 一次取回全市场。
+    该接口限 1 次/分钟且按 token 独立计算，所以 N 个 token 每分钟能覆盖 N 个交易日。
+    只 UPDATE 已存在的行，不插入新行。
+    """
+    if not dates:
+        return 0
+
+    total_updated = 0
+    for trade_date in dates:
+        deadline = time.time() + max_wait_per_date
+        df = None
+        while True:
+            token = tushare_slow_token()
+            if token is None:
+                if time.time() >= deadline:
+                    logger.warning(f"turnover_rate {trade_date}: 无可用 token，跳过")
+                    break
+                time.sleep(5)
+                continue
+
+            try:
+                df = ts.pro_api(token=token).daily_basic(
+                    trade_date=trade_date,
+                    fields="ts_code,trade_date,turnover_rate"
+                )
+                break
+            except Exception as e:
+                if '频率超限' in str(e) and time.time() < deadline:
+                    # 该 token 被惩罚性升级到 1 次/小时，换下一个
+                    time.sleep(5)
+                    continue
+                logger.error(f"turnover_rate {trade_date}: {str(e)[:120]}")
+                break
+
+        if df is None or df.empty:
+            continue
+
+        formatted_date = f"{trade_date[:4]}-{trade_date[4:6]}-{trade_date[6:]}"
+        records = [
+            (float(row.turnover_rate), to_std_code(row.ts_code), formatted_date)
+            for row in df.itertuples()
+            if pd.notna(row.turnover_rate)
+        ]
+        if not records:
+            continue
+
+        sql = f"UPDATE {DAILY_BAR_TABLE} SET turnover_rate = ? WHERE code = ? AND date = ?"
+        with get_db_connection() as conn:
+            cursor = conn.executemany(sql, records)
+            conn.commit()
+            total_updated += cursor.rowcount
+
+        logger.info(f"turnover_rate {trade_date}: 更新 {cursor.rowcount} 行")
+
+    return total_updated
 
 def update_daily_bars_for_code(
     code: str,

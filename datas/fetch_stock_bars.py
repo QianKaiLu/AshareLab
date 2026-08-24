@@ -1,5 +1,6 @@
 import akshare as ak
 import sqlite3
+import threading
 import pandas as pd
 from pathlib import Path
 from tools.log import get_fetch_logger
@@ -30,6 +31,12 @@ _EASTMONEY_BREAKER = 10
 
 # 价格保留 2 位小数，两次舍入最大误差 0.01，取 0.011 作为 pre_close 比对容差
 PRE_CLOSE_TOLERANCE = 0.011
+
+# baostock 的会话是进程级全局 socket，非线程安全：多线程并发查询会挂死
+# （实测 12 只并发跑满 600s 无进展、CPU 仅 4s、无 TCP 连接）。
+# 要并发只能用多进程，每个进程各自 login。
+_baostock_lock = threading.Lock()
+_baostock_logged_in = False
 
 
 class ExDividendDetected(Exception):
@@ -223,6 +230,152 @@ def fetch_daily_bar_from_sina(
         return df
     except Exception as e:
         logger.error(f"Error fetching data from sina for {code}: {e}", exc_info=True)
+        return None
+
+
+def _ensure_baostock_login() -> bool:
+    """惰性登录 baostock，进程内只登一次。login() 不需要任何凭证。"""
+    global _baostock_logged_in
+    with _baostock_lock:
+        if _baostock_logged_in:
+            return True
+        try:
+            import baostock as bs
+        except ImportError:
+            logger.error("baostock 未安装：pip install baostock")
+            return False
+
+        result = bs.login()
+        if result.error_code != '0':
+            logger.error(f"baostock 登录失败: {result.error_code} {result.error_msg}")
+            return False
+        _baostock_logged_in = True
+        return True
+
+
+def fetch_daily_bar_from_baostock(
+    code: str,
+    from_date: Optional[str] = None,
+    to_date: Optional[str] = None,
+    adjust: str = "qfq",
+    keep_halted: bool = False,
+) -> Optional[pd.DataFrame]:
+    """
+    Fetch daily stock bars from baostock（https://www.baostock.com）。
+
+    与东财 / 新浪的加法式复权不同，baostock 用「涨跌幅复权法」（乘法式），
+    历史价不会被累计分红减成负数——老股（如 000048、000002）在东财/新浪 qfq
+    下 2005~2015 段会出现负收盘价，baostock 同期恒为正。
+    覆盖自 1999 年起（早于本库 EARLIEST_DATE）。
+
+    注意：
+    - 非线程安全（进程级全局 socket 会话），要并发只能多进程，各进程自行 login
+    - 默认丢弃停牌日（tradestatus=0）：那些行 OHLC 全等于前收、volume=0，
+      入库会拉平均线、干扰形态判断。keep_halted=True 可保留
+    - 不支持北交所（8xxxxx / 9xxxxx），只有 sh / sz
+    """
+    if not _ensure_baostock_login():
+        return None
+
+    import baostock as bs
+
+    if from_date is None:
+        from_date = EARLIEST_DATE
+    if to_date is None:
+        to_date = latest_trade_day().strftime("%Y%m%d")
+
+    try:
+        exchange_code, _ = get_exchange_by_code(code)
+    except ValueError as e:
+        logger.warning(f"baostock: {e}")
+        return None
+
+    if exchange_code not in ("SH", "SZ"):
+        logger.warning(f"baostock 不支持 {exchange_code} 交易所（{code}）")
+        return None
+
+    adjust_flag = {"qfq": "2", "hfq": "1", "": "3"}.get(adjust)
+    if adjust_flag is None:
+        logger.error(f"baostock: 不支持的 adjust={adjust}")
+        return None
+
+    def to_dashed(d: str) -> str:
+        d = str(d).replace('-', '')
+        return f"{d[:4]}-{d[4:6]}-{d[6:8]}"
+
+    fields = ("date,open,high,low,close,preclose,volume,amount,"
+              "turn,tradestatus,pctChg")
+
+    try:
+        rs = bs.query_history_k_data_plus(
+            f"{exchange_code.lower()}.{code}",
+            fields,
+            start_date=to_dashed(from_date),
+            end_date=to_dashed(to_date),
+            frequency="d",
+            adjustflag=adjust_flag,
+        )
+        if rs.error_code != '0':
+            logger.error(f"baostock {code}: {rs.error_code} {rs.error_msg}")
+            return None
+
+        rows = []
+        while rs.next():
+            rows.append(rs.get_row_data())
+
+        if not rows:
+            logger.warning(f"No daily bar data returned from baostock for code={code}")
+            return None
+
+        df = pd.DataFrame(rows, columns=rs.fields)
+
+        # 停牌日：OHLC 全等于前收、volume=0、turn 为空
+        if not keep_halted:
+            df = df[df['tradestatus'] == '1'].copy()
+            if df.empty:
+                logger.warning(f"baostock {code}: 全部为停牌日，无有效数据")
+                return None
+
+        df = df.rename(columns={'turn': 'turnover_rate', 'pctChg': 'change_pct'})
+        df['code'] = code
+
+        # 停牌日 turnover_rate 为空串，需先转 None 再交给 to_numeric
+        df['turnover_rate'] = df['turnover_rate'].replace('', None)
+
+        for col in ['open', 'high', 'low', 'close', 'preclose', 'amount',
+                    'turnover_rate', 'change_pct']:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+
+        # baostock 的 volume 单位已是股、amount 已是元，与东财口径一致
+        df['volume'] = pd.to_numeric(df['volume'], errors='coerce').fillna(0).astype('int64')
+
+        df['date'] = pd.to_datetime(df['date'], errors='coerce')
+        df = df.dropna(subset=['date']).copy()
+
+        # baostock 直接给 preclose，比 close.diff() 好：首行也有值
+        df['price_change'] = df['close'] - df['preclose']
+        df['amplitude'] = (df['high'] - df['low']) / df['preclose'] * 100
+
+        for col in ['open', 'close', 'high', 'low', 'amount', 'amplitude',
+                    'change_pct', 'price_change', 'turnover_rate']:
+            df[col] = df[col].round(2)
+
+        df = (
+            df
+            .drop_duplicates(subset=['code', 'date'], keep='last')
+            .sort_values('date')
+            .reset_index(drop=True)
+        )
+
+        final_columns = [
+            'code', 'date', 'open', 'close', 'high', 'low',
+            'volume', 'amount', 'amplitude', 'change_pct',
+            'price_change', 'turnover_rate'
+        ]
+        return df[[col for col in final_columns if col in df.columns]]
+
+    except Exception as e:
+        logger.error(f"Error fetching data from baostock for {code}: {e}", exc_info=True)
         return None
 
 

@@ -10,7 +10,6 @@ def yt_dlp_download(url: str, output_dir: Path) -> Path:
     ydl_opts = {
         'format': 'bestvideo+bestaudio/best',
         'outtmpl': str(output_dir / '%(title)s.%(ext)s'),
-        'cookiesfrombrowser': ('chrome',), 
         'merge_output_format': 'mp4',
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -84,7 +83,6 @@ def yt_dlp_download_audio(url: str, output_dir: Path) -> Path:
     ydl_opts = {
         'format': 'bestaudio/best',
         'outtmpl': str(output_dir / '%(title)s.%(ext)s'),
-        'cookiesfrombrowser': ('chrome',), 
         'postprocessors': [
             {
                 'key': 'FFmpegExtractAudio',

@@ -559,8 +559,23 @@ bad_case: list[HuntInputLike] = ["002709"]
 
 
 def main():
+    # 命中时按「名称一行 + 紧凑指标一行」输出，指标 dict 直接可读、可 grep，
+    # 便于对命中结果做人工/AI 复盘，不必再单独取数。
+    METRIC_KEYS = (
+        "variant", "kdj_j", "price_change_pct", "amplitude_pct",
+        "fire_date", "fire_days", "fire_pct", "top_vol_ratio",
+        "last_day_volume_ratio", "prev_day_volume_ratio",
+        "three_vol_ratio", "three_body_ratio",
+        "pos_in_breakout_range", "is_high_position",
+        "stop_loss_line", "stop_loss_price", "support_price",
+    )
+
     def print_result(result: HuntResult):
         logger.info(f"{result.format_info}")
+        info = result.result_info
+        if isinstance(info, dict):
+            logger.info("    " + ", ".join(
+                f"{k}={info.get(k)}" for k in METRIC_KEYS))
 
     hunter = HuntMachine(max_workers=20, on_result_found=print_result)
     results: list[HuntResult] = hunter.hunt(hunt_b1, min_bars=500, hunt_pool=None)

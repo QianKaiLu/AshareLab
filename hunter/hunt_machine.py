@@ -78,13 +78,17 @@ class HuntMachine:
         self.max_workers = max_workers
         self.on_result_found = on_result_found
 
-    def hunt(self, analyzer: Callable[[pd.DataFrame], Any], min_bars: int = 500, hunt_pool: Optional[List[HuntInputLike]] = None) -> List[HuntResult]:
+    def hunt(self, analyzer: Callable[[pd.DataFrame], Any], min_bars: int = 500,
+             hunt_pool: Optional[List[HuntInputLike]] = None,
+             with_code: bool = False) -> List[HuntResult]:
         """
         Scan all stocks and apply the analyzer function.
-        
+
         Args:
             analyzer: A function that takes a DataFrame (daily bars) and returns a truthy value if the stock matches.
                       The return value can be a boolean or any object (e.g., a dict with details).
+                      When with_code=True, called as analyzer(df, code) —— 出货识别等策略
+                      需要代码判断板块涨跌停幅度。
             min_bars: Minimum number of bars required for the analyzer.
             hunt_pool: A list of stock codes to analyze.
 
@@ -97,12 +101,12 @@ class HuntMachine:
         else:
             pool = hunt_pool
         results: list[HuntResult] = []
-        
+
         logger.info(f"🏹 Start hunting among {len(pool)} inputs...")
-        
+
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             futures = {
-                executor.submit(self._process_stock, input, analyzer, min_bars): (input.code if isinstance(input, HuntInput) else input)
+                executor.submit(self._process_stock, input, analyzer, min_bars, with_code): (input.code if isinstance(input, HuntInput) else input)
                 for input in pool
             }
             
@@ -124,7 +128,7 @@ class HuntMachine:
         logger.info(f"✅ Hunt finished. Found {len(results)} matches.")
         return results
 
-    def _process_stock(self, input: HuntInputLike, analyzer: Callable[[pd.DataFrame], Any], min_bars: int) -> Optional[HuntResult]:
+    def _process_stock(self, input: HuntInputLike, analyzer: Callable[[pd.DataFrame], Any], min_bars: int, with_code: bool = False) -> Optional[HuntResult]:
         # Fetch data
         if isinstance(input, HuntInput):
             code = input.code
@@ -132,17 +136,17 @@ class HuntMachine:
         else:
             code = input
             df = query_latest_bars(code, n=min_bars)
-        
+
         if df.empty or len(df) < min_bars:
             return None
-            
+
         # Apply analyzer
         try:
-            res = analyzer(df)
+            res = analyzer(df, code) if with_code else analyzer(df)
             if res:
                 return HuntResult(code, res, input)
         except Exception as e:
             # logger.debug(f"Analyzer failed for {code}: {e}") # Optional: debug log
             pass
-            
+
         return None

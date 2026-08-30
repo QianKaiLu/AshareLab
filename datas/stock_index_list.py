@@ -12,13 +12,15 @@ from tools.stock_tools import to_std_code
 
 logger = get_fetch_logger()
 
-DATABASE_DIR = Path(__file__).parent.parent / "database"
+# 指数成分股名单属于参考数据，不入库；放 datas/index_lists/ 并纳入 git
+# （database/ 整个被 gitignore，且 30 天刷新的名单有版本回溯价值）
+INDEX_LIST_DIR = Path(__file__).parent / "index_lists"
 
-hs300_list_path = DATABASE_DIR / "hs300_stock_list.csv"
-csi500_list_path = DATABASE_DIR / "csi500_stock_list.csv"
-csi2000_list_path = DATABASE_DIR / "csi2000_stock_list.csv"
-csi_a500_list_path = DATABASE_DIR / "csi_a500_stock_list.csv"
-dummy_path = DATABASE_DIR / ".dummy"
+hs300_list_path = INDEX_LIST_DIR / "hs300_stock_list.csv"
+csi500_list_path = INDEX_LIST_DIR / "csi500_stock_list.csv"
+csi2000_list_path = INDEX_LIST_DIR / "csi2000_stock_list.csv"
+csi_a500_list_path = INDEX_LIST_DIR / "csi_a500_stock_list.csv"
+dummy_path = INDEX_LIST_DIR / ".dummy"
 
 update_interval_days = 30  # update every 30 days
 

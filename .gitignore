@@ -215,3 +215,5 @@ media_factory/datas/
 
 # ai models
 models/
+# index list refresh marker (mtime-based, local only)
+datas/index_lists/.dummy

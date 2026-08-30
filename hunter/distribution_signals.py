@@ -203,8 +203,11 @@ def _detect_s1(d: pd.DataFrame, i: int) -> Optional[tuple[str, str, dict]]:
         return "S1", "必走", metrics
     # S1 变式：实体稍浅但量压过顶部所有阳量，且位置在高位
     # （东财 2019「创新高，量大于之前所有的阳量」、中铁 20150608「对这个高点来讲是放量」）
+    # 级别从「必走」降为「至少走一半」——事件研究回测（backtest/s1_hs300.py，
+    # hs300 126 条 / csi500 241 条）显示变式 60 日超额仅 -2.9pp、前向收益为正，
+    # 明显弱于标准 S1（-5.5pp）；量没创 60 日天量多半只是普通高位调整。
     if body <= S1_BODY_VARIANT and is_local_sky and (has_accel or new_high):
-        return "S1变式", "必走", metrics
+        return "S1变式", "至少走一半", metrics
     # 量够、实体够，但没有加速——文稿说这种多半是试盘不是出货，降级
     if body <= S1_BODY_VARIANT:
         return "S1变式", "稳一手", {**metrics, "note": "无加速段，存疑（可能是试盘）"}

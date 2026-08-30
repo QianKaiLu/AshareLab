@@ -67,14 +67,16 @@ add_kdj_to_dataframe(df, inplace=True)      # → kdj_k / kdj_d / kdj_j
 add_macd_to_dataframe(df, inplace=True)     # → MACD_DIF / MACD_DEA / MACD_BAR
 ```
 
-现有指标：`macd`、`kdj`、`rsi`、`bbi`、`volume_ma`、`zxdkx`。
+现有指标：`macd`、`kdj`、`rsi`、`bbi`、`volume_ma`、`zxdkx`、`price_limit`（涨跌停幅度与归一化实体 `body_norm`，出货判定主尺子，需传 `code` 按板块/日期取幅度）。
 
 ### 选股框架：hunter 与 hunters 的分工
 
 **这是最容易搞混的地方**，两个目录不是历史遗留，职责不同：
 
 - `hunter/` = 引擎与基础件。`hunt_machine.py` 定义 `HuntMachine`（ThreadPoolExecutor 并行扫描）、`HuntInput`（惰性取数）、`HuntResult`（带 `union` / `intersection` 静态方法用于组合策略）；`hunt_pools.py` 提供股票池（全市场 / hs300 / hs300+csi500 / 加 csi2000）；`filters/` 是可复用的条件判断
-- `hunters/` = 具体策略实现，如 `z_b1_hunter.py`、`z_b2_hunter.py`、`macd_divergence_hunter.py`。它们 import `hunter/` 的引擎，并用 `hunters/hunt_output.py` 的 `draw_hunt_results()` 出图
+- `hunters/` = 具体策略实现，如 `z_b1_hunter.py`、`z_b2_hunter.py`、`macd_divergence_hunter.py`、`z_distribution_hunter.py`（出货识别，与买点 hunter 分工相反：回答「要不要回避」，按 必走/至少走一半/稳一手 × 20日高危/60日观察 分层）。它们 import `hunter/` 的引擎，并用 `hunters/hunt_output.py` 的 `draw_hunt_results()` 出图
+
+出货识别的探测器在 `hunter/distribution_signals.py`（S1~S5 + 换庄失效），是文稿《主力出货的 5 种典型方式》的量化版；只看量价位置，用 `price_limit` 归一化实体。需要代码判断板块幅度的策略，给 `HuntMachine.hunt()` 传 `with_code=True`，analyzer 签名变 `analyzer(df, code)`。
 
 策略函数是纯函数：吃 DataFrame，命中返回 dict（附带指标值），不命中返回 `None` / `False`。
 

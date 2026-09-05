@@ -19,4 +19,17 @@
 
 ## 当前状态
 
-设计 v0.4 已定稿，实现未开始。落地顺序见需求文档第 6 节。
+需求文档第 6 节的六步落地顺序**已全部完成**（2026-09-05）：存储层 → 周线 KDJ → 测量快照 → 每日日报 → 单票复盘 → 记账 skill。
+
+三个 skill 与共享的 py 包：
+
+| 入口 | 用途 |
+|---|---|
+| `/qk-stock-swing-trade` | 记一笔（买卖 + 理由 + 止损计划 + 便签验证） |
+| `/qk-stock-swing-daily` | 每日持仓日报，按「今天要不要动手」分档 |
+| `/qk-stock-swing-review` | 单笔买入复盘（买点 + 成交价偏离 + 理由 + 事后走势） |
+| `portfolio/` | 三者共享：store / position / snapshot / monitor / review / archive / cli |
+
+账本还是空的，用 `python -m portfolio.cli buy ...` 录第一笔，或 `python -m portfolio.monitor --codes <代码>` 先试跑。
+
+用法速查见 [../工具与工作流.md](../工具与工作流.md)。

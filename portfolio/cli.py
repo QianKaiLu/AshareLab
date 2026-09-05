@@ -25,6 +25,7 @@ import sys
 from typing import Optional
 
 from portfolio import position as pos
+from portfolio import snapshot
 from portfolio import store
 
 # 行情相关的导入放在函数内部：只查记录时不该被 pandas / sqlite 拖慢，
@@ -65,6 +66,35 @@ def last_close(code: str) -> Optional[tuple[str, float]]:
     return str(row["date"])[:10], float(row["close"])
 
 
+def collect_snapshot(code: str, day: str, skip: bool = False) -> dict:
+    """采集成交日测量快照（D14）。失败不阻塞录入——记录本身比快照重要。"""
+    if skip:
+        return {}
+    try:
+        snap = snapshot.collect(code, day)
+    except Exception as e:
+        print(f"  ⚠ 快照采集失败（不影响记录）: {e}")
+        return {}
+    if snap.get("error"):
+        print(f"  ⚠ {snap['error']}")
+    return snap
+
+
+def _deviation(price: float, snap: dict) -> None:
+    """实际成交价 vs 当日收盘的偏离，以及与止损参考位的距离。
+
+    B1 是收盘信号，买在收盘价之上多少，直接决定这笔的容错空间被吃掉多少。
+    """
+    close = snap.get("close")
+    if close:
+        print(f"  买入价 vs 当日收盘 {close}：{(price / close - 1) * 100:+.2f}%")
+    stop_price = snap.get("stop_loss_price")
+    if stop_price:
+        risk = (price / float(stop_price) - 1) * 100
+        print(f"  距止损参考位 {snap.get('stop_loss_line')}@{stop_price}：{risk:+.2f}%"
+              f"（这是单笔最大风险敞口）")
+
+
 def _preview(kind: str, rec: dict, commit: bool) -> int:
     tag = "已写入" if commit else "[预览] 未写入"
     print(f"{tag} {kind}:")
@@ -80,9 +110,10 @@ def cmd_buy(args) -> int:
     code, name = resolve(args.stock)
     day = store.parse_date(args.date)
 
+    snap = collect_snapshot(code, day, skip=args.no_snapshot)
     trade = store.make_trade(
         code=code, name=name, side="buy", day=day,
-        price=args.price, qty=args.qty, remark=args.remark,
+        price=args.price, qty=args.qty, remark=args.remark, snapshot=snap,
     )
 
     lots_before = pos.build_lots().get(code)
@@ -92,6 +123,11 @@ def cmd_buy(args) -> int:
         print(f"  加仓：原持仓 {held} 股，均价 {lots_before.avg_cost:.3f}")
     if not args.stop:
         print("  ⚠ 未写止损计划。核心原则：每一笔交易都必须有止损计划，建议补 --stop")
+
+    if snap:
+        print()
+        print(snapshot.describe(snap))
+        _deviation(args.price, snap)
 
     print()
     if args.commit:
@@ -144,10 +180,14 @@ def cmd_sell(args) -> int:
         if args.qty > lot.qty:
             print(f"  ⚠ 卖出数量超过持仓，将按 {lot.qty} 股计")
 
+    snap = collect_snapshot(code, day, skip=args.no_snapshot)
     trade = store.make_trade(
         code=code, name=name, side="sell", day=day,
-        price=args.price, qty=args.qty, remark=args.remark,
+        price=args.price, qty=args.qty, remark=args.remark, snapshot=snap,
     )
+    if snap:
+        print()
+        print(snapshot.describe(snap))
     print()
     if args.commit:
         store.append_record("trade", trade)
@@ -281,7 +321,12 @@ def cmd_detail(args) -> int:
             line += f"  {t['remark']}"
         print(line)
         if t.get("snapshot"):
-            print(f"      快照 {json.dumps(t['snapshot'], ensure_ascii=False)}")
+            if args.full_snapshot:
+                print(f"      快照 {json.dumps(t['snapshot'], ensure_ascii=False)}")
+            else:
+                # 摘要即够读，40 个字段的原始 JSON 用 --full-snapshot 才展开
+                for ln in snapshot.describe(t["snapshot"]).splitlines():
+                    print(f"    {ln}")
 
     hist = store.stop_history(code)
     if hist:
@@ -358,6 +403,7 @@ def main() -> int:
     b.add_argument("--reason", help="买入理由，存为便签")
     b.add_argument("--due", help="买入理由的复盘到期日")
     b.add_argument("--remark", help="交易备注")
+    b.add_argument("--no-snapshot", action="store_true", help="跳过测量快照采集")
     b.add_argument("--commit", action="store_true")
     b.set_defaults(func=cmd_buy)
 
@@ -368,6 +414,7 @@ def main() -> int:
     s.add_argument("date", nargs="?")
     s.add_argument("--reason", help="卖出理由，存为便签")
     s.add_argument("--remark")
+    s.add_argument("--no-snapshot", action="store_true", help="跳过测量快照采集")
     s.add_argument("--commit", action="store_true")
     s.set_defaults(func=cmd_sell)
 
@@ -398,6 +445,7 @@ def main() -> int:
 
     d = sub.add_parser("detail", help="单票交易 / 便签 / 止损沿革")
     d.add_argument("stock")
+    d.add_argument("--full-snapshot", action="store_true", help="展开快照全部字段的原始 JSON")
     d.set_defaults(func=cmd_detail)
 
     p = sub.add_parser("pending", help="待验证便签")

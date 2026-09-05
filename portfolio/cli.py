@@ -204,7 +204,15 @@ def cmd_sell(args) -> int:
             print(f"\n剩余 {after.qty} 股，成本 {after.avg_cost:.3f}，累计已实现 {after.realized:+,.2f}")
         else:
             print(f"\n已清仓。该票累计已实现盈亏 {after.realized:+,.2f}")
-            print("  提示：清仓归档（closed/<code>.md）尚未实现，见落地顺序")
+            # 清仓即归档：把这只票的交易、便签、止损沿革汇总成一份可读的复盘档
+            from portfolio import archive
+            path, _ = archive.write(code, commit=True)
+            if path:
+                print(f"✓ 归档 {path}")
+            pend = [n for n in pos.notes_of(code) if n.get("status") == "待验证"]
+            if pend:
+                print(f"  {len(pend)} 条便签仍待验证，清仓正是回看的时机："
+                      f"`python -m portfolio.cli verify {pend[0]['id']} \"结论\"`")
         return 0
 
     print(json.dumps(trade, ensure_ascii=False, indent=2))
@@ -356,17 +364,70 @@ def cmd_detail(args) -> int:
 
 
 def cmd_pending(args) -> int:
-    rows = pos.pending_notes()
+    """列出未验证的便签。
+
+    默认列全部（含未到期的）——只列到期的会让人以为记录丢了。日报走
+    `pos.pending_notes()`，那里才按 due 过滤，因为提醒要按期触发。
+    """
+    from datetime import date
+
+    today = date.today().strftime("%Y-%m-%d")
+    rows = [n for n in store.read_records("note") if n.get("status") == "待验证"]
     if not rows:
         print("没有待验证便签。")
         return 0
-    print(f"待验证便签 {len(rows)} 条：\n")
+
+    due_now = [n for n in rows if not n.get("due") or n["due"] <= today]
+    print(f"待验证便签 {len(rows)} 条，其中 {len(due_now)} 条已到期：\n")
     for n in rows:
         code = n.get("code", "market")
-        due = f" 到期 {n['due']}" if n.get("due") else " 无到期日"
+        if n.get("due"):
+            mark = "已到期" if n["due"] <= today else "未到期"
+            due = f" 到期 {n['due']}（{mark}）"
+        else:
+            due = " 无到期日"
         print(f"{n['date']}  {code}  [{n['type']}]{due}  [{n['id']}]")
         print(f"    {n['text']}")
-    print("\n回看这些判断是否应验，验证后把 status 改成「已验证」（当前需手工编辑 JSONL）。")
+    print("\n回看这些判断是否应验，用 `verify <id> \"结论\"` 盖章。")
+    return 0
+
+
+def cmd_verify(args) -> int:
+    """给便签盖章：待验证 → 已验证 / 已复盘。原判断保留，结论附加。"""
+    kind, rec = store.find_record(args.id)
+    if not rec:
+        sys.exit(f"✗ 找不到记录 {args.id}")
+    if kind != "note":
+        sys.exit(f"✗ {args.id} 是 {kind} 记录，只有便签能盖章")
+
+    print(f"{rec['date']} [{rec['type']}] {rec.get('status', '无状态')}")
+    print(f"  原判断：{rec['text']}")
+    print(f"  → {args.status}" + (f"　结论：{args.result}" if args.result else ""))
+    if not args.commit:
+        print("\n[预览] 未写入。确认后加 --commit。")
+        return 0
+    store.verify_note(args.id, args.status, args.result)
+    print(f"\n✓ 已盖章 {args.id}")
+    return 0
+
+
+def cmd_archive(args) -> int:
+    """生成清仓归档。省略代码则归档全部已清仓的票。"""
+    from portfolio import archive
+
+    codes = [resolve(args.stock)[0]] if args.stock else archive.closed_codes()
+    if not codes:
+        print("没有已清仓的票。")
+        return 0
+    for code in codes:
+        path, text = archive.write(code, commit=args.commit)
+        if path is None:
+            print(f"✗ {code} 无交易记录")
+        elif args.commit:
+            print(f"✓ {path}")
+        else:
+            print(text)
+            print(f"\n[预览] 未写入。确认无误后加 --commit 落盘到 {path}")
     return 0
 
 
@@ -450,6 +511,18 @@ def main() -> int:
 
     p = sub.add_parser("pending", help="待验证便签")
     p.set_defaults(func=cmd_pending)
+
+    v = sub.add_parser("verify", help="给便签盖章（待验证 → 已验证/已复盘）")
+    v.add_argument("id", help="便签 id")
+    v.add_argument("result", nargs="?", help="应验与否的结论，附加在原判断之后")
+    v.add_argument("--status", default="已验证", choices=store.NOTE_STATUS)
+    v.add_argument("--commit", action="store_true")
+    v.set_defaults(func=cmd_verify)
+
+    a = sub.add_parser("archive", help="生成清仓归档 closed/<code>.md")
+    a.add_argument("stock", nargs="?", help="省略则归档全部已清仓的票")
+    a.add_argument("--commit", action="store_true")
+    a.set_defaults(func=cmd_archive)
 
     r = sub.add_parser("rm", help="删除一条记录")
     r.add_argument("id")

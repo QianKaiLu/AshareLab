@@ -156,6 +156,49 @@ def delete_record(rid: str, account: str = "swing") -> Optional[dict]:
     return rec
 
 
+def update_record(rid: str, changes: dict, account: str = "swing") -> Optional[dict]:
+    """按 id 就地改字段，返回改后的记录。
+
+    只给便签状态流转用（待验证 → 已验证/已复盘）。**交易与止损不走这里**：
+    交易改了会让持仓与历史对不上，止损改了会抹掉「当时写的是什么」——那两类要么
+    追加新记录，要么删掉重录。
+    """
+    kind, rec = find_record(rid, account)
+    if not rec:
+        return None
+    if kind != "note":
+        raise ValidationError(
+            f"{rid} 是 {kind} 记录，不能改。交易请删除重录，止损请追加新记录（保留留痕）"
+        )
+    rows = read_records(kind, account)
+    for r in rows:
+        if r.get("id") == rid:
+            r.update(changes)
+            rec = r
+            break
+    rewrite_records(kind, rows, account)
+    return rec
+
+
+def verify_note(
+    rid: str,
+    status: str = "已验证",
+    result: Optional[str] = None,
+    account: str = "swing",
+) -> Optional[dict]:
+    """给便签盖章：待验证 → 已验证 / 已复盘（设计决策 D5 的复盘闭环）。
+
+    result 是应验与否的结论，附加在原文之后而不是替换——原判断必须留着，
+    否则下次就看不出当时想错在哪。
+    """
+    if status not in NOTE_STATUS:
+        raise ValidationError(f"status 可选 {list(NOTE_STATUS)}，收到 {status!r}")
+    changes: dict[str, Any] = {"status": status, "verified_at": date.today().strftime("%Y-%m-%d")}
+    if result:
+        changes["result"] = result.strip()
+    return update_record(rid, changes, account)
+
+
 # --- 记录构造：字段校验集中在这里，CLI 只管收集参数 ---------------------------
 
 

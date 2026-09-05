@@ -20,8 +20,10 @@
 
 本轮只要「大体符合交易理念」，不做「条件 → 动作 → 仓位比例」的精确映射。后续若发现日报的卖点建议前后不一致，再补：
 
-- 「BBI 上两根中大阳线」里「中大阳」的量化口径（可用 `indicators/price_limit.py` 的 `body_norm` 按板块幅度归一化实体）
+- 「BBI 上两根中大阳线」里「中大阳」的量化口径（可用 `indicators/price_limit.py` 的 `body_norm` 按板块幅度归一化实体）。当前实现用 `body_norm ≥ 0.4` 起判，是起点参照不是标定值
 - 信号冲突优先级表（BBI 减仓 vs J 值钝化放飞；出货 S1 vs 加速段拉升）
+
+已实测到的两个冲突（BBI 离场 vs 黄线未破、B1 买点 vs 出货 S3）见 CHANGELOG v0.4.1，目前写在 `qk-stock-swing-daily/references/sell_rules.md` 交由 AI 权衡。若日报的权衡结论开始前后不一致，就是该补优先级表的信号。
 
 ## 中：长期价值投资分支
 

@@ -108,7 +108,13 @@ conda run --live-stream -n stock python -m portfolio.cli note 300314 \
 ... -m portfolio.cli stop 300314 "上移到点火后低点 11.84" --price 11.84 --basis 人工 --commit
 ```
 
-`pending` 里的待验证便签，到期了要在日报里回看并给结论 —— 应验还是证伪。验证后改 `status`（目前需手工编辑 `portfolio/swing/notes.jsonl`）。
+日报末尾列出的待验证便签，到期了要在日报里回看并给结论 —— 应验还是证伪。有结论就顺手盖章，别让用户自己去改文件：
+
+```bash
+... -m portfolio.cli verify <便签id> "黄线11.16全程未破，判断成立" --commit
+```
+
+盖章要写具体依据，原判断会保留。
 
 ## 存档
 

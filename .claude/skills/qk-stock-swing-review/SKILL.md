@@ -122,7 +122,13 @@ conda run --live-stream -n stock python -m portfolio.cli note 300314 \
   --type 复盘结论 --commit
 ```
 
-若复盘发现原买入理由已证伪，把那条便签的 `status` 改成「已验证」并说明（目前需手工编辑 `portfolio/swing/notes.jsonl`）。
+若复盘发现原买入理由已应验或已证伪，顺手给那条便签盖章，别让用户自己去改文件：
+
+```bash
+... -m portfolio.cli verify <便签id> "黄线11.16未破判断成立，但没料到会连续6日收白线下" --commit
+```
+
+原判断保留，结论附加。写具体依据，不要只写「对了」「错了」。
 
 ## 相关
 

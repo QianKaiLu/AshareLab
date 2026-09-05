@@ -84,7 +84,7 @@ PYTHONPATH=. conda run --live-stream -n stock python -m hunters.z_b1_hunter > lo
 
 ## 步骤 4：指数成分交叉
 
-- 名单文件（格式 `code,name,list_date`）：`database/hs300_stock_list.csv`（约 300 行）、`database/csi500_stock_list.csv`（约 500 行）
+- 名单文件（格式 `code,name,list_date`）：`datas/index_lists/hs300_stock_list.csv`（约 300 行）、`datas/index_lists/csi500_stock_list.csv`（约 500 行）
 - 将命中池与两个名单分别取交集，在分析末尾单独列「指数成分（沪深300 / 中证500）」一节：每只标注所处梯队 + 一句话评价，并附两个股票列表字符串
 - 命中池多为中小票，指数成分通常只有个位数（0~10 只）属正常；两个名单都不含的票不需要列出
 
@@ -152,5 +152,5 @@ code,name,variant,kdj_j,chg,amp,fire,fire_days,fire_pct,top_vol_ratio,last_vol_r
 - `workflow/daily_update.py` — 行情日更流水线（详见 `/qk-stock-daily-update`）
 - `hunters/z_b1_hunter.py` — B1 全市场硬筛，`main()` 输出指标行
 - `qk-stock-b1-review/references/b1_rules.md` — 评价标定基准
-- `database/hs300_stock_list.csv` / `database/csi500_stock_list.csv` — 指数成分名单，用于命中池交叉
+- `datas/index_lists/hs300_stock_list.csv` / `datas/index_lists/csi500_stock_list.csv` — 指数成分名单，用于命中池交叉
 - `b1_results/` — 每日分析存档，`YYYY-MM-DD.md` 含分级 + 指数成分 + 全量指标 CSV

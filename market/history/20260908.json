@@ -3,6 +3,15 @@
  "errors": [],
  "limit_up": [
   {
+   "code": "000523",
+   "name": "红棉股份",
+   "industry": "综合Ⅱ",
+   "boards": 1,
+   "seal_amt": 201191958.0,
+   "first_seal": "092500",
+   "turnover": 6.9908037185668945
+  },
+  {
    "code": "002403",
    "name": "爱仕达",
    "industry": "小家电",
@@ -19,15 +28,6 @@
    "seal_amt": 68849242.0,
    "first_seal": "092500",
    "turnover": 19.385509490966797
-  },
-  {
-   "code": "000523",
-   "name": "红棉股份",
-   "industry": "综合Ⅱ",
-   "boards": 1,
-   "seal_amt": 201191958.0,
-   "first_seal": "092500",
-   "turnover": 6.9908037185668945
   },
   {
    "code": "600865",
@@ -57,15 +57,6 @@
    "turnover": 0.8653258681297302
   },
   {
-   "code": "603042",
-   "name": "华脉科技",
-   "industry": "通信设备",
-   "boards": 2,
-   "seal_amt": 74463239.0,
-   "first_seal": "092503",
-   "turnover": 3.178022623062134
-  },
-  {
    "code": "603999",
    "name": "读者传媒",
    "industry": "出版",
@@ -82,6 +73,15 @@
    "seal_amt": 100469325.0,
    "first_seal": "092503",
    "turnover": 1.3453760147094727
+  },
+  {
+   "code": "603042",
+   "name": "华脉科技",
+   "industry": "通信设备",
+   "boards": 2,
+   "seal_amt": 74463239.0,
+   "first_seal": "092503",
+   "turnover": 3.178022623062134
   },
   {
    "code": "000978",
@@ -884,5 +884,24 @@
    "chg": 6.914893627166748
   }
  ],
- "_note": "历史快照：仅涨停池/炸板池（实时榜无历史参数，当日快照才含）"
+ "money_effect": {
+  "prev_zt_count": 93,
+  "promote_count": 18,
+  "promote_rate": 19.4,
+  "premium_median": 2.24,
+  "premium_mean": 2.89,
+  "red_ratio": 64.5
+ },
+ "newhigh": {
+  "window": 20,
+  "date": "2026-09-08",
+  "hs300_newhigh": 14,
+  "hs300_total": 287,
+  "hs300_pct": 4.9,
+  "csi2000_newhigh": 120,
+  "csi2000_total": 699,
+  "csi2000_pct": 17.2,
+  "lean": "小票占优"
+ },
+ "_note": "历史快照：含涨停池/炸板池/赚钱效应/大小票分歧；板块榜与情绪总览是实时接口，仅当日快照含"
 }

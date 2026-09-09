@@ -1,0 +1,538 @@
+{
+ "date": "20260824",
+ "errors": [],
+ "limit_up": [
+  {
+   "code": "000065",
+   "name": "北方国际",
+   "industry": "专业工程",
+   "boards": 1,
+   "seal_amt": 73901500.0,
+   "first_seal": "092500",
+   "turnover": 7.800812721252441
+  },
+  {
+   "code": "000931",
+   "name": "中 关 村",
+   "industry": "化学制药",
+   "boards": 3,
+   "seal_amt": 89005666.0,
+   "first_seal": "092500",
+   "turnover": 14.989714622497559
+  },
+  {
+   "code": "000925",
+   "name": "众合科技",
+   "industry": "轨交设备",
+   "boards": 1,
+   "seal_amt": 169076265.0,
+   "first_seal": "092500",
+   "turnover": 1.7560416460037231
+  },
+  {
+   "code": "000017",
+   "name": "深中华A",
+   "industry": "饰品",
+   "boards": 3,
+   "seal_amt": 180589590.0,
+   "first_seal": "092500",
+   "turnover": 2.0051183700561523
+  },
+  {
+   "code": "002445",
+   "name": "中南文化",
+   "industry": "通用设备",
+   "boards": 1,
+   "seal_amt": 198607600.0,
+   "first_seal": "092500",
+   "turnover": 0.20274211466312408
+  },
+  {
+   "code": "002084",
+   "name": "海鸥住工",
+   "industry": "家居用品",
+   "boards": 1,
+   "seal_amt": 236239775.0,
+   "first_seal": "092500",
+   "turnover": 0.7579439878463745
+  },
+  {
+   "code": "002906",
+   "name": "华阳集团",
+   "industry": "汽车零部",
+   "boards": 1,
+   "seal_amt": 325742046.0,
+   "first_seal": "092500",
+   "turnover": 0.4225907027721405
+  },
+  {
+   "code": "002015",
+   "name": "协鑫能科",
+   "industry": "电力",
+   "boards": 1,
+   "seal_amt": 348193467.0,
+   "first_seal": "092500",
+   "turnover": 1.9555184841156006
+  },
+  {
+   "code": "600785",
+   "name": "新华百货",
+   "industry": "一般零售",
+   "boards": 2,
+   "seal_amt": 74140264.0,
+   "first_seal": "092501",
+   "turnover": 5.015392780303955
+  },
+  {
+   "code": "600604",
+   "name": "市北高新",
+   "industry": "房地产开",
+   "boards": 1,
+   "seal_amt": 65737143.0,
+   "first_seal": "093000",
+   "turnover": 2.000519037246704
+  },
+  {
+   "code": "002412",
+   "name": "汉森制药",
+   "industry": "中药Ⅱ",
+   "boards": 4,
+   "seal_amt": 249630535.0,
+   "first_seal": "093006",
+   "turnover": 7.332803249359131
+  },
+  {
+   "code": "601212",
+   "name": "白银有色",
+   "industry": "工业金属",
+   "boards": 2,
+   "seal_amt": 303296109.0,
+   "first_seal": "093045",
+   "turnover": 2.9518795013427734
+  },
+  {
+   "code": "002017",
+   "name": "东信和平",
+   "industry": "通信设备",
+   "boards": 2,
+   "seal_amt": 51929742.0,
+   "first_seal": "093100",
+   "turnover": 7.44802713394165
+  },
+  {
+   "code": "603958",
+   "name": "哈森股份",
+   "industry": "服装家纺",
+   "boards": 3,
+   "seal_amt": 52624775.0,
+   "first_seal": "093138",
+   "turnover": 19.913835525512695
+  },
+  {
+   "code": "003040",
+   "name": "楚天龙",
+   "industry": "通信设备",
+   "boards": 2,
+   "seal_amt": 32440579.0,
+   "first_seal": "093157",
+   "turnover": 11.153006553649902
+  },
+  {
+   "code": "001268",
+   "name": "联合精密",
+   "industry": "家电零部",
+   "boards": 1,
+   "seal_amt": 43818993.0,
+   "first_seal": "093227",
+   "turnover": 6.221759796142578
+  },
+  {
+   "code": "605286",
+   "name": "同力天启",
+   "industry": "专用设备",
+   "boards": 1,
+   "seal_amt": 139004113.0,
+   "first_seal": "093250",
+   "turnover": 2.7201833724975586
+  },
+  {
+   "code": "000620",
+   "name": "盈新发展",
+   "industry": "房地产开",
+   "boards": 1,
+   "seal_amt": 251117654.0,
+   "first_seal": "093357",
+   "turnover": 9.124317169189453
+  },
+  {
+   "code": "603200",
+   "name": "上海洗霸",
+   "industry": "环境治理",
+   "boards": 1,
+   "seal_amt": 41106065.0,
+   "first_seal": "093442",
+   "turnover": 1.924377679824829
+  },
+  {
+   "code": "002277",
+   "name": "友阿股份",
+   "industry": "一般零售",
+   "boards": 1,
+   "seal_amt": 45251703.0,
+   "first_seal": "093506",
+   "turnover": 5.961277961730957
+  },
+  {
+   "code": "600594",
+   "name": "益佰制药",
+   "industry": "中药Ⅱ",
+   "boards": 1,
+   "seal_amt": 37290906.0,
+   "first_seal": "093519",
+   "turnover": 6.601603031158447
+  },
+  {
+   "code": "301152",
+   "name": "天力锂能",
+   "industry": "电池",
+   "boards": 1,
+   "seal_amt": 24870780.0,
+   "first_seal": "093530",
+   "turnover": 20.0224609375
+  },
+  {
+   "code": "603089",
+   "name": "正裕工业",
+   "industry": "汽车零部",
+   "boards": 1,
+   "seal_amt": 26984441.0,
+   "first_seal": "093613",
+   "turnover": 4.494946002960205
+  },
+  {
+   "code": "600613",
+   "name": "神奇制药",
+   "industry": "化学制药",
+   "boards": 1,
+   "seal_amt": 93698837.0,
+   "first_seal": "093629",
+   "turnover": 20.356971740722656
+  },
+  {
+   "code": "603032",
+   "name": "德新科技",
+   "industry": "电池",
+   "boards": 1,
+   "seal_amt": 48995082.0,
+   "first_seal": "093710",
+   "turnover": 3.7020957469940186
+  },
+  {
+   "code": "002580",
+   "name": "圣阳股份",
+   "industry": "电池",
+   "boards": 1,
+   "seal_amt": 188619367.0,
+   "first_seal": "093733",
+   "turnover": 12.827672958374023
+  },
+  {
+   "code": "002882",
+   "name": "金龙羽",
+   "industry": "电网设备",
+   "boards": 1,
+   "seal_amt": 22778712.0,
+   "first_seal": "093912",
+   "turnover": 5.773613452911377
+  },
+  {
+   "code": "000723",
+   "name": "美锦能源",
+   "industry": "焦炭Ⅱ",
+   "boards": 1,
+   "seal_amt": 30298031.0,
+   "first_seal": "094003",
+   "turnover": 4.14756965637207
+  },
+  {
+   "code": "002041",
+   "name": "登海种业",
+   "industry": "种植业",
+   "boards": 1,
+   "seal_amt": 102201624.0,
+   "first_seal": "094412",
+   "turnover": 5.1568450927734375
+  },
+  {
+   "code": "605198",
+   "name": "安德利",
+   "industry": "农产品加",
+   "boards": 1,
+   "seal_amt": 55363055.0,
+   "first_seal": "094720",
+   "turnover": 1.8804025650024414
+  },
+  {
+   "code": "003035",
+   "name": "南网能源",
+   "industry": "电力",
+   "boards": 1,
+   "seal_amt": 67983585.0,
+   "first_seal": "094806",
+   "turnover": 2.1831259727478027
+  },
+  {
+   "code": "603105",
+   "name": "芯能科技",
+   "industry": "电力",
+   "boards": 1,
+   "seal_amt": 60997392.0,
+   "first_seal": "095038",
+   "turnover": 6.541827201843262
+  },
+  {
+   "code": "600508",
+   "name": "上海能源",
+   "industry": "煤炭开采",
+   "boards": 1,
+   "seal_amt": 74277237.0,
+   "first_seal": "095249",
+   "turnover": 3.5398504734039307
+  },
+  {
+   "code": "601700",
+   "name": "风范股份",
+   "industry": "电网设备",
+   "boards": 1,
+   "seal_amt": 50322784.0,
+   "first_seal": "095405",
+   "turnover": 14.542915344238281
+  },
+  {
+   "code": "002651",
+   "name": "利君股份",
+   "industry": "航空装备",
+   "boards": 1,
+   "seal_amt": 69227594.0,
+   "first_seal": "095551",
+   "turnover": 6.118129253387451
+  },
+  {
+   "code": "603330",
+   "name": "天洋新材",
+   "industry": "塑料",
+   "boards": 2,
+   "seal_amt": 49273510.0,
+   "first_seal": "100452",
+   "turnover": 28.748992919921875
+  },
+  {
+   "code": "002172",
+   "name": "澳洋健康",
+   "industry": "医疗服务",
+   "boards": 1,
+   "seal_amt": 58956113.0,
+   "first_seal": "100703",
+   "turnover": 16.141847610473633
+  },
+  {
+   "code": "603565",
+   "name": "中谷物流",
+   "industry": "航运港口",
+   "boards": 1,
+   "seal_amt": 75877836.0,
+   "first_seal": "101223",
+   "turnover": 2.616997718811035
+  },
+  {
+   "code": "002716",
+   "name": "湖南白银",
+   "industry": "贵金属",
+   "boards": 2,
+   "seal_amt": 156651576.0,
+   "first_seal": "101430",
+   "turnover": 25.329517364501953
+  },
+  {
+   "code": "600367",
+   "name": "红星发展",
+   "industry": "化学原料",
+   "boards": 1,
+   "seal_amt": 91482212.0,
+   "first_seal": "102611",
+   "turnover": 23.49808120727539
+  },
+  {
+   "code": "300313",
+   "name": "天山生物",
+   "industry": "养殖业",
+   "boards": 1,
+   "seal_amt": 23144448.0,
+   "first_seal": "105842",
+   "turnover": 23.494287490844727
+  },
+  {
+   "code": "601083",
+   "name": "锦江航运",
+   "industry": "航运港口",
+   "boards": 1,
+   "seal_amt": 17050866.0,
+   "first_seal": "130052",
+   "turnover": 22.63522720336914
+  },
+  {
+   "code": "600610",
+   "name": "中毅达",
+   "industry": "化学原料",
+   "boards": 1,
+   "seal_amt": 64715244.0,
+   "first_seal": "131811",
+   "turnover": 11.99840259552002
+  },
+  {
+   "code": "600272",
+   "name": "开开实业",
+   "industry": "医药商业",
+   "boards": 1,
+   "seal_amt": 17932200.0,
+   "first_seal": "133354",
+   "turnover": 31.8587646484375
+  },
+  {
+   "code": "002052",
+   "name": "同洲电子",
+   "industry": "其他电源",
+   "boards": 1,
+   "seal_amt": 50446146.0,
+   "first_seal": "140503",
+   "turnover": 4.672367572784424
+  },
+  {
+   "code": "600403",
+   "name": "大有能源",
+   "industry": "煤炭开采",
+   "boards": 1,
+   "seal_amt": 109480676.0,
+   "first_seal": "141658",
+   "turnover": 6.199392795562744
+  }
+ ],
+ "broken": [
+  {
+   "code": "002975",
+   "name": "博杰股份",
+   "industry": "自动化设",
+   "chg": 8.284435272216797
+  },
+  {
+   "code": "002703",
+   "name": "浙江世宝",
+   "industry": "汽车零部",
+   "chg": 5.714285850524902
+  },
+  {
+   "code": "301598",
+   "name": "博科测试",
+   "industry": "专用设备",
+   "chg": 17.078319549560547
+  },
+  {
+   "code": "601958",
+   "name": "金钼股份",
+   "industry": "小金属",
+   "chg": 6.153144836425781
+  },
+  {
+   "code": "002536",
+   "name": "飞龙股份",
+   "industry": "汽车零部",
+   "chg": 3.896103858947754
+  },
+  {
+   "code": "001257",
+   "name": "盛龙股份",
+   "industry": "小金属",
+   "chg": 3.055555582046509
+  },
+  {
+   "code": "002506",
+   "name": "协鑫集成",
+   "industry": "光伏设备",
+   "chg": 6.5134100914001465
+  },
+  {
+   "code": "688356",
+   "name": "键凯科技",
+   "industry": "化学制药",
+   "chg": 15.520774841308594
+  },
+  {
+   "code": "002192",
+   "name": "融捷股份",
+   "industry": "能源金属",
+   "chg": 5.985381603240967
+  },
+  {
+   "code": "603320",
+   "name": "迪贝电气",
+   "industry": "电机Ⅱ",
+   "chg": 3.3252720832824707
+  },
+  {
+   "code": "002132",
+   "name": "恒星科技",
+   "industry": "通用设备",
+   "chg": 9.01467514038086
+  },
+  {
+   "code": "002853",
+   "name": "皮阿诺",
+   "industry": "家居用品",
+   "chg": 2.5365853309631348
+  },
+  {
+   "code": "001230",
+   "name": "劲旅环境",
+   "industry": "环境治理",
+   "chg": 9.290383338928223
+  },
+  {
+   "code": "000603",
+   "name": "盛达资源",
+   "industry": "贵金属",
+   "chg": 8.877355575561523
+  },
+  {
+   "code": "002742",
+   "name": "冀衡医药",
+   "industry": "化学制药",
+   "chg": 4.679802894592285
+  },
+  {
+   "code": "688136",
+   "name": "科兴制药",
+   "industry": "生物制品",
+   "chg": 14.841848373413086
+  }
+ ],
+ "money_effect": {
+  "prev_zt_count": 54,
+  "promote_count": 10,
+  "promote_rate": 18.5,
+  "premium_median": -1.63,
+  "premium_mean": 0.53,
+  "red_ratio": 38.9
+ },
+ "newhigh": {
+  "window": 20,
+  "date": "2026-08-24",
+  "hs300_newhigh": 18,
+  "hs300_total": 287,
+  "hs300_pct": 6.3,
+  "csi2000_newhigh": 29,
+  "csi2000_total": 699,
+  "csi2000_pct": 4.1,
+  "lean": "大票占优"
+ },
+ "_note": "历史快照：含涨停池/炸板池/赚钱效应/大小票分歧；板块榜与情绪总览是实时接口，仅当日快照含"
+}

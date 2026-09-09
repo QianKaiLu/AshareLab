@@ -644,5 +644,24 @@
    "chg": 9.178321838378906
   }
  ],
- "_note": "历史快照：仅涨停池/炸板池（实时榜无历史参数，当日快照才含）"
+ "money_effect": {
+  "prev_zt_count": 44,
+  "promote_count": 7,
+  "promote_rate": 15.9,
+  "premium_median": -1.78,
+  "premium_mean": -0.57,
+  "red_ratio": 34.1
+ },
+ "newhigh": {
+  "window": 20,
+  "date": "2026-09-04",
+  "hs300_newhigh": 37,
+  "hs300_total": 287,
+  "hs300_pct": 12.9,
+  "csi2000_newhigh": 52,
+  "csi2000_total": 699,
+  "csi2000_pct": 7.4,
+  "lean": "大票占优"
+ },
+ "_note": "历史快照：含涨停池/炸板池/赚钱效应/大小票分歧；板块榜与情绪总览是实时接口，仅当日快照含"
 }

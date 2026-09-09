@@ -1,0 +1,21 @@
+{
+ "date": "20260819",
+ "errors": [],
+ "limit_up": [],
+ "broken": [],
+ "money_effect": {
+  "prev_zt_count": 0
+ },
+ "newhigh": {
+  "window": 20,
+  "date": "2026-08-19",
+  "hs300_newhigh": 16,
+  "hs300_total": 287,
+  "hs300_pct": 5.6,
+  "csi2000_newhigh": 20,
+  "csi2000_total": 699,
+  "csi2000_pct": 2.9,
+  "lean": "大票占优"
+ },
+ "_note": "历史快照：含涨停池/炸板池/赚钱效应/大小票分歧；板块榜与情绪总览是实时接口，仅当日快照含"
+}

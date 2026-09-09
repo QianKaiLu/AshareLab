@@ -1,0 +1,22 @@
+{
+ "date": "20260807",
+ "errors": [
+  "broken: ValueError: 炸板股池只能获取最近 30 个交易日的数据"
+ ],
+ "limit_up": [],
+ "money_effect": {
+  "prev_zt_count": 0
+ },
+ "newhigh": {
+  "window": 20,
+  "date": "2026-08-07",
+  "hs300_newhigh": 27,
+  "hs300_total": 287,
+  "hs300_pct": 9.4,
+  "csi2000_newhigh": 102,
+  "csi2000_total": 699,
+  "csi2000_pct": 14.6,
+  "lean": "小票占优"
+ },
+ "_note": "历史快照：含涨停池/炸板池/赚钱效应/大小票分歧；板块榜与情绪总览是实时接口，仅当日快照含"
+}

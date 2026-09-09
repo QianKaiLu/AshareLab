@@ -224,6 +224,18 @@ def collect(code: str, day: Optional[str] = None, bars: int = BARS) -> dict:
         }
     )
 
+    # 信号日 = 前一交易日。B1 是信号日收盘确立的形态，次日才买入——
+    # 「买入价 vs 信号日收盘」才是追高多少的度量，成交日收盘不具参考性
+    # （成交日常因追涨而大涨，用它算会把追高显示成「低买」）。
+    if len(d) >= 2:
+        prev = d.iloc[-2]
+        prev_close = float(prev["close"])
+        snap["signal_date"] = str(prev["date"])[:10]
+        snap["signal_close"] = _num(prev_close)
+        snap["signal_kdj_j"] = _num(prev.get("kdj_j"))
+        if prev_close > 0:
+            snap["signal_change_pct"] = _num(prev.get("change_pct"))
+
     # 量能：相对 5 日均量看当日强弱，近 60 日分位看是否地量
     vma5 = last.get("volume_ma_5")
     if vma5 and np.isfinite(vma5) and vma5 > 0:

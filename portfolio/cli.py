@@ -81,13 +81,21 @@ def collect_snapshot(code: str, day: str, skip: bool = False) -> dict:
 
 
 def _deviation(price: float, snap: dict) -> None:
-    """实际成交价 vs 当日收盘的偏离，以及与止损参考位的距离。
+    """实际成交价 vs 信号日收盘的偏离，以及与止损参考位的距离。
 
-    B1 是收盘信号，买在收盘价之上多少，直接决定这笔的容错空间被吃掉多少。
+    B1 是信号日收盘确立的形态、次日买入，所以「买在信号日收盘之上多少」才是
+    追高量——成交日收盘不具参考性（追涨日的大阳会让追高显示成「低买」）。
     """
-    close = snap.get("close")
-    if close:
-        print(f"  买入价 vs 当日收盘 {close}：{(price / close - 1) * 100:+.2f}%")
+    sig = snap.get("signal_close")
+    if sig:
+        print(f"  买入价 vs 信号日({snap.get('signal_date')})收盘 {sig}："
+              f"{(price / float(sig) - 1) * 100:+.2f}%")
+    else:
+        # 旧快照没有 signal 字段：退回成交日收盘并注明
+        close = snap.get("close")
+        if close:
+            print(f"  买入价 vs 当日收盘 {close}：{(price / float(close) - 1) * 100:+.2f}%"
+                  f"（旧快照无信号日字段）")
     stop_price = snap.get("stop_loss_price")
     if stop_price:
         risk = (price / float(stop_price) - 1) * 100

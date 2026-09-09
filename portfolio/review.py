@@ -69,6 +69,22 @@ def _pick_trade(
     return trades[-1], None
 
 
+def _prev_trade_day(code: str, day: str) -> Optional[str]:
+    """取 day 之前最近的一个交易日（信号日 = 买入依据的那天）。
+
+    B1 形态在信号日收盘确立，次日才买入，所以复盘买点要测信号日而不是成交日。
+    """
+    from datas.query_stock import query_bars_by_days
+
+    df = query_bars_by_days(code, days=800, to_date=day)
+    if df is None or df.empty:
+        return None
+    prev = df[df["date"] < pd.Timestamp(day)]
+    if prev.empty:
+        return None
+    return str(prev["date"].iloc[-1])[:10]
+
+
 def _stop_in_effect(stops: list[dict], day: str) -> Optional[dict]:
     """取 day 当天生效的止损——即 date ≤ day 的最后一条。
 
@@ -171,8 +187,8 @@ def _deviation(buy_price: float, meas: dict) -> dict:
 
     close = meas.get("均线结构", {}).get("收盘价")
     if close:
-        out["当日收盘"] = close
-        out["vs收盘%"] = snapshot._num((buy_price / float(close) - 1) * 100)
+        out["信号日收盘"] = close
+        out["vs信号日收盘%"] = snapshot._num((buy_price / float(close) - 1) * 100)
 
     stop = meas.get("止损", {})
     if stop.get("止损价"):
@@ -221,8 +237,14 @@ def review_trade(
                                   "`python -m portfolio.cli buy ...` 录入"}
         buy_date, buy_price, qty = trade["date"], float(trade["price"]), trade["qty"]
 
-    # 买点测量：一律以成交日为基准日，只用当天及之前的数据
-    meas = b1r.review(code, buy_date.replace("-", ""))
+    # 买点测量按「信号日」取，不是成交日——B1 是收盘形态，次日（往往开盘）
+    # 才买入：信号日的形态是买入依据，成交日只是执行。
+    # 若用成交日测，遇到追涨买入（信号日次日大阳）会把「买点成立」误判成
+    # 「不构成 B1」（实测：财通 08-25 信号日完美一，08-26 成交日 +3.58% 判失败）。
+    signal_date = _prev_trade_day(code, buy_date)
+    if signal_date is None:
+        return {"error": f"{buy_date} 之前没有交易日，无法取信号日"}
+    meas = b1r.review(code, signal_date.replace("-", ""))
     if "error" in meas:
         return {"error": f"买点测量失败：{meas['error']}"}
 
@@ -231,6 +253,7 @@ def review_trade(
                  "行业": str(info.iloc[0]["idn_name"]) if not info.empty else ""},
         "这笔交易": {
             "成交日": buy_date,
+            "信号日": signal_date,
             "买入价": snapshot._num(buy_price),
             "数量": qty,
             "记录id": trade["id"] if trade else None,
@@ -304,7 +327,7 @@ def render(r: dict) -> str:
     lines: list[str] = []
     s, t = r["标的"], r["这笔交易"]
     lines.append(f"# {s['name']}({s['code']}) 买点复盘  {s['行业']}")
-    head = f"成交 {t['成交日']} @ {t['买入价']}"
+    head = f"成交 {t['成交日']}（信号日 {t.get('信号日')}）@ {t['买入价']}"
     if t.get("数量"):
         head += f" × {t['数量']} 股"
     head += f"   [{t['模式']}]"
@@ -335,9 +358,10 @@ def render(r: dict) -> str:
 
     lines.append("\n## 买入价偏离")
     dv = r["买入价偏离"]
-    if dv.get("vs收盘%") is not None:
-        lines.append(f"  买入 {dv['买入价']} vs 当日收盘 {dv['当日收盘']}："
-                     f"{dv['vs收盘%']:+.2f}%")
+    sig = r["这笔交易"].get("信号日")
+    if dv.get("vs信号日收盘%") is not None:
+        lines.append(f"  买入 {dv['买入价']} vs 信号日({sig})收盘 {dv['信号日收盘']}："
+                     f"{dv['vs信号日收盘%']:+.2f}%")
     if dv.get("单笔风险敞口%") is not None:
         lines.append(f"  距止损位 {dv['止损位']}（{dv.get('止损参考线')}）："
                      f"{dv['单笔风险敞口%']:+.2f}%  ← 单笔最大风险敞口")

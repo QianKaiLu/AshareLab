@@ -1,6 +1,6 @@
 ---
 name: qk-stock-market-daily
-description: 当日市场整体情况分析——活跃市值闸门、宽基指数位置、情绪周期、热点板块与主线，并综合成关键洞察。触发场景：(1) 用户说「看下今天大盘」「市场怎么样」「今天市场整体情况」「大盘环境」「市场分析」「今天什么环境」(2) 用户问「现在能不能开仓」「仓位该放多少」「适不适合做」(3) 用户输入 /qk-stock-market-daily (4) 每日复盘或选股前想看市场背景。
+description: 当日市场整体情况分析——活跃市值闸门、宽基指数位置、情绪周期、热点板块与主线，综合成关键洞察，可出手机阅读的图版。触发场景：(1) 用户说「看下今天大盘」「市场怎么样」「今天市场整体情况」「大盘环境」「市场分析」「今天什么环境」(2) 用户问「现在能不能开仓」「仓位该放多少」「适不适合做」(3) 用户说「出一份图版」「生成图片版」「做成图片」「发我看」(4) 用户输入 /qk-stock-market-daily (5) 每日复盘或选股前想看市场背景。
 ---
 
 # 当日市场分析
@@ -122,6 +122,47 @@ PYTHONPATH=. conda run --live-stream -n stock python -m market.table --days 30  
 什么情况下这个判断会变，**必须给出来**，否则判断无法被证伪。例：
 「活跃市值站上自身 60 日线且 MACD 白线上水」。
 
+## 步骤 4：出图（可选，用户要图版时）
+
+用户说「出一份图版」「生成图片版」「做成图片」「发我看」时走这条。
+
+**核心：图版是重写，不是截取。** 不要试图把 `market.cli report` 的输出直接渲染——
+`render()` 是逐行拼接的紧凑文本，渲染器的 `nl2br` 会把单换行变成 `<br>`，整段粘成
+一块文字墙，`>` 引用块和表格都未必能正确起块。
+
+1. 读 `references/image_report_format.md`（**必读**，里面有版面实测约束与八条硬规则）
+2. 按那份规范把步骤 3 的研判**重写**成图版 markdown
+3. 写到 **`market_reports/YYYY-MM-DD.md`**（与 `b1_results/`、`portfolio/swing/daily/`
+   同款的日期命名存档，**入 git**）
+4. 渲染：
+
+```bash
+PYTHONPATH=. conda run --live-stream -n stock python workflow/render_market_report.py \
+    market_reports/2026-09-15.md --no-open
+```
+
+不加参数时自动取 `market_reports/` 下最新的一份。PNG 落在同目录但不入 git
+（1.1MB/天，随时可从 md 重渲）。
+
+5. 把 PNG 路径告诉用户。**渲染完自己 Read 一遍图**，检查排版、配色、层级、有没有粘块
+
+同一天重跑覆盖同名 md，所以「补充研判后重出图」是安全的。
+
+### 写图版时的三个高频错误
+
+- **忘留空行**。标题、表格、列表、引用块前后各一个空行，否则会被 `<br>` 粘住
+- **把长数据挤一行**。12 只指数距 60 线必须拆成表格多行，不能写成一行 12 个
+- **忘了上色**。涨跌数字包 `<span class="positive">` / `<span class="negative">`，
+  模板里已有这两个类，不改 CSS 就能用
+
+### 前置依赖
+
+首次使用需装 Playwright 浏览器（约 150MB，一次性）：
+
+```bash
+conda run -n stock playwright install chromium
+```
+
 ## 输出组织
 
 ```
@@ -152,6 +193,9 @@ PYTHONPATH=. conda run --live-stream -n stock python -m market.table --days 30  
 
 ## 相关
 
+- `references/image_report_format.md` — **图版排版规范**（版面约束 + 八条硬规则，出图前必读）
+- `workflow/render_market_report.py` — 图版渲染（markdown → PNG），薄封装
+- `tools/markdown_lab.py` — 渲染实现（模板、preprocess、Playwright 截图），两条报告链路共用
 - `market/cli.py` — `snapshot` / `report` / `backfill` / `history` 四个子命令
 - `market/analyze.py` — 各层实现与 `render()` 的拼装约定
 - `market/amv.py` — 活跃市值择时层（L0），判据细节在模块 docstring

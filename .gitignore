@@ -213,6 +213,8 @@ output/
 ocp/output/
 media_factory/datas/
 
+# 市场日报（market_reports/ 的 md 与 png 都入 git，由用户 2026-09-15 决定）
+
 # ai models
 models/
 # index list refresh marker (mtime-based, local only)

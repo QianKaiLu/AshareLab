@@ -44,6 +44,26 @@ conda run --live-stream -n stock python .claude/skills/qk-stock-0amv/scripts/amv
 | `show [--tail N] [--json]` | 看已存数据 + 缺口检查 |
 | `verify` | 全量重新校验 |
 
+## 看状态（不是看数据）
+
+用户问「活跃市值怎么样」「现在是什么区间」「能不能开仓」，答的是**择时状态**，不是数值 ——
+用 `market/amv.py`，不要用 `show`：
+
+```bash
+conda run --live-stream -n stock python -m market.amv            # 最新
+conda run --live-stream -n stock python -m market.amv 20260821   # 指定日期（回看）
+```
+
+输出形如「空头区间　距60线 -19.50%　60线斜率 -2.49%　MACD 水下死叉　→ 仓位上限 1~2 成」。
+
+判据（区间划分、仓位上限出处）见 `market/amv.py` 模块 docstring。要点：
+
+- **数字大小不重要，位置才重要**。孤零零一根 +4% 大阳线，若没站上 60 日线就是诱多
+- 60 日线指**活跃市值自身**的，不是大盘的
+- 空头区间 → 顶多 1~2 成仓；多头 + 当日 ≥4% → 可满仓（材料原文，别自己造阈值）
+
+同一层也接在 `market.cli report` 的 L0 段和 `portfolio.monitor` 的市场层里。
+
 ## 工作流
 
 **核心原则：解析结果必须先回显给用户确认，再落盘。** 手打数据错一位就是脏数据，且不像抓取的数据能重跑修正。

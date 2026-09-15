@@ -1,9 +1,10 @@
-"""市场环境分析：情绪周期 → 资金风向 → 主题结构 → 主线判定。
+"""市场环境分析：活跃市值择时 → 指数位置 → 情绪周期 → 资金风向 → 主题结构 → 主线判定。
 
 只做客观聚合与规则判定，不下「主线就是 XX」的结论——那属于研究假设层，
 由人/AI 结合盘面与消息面研判。设计与决策依据见 docs/market/设计方案.md。
 
-四层各自独立回答一个问题：
+各层各自独立回答一个问题：
+    L0 大盘环境   活跃市值（资金）+ 指数（价格） → 能不能参与、在什么位置
     L1 情绪周期   现在能不能做、做多重      → 仓位基调
     L2 资金风向   该做大票还是小票          → 选股池方向
     L3 主题结构   资金在炒什么              → 候选范围
@@ -16,7 +17,9 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+from market.amv import amv_timing
 from market.fetch import load_history
+from market.index import index_overview
 
 # ---- L1 情绪阈值（来自调研版经验值，待用回溯数据标定）
 ZT_CRAZY, ZT_HOT, ZT_COLD = 80, 60, 30
@@ -377,6 +380,8 @@ def analyze(date: Optional[str] = None, days: int = 5) -> dict:
     zt = snap.get("limit_up") or []
     return {
         "date": target,
+        "L0活跃市值": amv_timing(target, days),
+        "L0指数": index_overview(target, days),
         "L1情绪": emotion(hist, target),
         "L1走势": zt_trend(hist),
         "L2风向": divergence(hist, target),
@@ -394,6 +399,59 @@ def render(a: dict) -> str:
     if a.get("error"):
         return f"❌ {a['error']}"
     L: list[str] = [f"# 市场环境分析　{a['date']}", ""]
+
+    # ---- L0 活跃市值：前置闸门，排在最前（L1-L4 只回答「参与什么」）
+    v = a.get("L0活跃市值") or {}
+    if v.get("error"):
+        # 闸门缺数据不能静默消失——「没看到警告」会被误读成「可以参与」
+        L.append(f"⚠ 活跃市值择时不可用：{v['error']}")
+        L.append("")
+    else:
+        L.append(f"## L0 活跃市值：**{v['区间']}**　→ 短线仓位上限 {v['仓位上限']}")
+        bits = [f"活跃市值 {v['收盘']:,.0f}（{v['数据日期'][5:]}）",
+                f"距60线 {v['距60线']:+.2f}%",
+                f"60线斜率 {v['60线斜率']:+.2f}%",
+                f"MACD {v['白线']}{v['MACD']}"]
+        if v["今日信号"]:
+            bits.append(v["今日信号"])
+        L.append("　".join(bits))
+        if v["走势"]:
+            L.append("走势：" + "　".join(
+                f"{t['date']} {t['涨跌']:+.2f}" for t in v["走势"]))
+            L.append("> 格式：日期 活跃市值涨跌幅（走势行只显示涨跌幅，不含点位）")
+        L.append(f"> 依据：{v['仓位依据']}")
+        L.append(f"> 口径：{v['口径']}")
+        if v["数据滞后天数"] > 0:
+            L.append(f"⚠ 0AMV 数据落后 {v['数据滞后天数']} 个交易日"
+                     f"（快照 {a['date']} / 0AMV {v['数据日期']}），以下判定基于落后数据")
+        L.append("")
+
+    # ---- L0 指数：价格视角，与活跃市值的资金视角互补
+    ix = a.get("L0指数") or {}
+    if ix.get("error"):
+        L.append(f"⚠ 指数概览不可用：{ix['error']}")
+        L.append("")
+    else:
+        L.append(f"## L0 指数：**{ix['概览']}**　→ {ix['60线概览']}")
+        for label in ("主要", "宽基"):
+            group = [r for r in ix["指数"] if r["组"] == label]
+            if group:
+                L.append("　".join(
+                    f"{r['名称']} {r['收盘']:,.2f}（{r['当日']:+.2f}%）" for r in group))
+        ma = sorted((r for r in ix["指数"] if r["距60线"] is not None),
+                    key=lambda r: -r["距60线"])
+        if ma:
+            L.append("距60线（由近到远）：" + "　".join(
+                f"{r['名称']} {r['距60线']:+.2f}%" for r in ma))
+        if ix["风格"]:
+            L.append(f"风格：中证1000 − 沪深300 = {ix['风格']['值']:+.2f}pp"
+                     f" → {ix['风格']['解读']}")
+        if ix.get("共振"):
+            r = ix["共振"]
+            L.append(f"券商+沪深300+创业板：{r['明细']}"
+                     + ("　→ **共振，疑似聪明资金进场**" if r["共振"] else "　→ 未共振"))
+        L.append(f"> 口径：{ix['口径']}")
+        L.append("")
 
     # ---- L1
     e = a["L1情绪"]

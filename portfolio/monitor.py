@@ -25,6 +25,7 @@ import pandas as pd
 
 from datas.query_stock import get_stock_info_by_code, query_bars_by_days
 from hunter.distribution_signals import scan_signals, summarize
+from market.amv import amv_timing
 from portfolio import position as pos
 from portfolio import snapshot, store
 
@@ -384,6 +385,19 @@ def monitor_one(
     return item
 
 
+def _market_layer(as_of: Optional[str] = None) -> dict:
+    """活跃市值择时状态（市场层）。
+
+    这一层回答的不是「这只票怎么样」，而是「现在该不该有仓位」——空头区间下
+    再完美的票也顶多 1~2 成仓。0AMV 靠手工录入，落后于评估日是常态，所以
+    必须把数据日期一并带出来，不能假装对齐。
+    """
+    try:
+        return amv_timing(as_of or pd.Timestamp.today().strftime("%Y%m%d"))
+    except Exception as e:  # 市场层拿不到不该拖垮持仓监控
+        return {"error": f"{type(e).__name__}: {e}"}
+
+
 def monitor_all(
     account: str = "swing",
     as_of: Optional[str] = None,
@@ -406,6 +420,7 @@ def monitor_all(
         "watch_only": bool(codes),
         "count": len(items),
         "items": items,
+        "market": _market_layer(as_of),
     }
     if lots:
         total_cost = sum(l.cost_total for l in lots)
@@ -448,6 +463,25 @@ def render(report: dict) -> str:
             lines.append(f"已实现盈亏合计 {report['已实现盈亏合计']:+,.2f}")
     elif report["count"]:
         lines.append(f"共 {report['count']} 只")
+
+    # ---- 市场层：回答「现在该不该有仓位」，是下面所有个股判断的背景
+    mk = report.get("market") or {}
+    if mk.get("error"):
+        lines.append(f"\n## 市场层\n⚠ 活跃市值择时不可用：{mk['error']}")
+    else:
+        lines.append("\n## 市场层（活跃市值）")
+        bits = [f"{mk['区间']}区间",
+                f"距60线 {mk['距60线']:+.2f}%",
+                f"60线斜率 {mk['60线斜率']:+.2f}%",
+                f"MACD {mk['白线']}{mk['MACD']}",
+                f"**短线仓位上限 {mk['仓位上限']}**"]
+        lines.append("　".join(bits))
+        lines.append(f"> {mk['仓位依据']}")
+        if mk["今日信号"]:
+            lines.append(f"⚠ 当日信号：{mk['今日信号']}")
+        if mk["数据滞后天数"] > 0:
+            lines.append(f"⚠ 0AMV 数据落后 {mk['数据滞后天数']} 个交易日"
+                         f"（评估日 {report.get('as_of')} / 0AMV {mk['数据日期']}）")
 
     if not report["count"]:
         lines.append("\n当前无持仓。用 `python -m portfolio.cli buy ...` 录入，"

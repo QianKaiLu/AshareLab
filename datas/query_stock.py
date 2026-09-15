@@ -349,6 +349,59 @@ def get_stock_info_by_codes(codes: list) -> pd.DataFrame:
     df.set_index('code', inplace=True)
     return df
 
+def query_stock_industry_map() -> dict[str, str]:
+    """
+    Map stock code -> industry name (stock_base_info.idn_name).
+
+    Codes without an industry are omitted. Returns {} when the table is unavailable.
+    """
+    query = (f"SELECT code, idn_name FROM {STOCK_INFO_TABLE} "
+             f"WHERE idn_name IS NOT NULL AND idn_name <> ''")
+    try:
+        with get_db_connection() as conn:
+            rows = conn.execute(query).fetchall()
+        return {str(r[0]): str(r[1]) for r in rows}
+    except Exception as e:
+        logger.error(f"❌ Error reading industry map: {e}", exc_info=True)
+        return {}
+
+def query_close_matrix(
+    from_date: str,
+    to_date: str,
+    codes: Optional[list[str]] = None,
+) -> pd.DataFrame:
+    """
+    Pivot of daily closes for a date range: index=date, columns=code.
+
+    Built for cross-sectional work (sector aggregation, breadth). Values are closes,
+    not adjusted again — stock_bars_daily_qfq is already qfq. Missing cells (suspended
+    days) stay NaN. Returns an empty DataFrame when nothing matches.
+    """
+    try:
+        start = format_date_input_to_yyyy_mm_dd(from_date)
+        end = format_date_input_to_yyyy_mm_dd(to_date)
+    except Exception as e:
+        logger.warning(f"Invalid date range {from_date}~{to_date}: {e}")
+        return pd.DataFrame()
+
+    query = (f"SELECT code, date, close FROM {DAILY_BAR_TABLE} "
+             f"WHERE date >= ? AND date <= ?")
+    params: list[Any] = [start, end]
+    if codes:
+        placeholders = ",".join("?" for _ in codes)
+        query += f" AND code IN ({placeholders})"
+        params.extend(codes)
+
+    try:
+        with get_db_connection() as conn:
+            df = pd.read_sql_query(query, conn, params=params, parse_dates=['date'])
+        if df.empty:
+            return pd.DataFrame()
+        return df.pivot_table(index="date", columns="code", values="close", aggfunc="last")
+    except Exception as e:
+        logger.error(f"❌ Error building close matrix: {e}", exc_info=True)
+        return pd.DataFrame()
+
 def query_all_stock_code_list() -> pd.Series:
     """
     Query all stock basic information from the database.

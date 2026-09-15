@@ -297,6 +297,123 @@ def fetch_newhigh_divergence(date: str, window: int = 20) -> dict:
     }
 
 
+# ---- 股指期货基差
+FUTURES_SPECS = (("IF", "sh000300", "沪深300"),
+                 ("IC", "sh000905", "中证500"),
+                 ("IM", "sh000852", "中证1000"))
+BASIS_MONTHS_AHEAD = 3          # 当月交割后最多往后找几个月
+
+
+def _month_code(prefix: str, date: str, offset: int) -> str:
+    """品种前缀 + YYMM。offset=0 为当月。"""
+    y, m = int(date[:4]), int(date[4:6]) + offset
+    y += (m - 1) // 12
+    m = (m - 1) % 12 + 1
+    return f"{prefix}{y % 100:02d}{m:02d}"
+
+
+def _days_to_expiry(code: str, date: str) -> Optional[int]:
+    """距该合约交割日（合约月第三个周五）的自然日数。
+
+    当月基差在交割日收敛到 0、换月后立刻转负——这是合约期限结构，不是市场变化。
+    实测 IF：08-21 交割日 -4.10 → 08-24 换月后 -36.73，跳了 32 点。所以跨换月日
+    不能直接做环比，得看这个天数才知道自己在周期哪个位置。
+    """
+    import calendar
+    from datetime import date as _date
+
+    y, m = 2000 + int(code[2:4]), int(code[4:6])
+    fridays = [d for d in range(1, calendar.monthrange(y, m)[1] + 1)
+               if _date(y, m, d).weekday() == 4]
+    if len(fridays) < 3:
+        return None
+    expiry = _date(y, m, fridays[2])
+    d = _date(int(date[:4]), int(date[4:6]), int(date[6:8]))
+    return (expiry - d).days
+
+
+def fetch_basis(date: str) -> dict:
+    """股指期货**当月合约**基差 = 期货收盘 − 现货收盘。负值 = 贴水。
+
+    必须用当月合约，不能拿主力连续（`IF0`）算。后者跟随持仓量最大的合约，
+    通常是季月——2026-09-15 实测：IF0 收 4355.8，而当月 IF2609 收 4449.8，
+    差 94 点，用主力算当月基差会失真一个数量级。合约交割（每月第三个周五）
+    后自动切下月。
+    """
+    from datas.query_stock import query_index_bars
+
+    day = f"{date[:4]}-{date[4:6]}-{date[6:8]}" if "-" not in date else date
+    out: dict[str, Any] = {}
+    for prefix, symbol, name in FUTURES_SPECS:
+        for k in range(BASIS_MONTHS_AHEAD):
+            code = _month_code(prefix, date, k)
+            try:
+                df = ak.futures_zh_daily_sina(symbol=code)
+            except Exception:
+                continue
+            if df is None or df.empty:
+                continue
+            hit = df[df["date"] == day]
+            if hit.empty:
+                continue                    # 该合约当日无数据 → 已交割，试下月
+            spot = query_index_bars(symbol, to_date=day)
+            spot = spot[spot["date"] <= pd.Timestamp(day)] if not spot.empty else spot
+            if spot.empty:
+                break
+            fut, sp = float(hit.iloc[-1]["close"]), float(spot["close"].iloc[-1])
+            out[prefix] = {"合约": code, "品种": name, "现货": round(sp, 2),
+                           "期货": round(fut, 2), "基差": round(fut - sp, 2),
+                           "基差率": round((fut / sp - 1) * 100, 2),
+                           "距交割": _days_to_expiry(code, date)}
+            break
+    if not out:
+        raise RuntimeError("未取到任何品种的当月合约基差")
+    return out
+
+
+# ---- 沪深300ETF 放量
+ETF_SYMBOL = "sh510300"
+ETF_NAME = "沪深300ETF"
+ETF_MA_WINDOW = 20
+# 放量阈值与 portfolio/monitor.py:VOL_SPIKE_RATIO 同口径，不另造
+ETF_SPIKE = 2.0
+
+
+def fetch_etf_volume(date: str) -> dict:
+    """沪深300ETF 成交量与放量倍数。
+
+    文章用它判断「神秘资金」（汪汪队）是否进场——异常放量即进场信号。
+    东财的 fund_etf_hist_em 连接被拒（老问题），走新浪。
+    """
+    day = f"{date[:4]}-{date[4:6]}-{date[6:8]}" if "-" not in date else date
+    df = ak.fund_etf_hist_sina(symbol=ETF_SYMBOL)
+    if df is None or df.empty:
+        raise RuntimeError(f"{ETF_SYMBOL} 无数据")
+    df = df.copy()
+    # 该接口的 date 列是 datetime.date 对象，不是字符串，不能直接和字符串比
+    df["date"] = pd.to_datetime(df["date"])
+    df = df[df["date"] <= pd.Timestamp(day)]
+    if df.empty:
+        raise RuntimeError(f"{ETF_SYMBOL} 无 {day} 之前的数据")
+
+    vol = pd.to_numeric(df["volume"], errors="coerce").dropna()
+    cur = float(vol.iloc[-1])
+    base = float(vol.tail(ETF_MA_WINDOW).mean())
+    ratio = (cur / base) if base else None
+    used = df["date"].iloc[-1].strftime("%Y-%m-%d")
+    return {
+        "日期": used,
+        # 新浪这支 ETF 的日线当天常还没出（实测 09-15 只到 09-14），
+        # 所以必须标明实际用的是哪天，不能让用户以为是当日读数
+        "滞后": used != day,
+        "ETF": ETF_NAME,
+        "成交量": int(cur),
+        "近20日均量": int(base),
+        "倍数": round(ratio, 2) if ratio else None,
+        "异常": bool(ratio and ratio >= ETF_SPIKE),
+    }
+
+
 def fetch_snapshot(date: str) -> dict:
     """抓当日快照。
 
@@ -320,6 +437,8 @@ def fetch_snapshot(date: str) -> dict:
     grab("broken", lambda: fetch_broken(date))
     grab("money_effect", lambda: fetch_money_effect(date))
     grab("newhigh", lambda: fetch_newhigh_divergence(date))
+    grab("basis", lambda: fetch_basis(date))              # 期货历史合约，可回溯
+    grab("etf", lambda: fetch_etf_volume(date))           # ETF 历史日线，可回溯
 
     # 只有当天的源：实时接口无历史参数，抓历史日期会存进当天数据、污染分析
     if is_today:

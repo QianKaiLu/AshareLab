@@ -1,4 +1,4 @@
-"""市场环境分析：活跃市值择时 → 指数位置 → 情绪周期 → 资金风向 → 主题结构 → 主线判定。
+"""市场环境分析：活跃市值择时 → 情绪周期 → 资金风向 → 主题结构 → 主线判定。
 
 只做客观聚合与规则判定，不下「主线就是 XX」的结论——那属于研究假设层，
 由人/AI 结合盘面与消息面研判。设计与决策依据见 docs/market/设计方案.md。
@@ -10,6 +10,9 @@
     L3 主题结构   资金在炒什么              → 候选范围
     L4 主线判定   哪个是主线、哪些是支线    → 优先级与回避
 
+L0 与 L1-L4 不是并列关系：活跃市值定的是「要不要参与」，L1-L4 定的是「参与什么」。
+空头区间下后面几层的信号再多也要降级对待，所以报告里 L0 排在最前。
+
 L1 一律用环比：单日截面会误判（涨停 93→73→48 递减时绝对数仍有 42）。
 """
 
@@ -20,6 +23,7 @@ from typing import Any, Optional
 from market.amv import amv_timing
 from market.fetch import load_history
 from market.index import index_overview
+from market.sector import oversold_sectors
 
 # ---- L1 情绪阈值（来自调研版经验值，待用回溯数据标定）
 ZT_CRAZY, ZT_HOT, ZT_COLD = 80, 60, 30
@@ -385,6 +389,9 @@ def analyze(date: Optional[str] = None, days: int = 5) -> dict:
         "L1情绪": emotion(hist, target),
         "L1走势": zt_trend(hist),
         "L2风向": divergence(hist, target),
+        "L2基差": snap.get("basis"),
+        "L2ETF": snap.get("etf"),
+        "L2超跌板块": oversold_sectors(target),
         "L3涨停分布": zt_industry_agg(zt)[:10],
         "L3连板梯队": board_ladder(zt),
         "L3延续性": zt_persist(hist, days),
@@ -489,17 +496,44 @@ def render(a: dict) -> str:
 
     # ---- L2
     d = a["L2风向"]
-    if d.get("hs300_pct") is not None:
-        L.append(f"## L2 资金风向：**{d.get('lean')}**"
+    basis = a.get("L2基差") or {}
+    etf = a.get("L2ETF") or {}
+    if d.get("hs300_pct") is not None or basis or etf:
+        L.append("## L2 资金风向"
+                 + (f"：**{d.get('lean')}**" if d.get("lean") else "")
                  + (f"　{d['解读']}" if d.get("解读") else ""))
-        L.append(f"创 {d.get('window', 20)} 日新高：沪深300 {d['hs300_newhigh']}/{d['hs300_total']}"
-                 f"（{d['hs300_pct']}%）　中证2000 {d['csi2000_newhigh']}/{d['csi2000_total']}"
-                 f"（{d['csi2000_pct']}%）")
+        if d.get("hs300_pct") is not None:
+            L.append(f"创 {d.get('window', 20)} 日新高："
+                     f"沪深300 {d['hs300_newhigh']}/{d['hs300_total']}（{d['hs300_pct']}%）　"
+                     f"中证2000 {d['csi2000_newhigh']}/{d['csi2000_total']}（{d['csi2000_pct']}%）")
         if d.get("走势"):
             L.append("走势：" + "　".join(
                 f"{t['date'][4:6]}-{t['date'][6:8]} {t['hs300_pct']}%/{t['csi2000_pct']}%"
                 for t in d["走势"]))
             L.append("> 格式：日期 沪深300占比/中证2000占比（modoo：小票看游资态度，大票看机构）")
+        if basis:
+            L.append("期指基差（当月，期货−现货）：" + "　".join(
+                f"{k} {v['基差']:+.2f}（{v['基差率']:+.2f}%）" for k, v in basis.items()))
+            L.append("> 口径：当月合约，负=贴水（期货比现货悲观）。交割日收敛到 0、"
+                     "换月后立刻转负是期限结构，跨换月日别做环比")
+        if etf:
+            L.append(f"{etf['ETF']} 成交 {etf['成交量'] / 1e8:.2f} 亿股"
+                     f"（近 20 日均量 {etf['近20日均量'] / 1e8:.2f} 亿股，{etf['倍数']} 倍）"
+                     + ("　⚠ 异常放量——疑似神秘资金进场" if etf.get("异常") else ""))
+            if etf.get("滞后"):
+                L.append(f"> ⚠ ETF 日线只到 {etf['日期']}，不是当日读数")
+        L.append("")
+
+    # ---- L2 超跌板块（跨全市场的行业扫描，与上面的快照类指标不同源）
+    sec = a.get("L2超跌板块") or {}
+    if not sec.get("error") and sec.get("超卖板块"):
+        L.append(f"## L2 超跌板块（KDJ 为负，按超卖深度排序）"
+                 f"　{sec['超卖数']}/{sec['行业总数']} 个行业（{sec['数据日期']}）")
+        L.append("　".join(
+            f"{r['行业']} {r['J值']:.0f}（{r['当日']:+.2f}%）" for r in sec["超卖板块"][:10]))
+        if sec.get("提示"):
+            L.append(f"⚠ {sec['提示']}")
+        L.append(f"> 口径：{sec['口径']}")
         L.append("")
 
     # ---- L4 主线放在 L3 明细之前：结论优先

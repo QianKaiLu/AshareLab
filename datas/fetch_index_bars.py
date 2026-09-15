@@ -57,6 +57,8 @@ INDEX_POOL: tuple[tuple[str, str, str, Optional[str]], ...] = (
     ("sz399303", "国证2000", AKSHARE, TENCENT),
     ("sh000985", "中证全指", TENCENT, AKSHARE),
     ("sh000016", "上证50", AKSHARE, TENCENT),
+    # 券商不是宽基，但《大富翁(4)》的「券商+沪深300+创业板共振」判据要用它
+    ("sz399975", "证券公司", AKSHARE, TENCENT),
 )
 
 # 默认基准：用户做中盘票，中证500 比上证更贴

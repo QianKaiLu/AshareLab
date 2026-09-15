@@ -1,13 +1,13 @@
 ---
 name: qk-stock-daily-update
-description: A 股日常行情更新流水线。同步股票池（补新股/剔退市，每周一次）→ 增量抓日线 → 回填换手率 → 数据质量校验。触发场景：(1) 用户说「更新行情」「拉最新数据」「日更」「同步股票数据」「更新数据库」(2) 用户说「刷新股票池」「补新股」「剔退市」(3) 用户输入 /qk-stock-daily-update (4) 用户在做选股/画图/研报前发现数据不是最新。支持 --force-pool、--skip-pool、--dry-run 参数。
+description: A 股日常行情更新流水线。同步股票池（补新股/剔退市，每周一次）→ 增量抓日线 → 回填换手率 → 更新指数日线 → 数据质量校验。触发场景：(1) 用户说「更新行情」「拉最新数据」「日更」「同步股票数据」「更新数据库」(2) 用户说「刷新股票池」「补新股」「剔退市」(3) 用户输入 /qk-stock-daily-update (4) 用户在做选股/画图/研报前发现数据不是最新。支持 --force-pool、--skip-pool、--skip-index、--dry-run 参数。
 ---
 
 # QK Stock Daily Update — A 股行情日更流水线
 
 ## 概述
 
-把 `database/ashare_data.db` 对齐到最新交易日。四步流水线，每步失败不阻断后续：
+把 `database/ashare_data.db` 对齐到最新交易日。五步流水线，每步失败不阻断后续：
 
 ```
 1. 股票池同步（默认每 7 天一次）
@@ -19,7 +19,9 @@ description: A 股日常行情更新流水线。同步股票池（补新股/剔�
    ↓
 4. 换手率回填（daily_basic 按交易日）
    ↓
-校验：最新日期 / 落后股票数 / OHLC 异常 / 涨跌幅异常 / 换手率空值
+5. 指数日线（11 只宽基 → 独立表 index_bars_daily）
+   ↓
+校验：最新日期 / 落后股票数 / OHLC 异常 / 涨跌幅异常 / 换手率空值 / 指数覆盖
 ```
 
 ## 运行环境（必读）
@@ -59,6 +61,7 @@ PYTHONPATH=. conda run --live-stream -n stock python workflow/daily_update.py > 
 | （无） | 常规日更，池子按 7 天间隔自动判断 | **默认** |
 | `--force-pool` | 忽略间隔，强制同步池子 | 知道刚有新股上市/退市 |
 | `--skip-pool` | 跳过池子，只更行情 | 盘后快速更新 |
+| `--skip-index` | 跳过指数日线，只更个股 | 指数源出问题时隔离排查 |
 | `--dry-run` | 只报告池子差异，不写库、不抓行情 | 想先看会增删哪些股票 |
 | `--pool-interval N` | 改池子同步间隔（默认 7 天） | 想更频繁地跟踪新股 |
 
@@ -69,6 +72,9 @@ PYTHONPATH=. conda run --live-stream -n stock python workflow/daily_update.py > 
 ```bash
 # 已到最新交易日的股票数
 sqlite3 database/ashare_data.db "SELECT COUNT(*) FROM (SELECT code FROM stock_bars_daily_qfq GROUP BY code HAVING MAX(date)=(SELECT MAX(date) FROM stock_bars_daily_qfq));"
+
+# 指数是否跟上（第 5 步才跑，最后才动）
+sqlite3 database/ashare_data.db "SELECT symbol, MAX(date) FROM index_bars_daily GROUP BY symbol;"
 ```
 
 进程结束后日志才完整可读。
@@ -87,6 +93,16 @@ sqlite3 database/ashare_data.db "SELECT COUNT(*) FROM (SELECT code FROM stock_ba
 **新股走 akshare 全量。** 库中无锚点时 tushare 的缩放方案不可用，worker 会直接返回失败，由第 3 步的 akshare 轮补全量历史。所以「tushare 轮失败 N 只」在有新股时是正常的。
 
 **雪球详情大概率补不上。** `stock_individual_basic_info_xq` 现在要求登录态，对所有代码返回 `400016`。日志里「雪球详情补齐 0/N 只」是预期行为，只影响行业字段，不影响行情。
+
+**指数日线是独立表 + 独立模块。** 11 只宽基指数落在 `index_bars_daily`，代码是 `datas/fetch_index_bars.py`。三个必须知道的点：
+
+- **指数代码带交易所前缀（`sh000001`），不能用 `tools/stock_tools.py`**。`to_std_code('sh000001')` 会得到 `000001`，与平安银行撞车主键；`get_exchange_by_code` 对 `000300` 误判深交所、对 `399300` 直接抛异常。
+- **两个源各有静默失败模式，所以有兜底 + 新鲜度校验**。akshare 新浪的 `sh000985` 数据停在 2016 却不报错；腾讯的 `bj899050` 只返回 1 根、且对指数有 2000 根上限。校验的基准是**个股表的 `MAX(date)`**（真实交易日历），不是 `latest_trade_day()`（它不认节假日）。
+- **成交量已统一成「股」**。腾讯原生是「手」，模块内乘了 100 对齐新浪，否则主源/兜底源切换会污染 volume 序列。
+
+指数池要增删，改 `datas/fetch_index_bars.py` 的 `INDEX_POOL` 常量即可（每项是 `(symbol, 名称, 主源, 兜底源)`），并实测新 symbol 在两个源上的可用性 —— **别只看能不能取到数，要看末日期是不是最新**。
+
+**警告不等于失败。** 「指数落后于基准」只打 warning 不进 `problems`，不影响退出码（与「换手率为空」同一先例）。源滞后一天不该让整个日更报错。
 
 ## 常见场景
 
@@ -121,7 +137,24 @@ sqlite3 database/ashare_data.db "SELECT COUNT(*) FROM (SELECT code FROM stock_ba
 PYTHONPATH=. conda run --live-stream -n stock python workflow/repair_negative_prices.py --dry-run
 ```
 
-### 场景 5：库损坏或要重建
+### 场景 5：只想单独更指数
+
+```
+用户: 指数数据补一下 / 指数怎么没更新
+```
+
+→ 不必跑整个日更（个股那步要 20 分钟），直接单独跑模块：
+
+```bash
+cd /Users/qianqian/stock/AshareLab
+PYTHONPATH=. conda run --live-stream -n stock python -c "from datas.fetch_index_bars import update_all_indices; print(update_all_indices())"
+```
+
+约 15 秒（11 只串行 + 0.5s 间隔）。返回的统计里看 `failed` / `stale` 两个列表。
+查数据用 `datas/query_stock.py` 的 `query_index_bars()` / `query_index_latest_bars()`，
+**不要直接写 SQL 查 `index_bars_daily`**。默认基准是中证500（`sh000905`）。
+
+### 场景 6：库损坏或要重建
 
 **重建前先备份**（2.5G，约 10 秒）：
 
@@ -141,6 +174,7 @@ PYTHONPATH=. conda run --live-stream -n stock python workflow/rebuild_database.p
 | `workflow/rebuild_database.py` | 从 0 重建（可重入） |
 | `workflow/restore_stock_pool.py` | 从备份恢复池子（雪球挂时用） |
 | `datas/sync_stock_pool.py` | 池子同步模块，可单独 dry-run |
+| `datas/fetch_index_bars.py` | 指数日线模块，可单独跑（见场景 6） |
 
 ## 数据源现状（2026-08-24 实测）
 
@@ -152,9 +186,13 @@ PYTHONPATH=. conda run --live-stream -n stock python workflow/rebuild_database.p
 | akshare / 东财 | **不可用** | 连接层瞬时拒绝，自动回退新浪 |
 | baostock | 可用 | 独立校验源，非线程安全，不支持北交所 |
 | 雪球详情 | **需登录态** | 只影响行业字段 |
+| akshare `stock_zh_index_daily`（新浪） | 正常 | 指数主源，**无日期参数、每次返回全量**；`sh000985` 数据停在 2016 需绕过 |
+| 腾讯 `web.ifzq.gtimg.cn` | 正常 | 指数兜底源，免费无 token；**指数上限 2000 根，`bj899050` 只返回 1 根** |
 
 ## 注意事项
 
-- 数据库约 2.5G，日更只写增量，不会显著增长
+- 数据库约 2.5G，日更只写增量，不会显著增长（指数表约 4.9 万行，可忽略）
 - `latest_trade_day()` 只认周末不认节假日，长假期间会对全市场空跑一轮请求（无害，但耗时）
 - 池子同步时间戳记在 `database/.pool_synced` 的 mtime 上
+- **交易日历的权威来源是个股表的 `MAX(date)`**，不是 `latest_trade_day()`。判断「数据到没到最新」一律查库
+- 指数池不含中证2000（`sh932000`）—— 两个源都取不到；小盘代理用国证2000（`sz399303`）

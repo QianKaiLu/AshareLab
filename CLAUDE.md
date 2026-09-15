@@ -52,10 +52,12 @@ conda run -n stock video-process "<视频URL>" --no-open
 
 所有查询都走 `datas/query_stock.py`，不要在别处写裸 SQL。库固定在 `database/ashare_data.db`（WAL 模式，约 2.4G，不入 git）。
 
-- 价格一律**前复权（qfq）**，表 `stock_bars_daily_qfq`；基础信息表 `stock_base_info`
-- 日期以字符串 `YYYYMMDD` 存储，日期运算用 `tools/times.py`
+- 价格一律**前复权（qfq）**，表 `stock_bars_daily_qfq`；基础信息表 `stock_base_info`；指数表 `index_bars_daily`
+- **库里 `date` 存的是 `YYYY-MM-DD` 字符串**（`YYYYMMDD` 只用于喂数据源接口的参数，两者在这个仓库里反复互转）
 - 抓取以 AKShare 为主、Tushare 兜底；Tushare 限流靠 `config.py` 里的 token 数组 + `tools/tushare_rate_limiter.py` 轮换
 - 批量写入用「队列 + 单写线程」模式，避免多线程写 SQLite
+
+**指数与个股是两套代码空间，不能混。** `tools/stock_tools.py` 的 `to_std_code` 会把 `sh000001` 归一成 `000001`（与平安银行撞车），`get_exchange_by_code` 对 `000300` 误判深交所、对 `399300` 抛异常。所以指数代码全程带交易所前缀（`sh000001`），走独立表与独立模块 `datas/fetch_index_bars.py`。查询用 `query_index_bars()` / `query_index_latest_bars()`，默认基准是中证500（`sh000905`）。
 
 ### 指标层
 
@@ -89,7 +91,7 @@ def hunt_xxx(df: pd.DataFrame) -> Optional[dict]:
     return {"kdj_j": j_val} if matched else None
 ```
 
-并发规模：抓数据 8 workers，扫描 20 workers。
+并发规模：抓数据 3 workers（`datas/fetch_all_market.py`，东财/tushare 扛不住高并发），扫描 20 workers。抓取 worker 间有 `REQUEST_DELAY` 防突发限流。
 
 ### 绘图层
 

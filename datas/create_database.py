@@ -14,6 +14,7 @@ DB_PATH = DB_DIR / "ashare_data.db"
 
 STOCK_INFO_TABLE = "stock_base_info"
 DAILY_BAR_TABLE = "stock_bars_daily_qfq"
+INDEX_BAR_TABLE = "index_bars_daily"
 
 EARLIEST_DATE = "20050101"
 
@@ -63,7 +64,7 @@ def create_daily_bar_table():
     with get_db_connection() as conn:
         create_table_query = f"""
         CREATE TABLE IF NOT EXISTS {DAILY_BAR_TABLE} (
-            code TEXT NOT NULL, -- 股票代码 (带交易所前缀)
+            code TEXT NOT NULL, -- 股票代码 (裸 6 位数字，如 000001)
             date DATE NOT NULL, -- 交易日期
             open REAL, -- 开盘价
             close REAL, -- 收盘价
@@ -86,12 +87,38 @@ def create_daily_bar_table():
 
         conn.commit()
 
+def create_index_bar_table():
+    with get_db_connection() as conn:
+        create_table_query = f"""
+        CREATE TABLE IF NOT EXISTS {INDEX_BAR_TABLE} (
+            symbol TEXT NOT NULL, -- 指数代码 (带交易所前缀，如 sh000001)
+            date DATE NOT NULL, -- 交易日期
+            open REAL, -- 开盘点位
+            close REAL, -- 收盘点位
+            high REAL, -- 最高点位
+            low REAL, -- 最低点位
+            volume INTEGER, -- 成交量 (指数为成分股汇总；统一为「股」，新浪原生口径)
+            amount REAL, -- 成交额 (当前两个数据源都不提供，预留列)
+            change_pct REAL, -- 涨跌幅，由本库计算
+            price_change REAL, -- 涨跌额，由本库计算
+            PRIMARY KEY (symbol, date)
+        );
+        """
+        conn.execute(create_table_query)
+
+        conn.execute(f"CREATE INDEX IF NOT EXISTS idx_{INDEX_BAR_TABLE}_date ON {INDEX_BAR_TABLE} (date);")
+        conn.execute(f"CREATE INDEX IF NOT EXISTS idx_{INDEX_BAR_TABLE}_symbol ON {INDEX_BAR_TABLE} (symbol);")
+
+        conn.commit()
+
 def prepare_database(recreate: bool = False):
     if recreate:
         delete_table_if_exists(f"{STOCK_INFO_TABLE}")
         delete_table_if_exists(f"{DAILY_BAR_TABLE}")
+        delete_table_if_exists(f"{INDEX_BAR_TABLE}")
     create_stock_info_table()
     create_daily_bar_table()
+    create_index_bar_table()
     with get_db_connection() as conn:
         conn.execute('PRAGMA journal_mode=WAL;')
         conn.execute('PRAGMA synchronous=NORMAL;')

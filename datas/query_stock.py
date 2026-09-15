@@ -9,7 +9,7 @@ from tools.times import ms_timestamp_to_date, format_date_input_to_yyyy_mm_dd
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional, Any
 from datetime import datetime
-from datas.create_database import DB_PATH, DAILY_BAR_TABLE, EARLIEST_DATE, STOCK_INFO_TABLE, get_db_connection
+from datas.create_database import DB_PATH, DAILY_BAR_TABLE, EARLIEST_DATE, INDEX_BAR_TABLE, STOCK_INFO_TABLE, get_db_connection
 from contextlib import closing
 
 logger = get_fetch_logger()
@@ -358,7 +358,118 @@ def query_all_stock_code_list() -> pd.Series:
         df = pd.read_sql_query(query, conn)
 
     return df['code'].map(to_std_code)
-    
+
+# ------------------------------------------------------------------ 指数日线
+# 指数代码空间与个股冲突：to_std_code('sh000001') == '000001' == 平安银行，
+# 所以下面几个函数刻意不调 to_std_code，也不复用上面的个股查询函数。
+
+def query_index_bars(
+    symbol: str,
+    from_date: Optional[str] = None,
+    to_date: Optional[str] = None,
+) -> pd.DataFrame:
+    """
+    Query index daily bars by symbol (e.g. 'sh000001') and date range.
+
+    Unlike the stock queries above, this does NOT run to_std_code: index symbols
+    live in a separate namespace ('sh000001' would otherwise collapse onto the
+    stock code '000001').
+
+    Returns:
+        pd.DataFrame sorted by date; empty DataFrame if nothing found.
+    """
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        query = f"SELECT * FROM {INDEX_BAR_TABLE} WHERE symbol = ?"
+        params: list[Any] = [symbol]
+
+        if from_date:
+            query += " AND date >= ?"
+            params.append(format_date_input_to_yyyy_mm_dd(from_date))
+        if to_date:
+            query += " AND date <= ?"
+            params.append(format_date_input_to_yyyy_mm_dd(to_date))
+
+        query += " ORDER BY date ASC"
+        df = pd.read_sql_query(query, conn, params=params, parse_dates=['date'])
+
+        if df.empty:
+            logger.info(f"No index bars found for {symbol} between {from_date} and {to_date}")
+            return pd.DataFrame()
+        return df
+
+    except Exception as e:
+        logger.error(f"❌ Error querying index bars for {symbol}: {e}", exc_info=True)
+        return pd.DataFrame()
+    finally:
+        if conn:
+            conn.close()
+
+def query_index_latest_bars(symbol: str, n: int = 1) -> pd.DataFrame:
+    """
+    Query the latest n index bars for symbol, returned in ascending date order.
+    """
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        query = (f"SELECT * FROM {INDEX_BAR_TABLE} WHERE symbol = ? "
+                 f"ORDER BY date DESC LIMIT ?")
+        df = pd.read_sql_query(query, conn, params=(symbol, n), parse_dates=['date'])
+
+        if df.empty:
+            return pd.DataFrame()
+        return df[::-1].reset_index(drop=True)
+
+    except Exception as e:
+        logger.error(f"❌ Error querying latest {n} index bars for {symbol}: {e}", exc_info=True)
+        return pd.DataFrame()
+    finally:
+        if conn:
+            conn.close()
+
+def get_latest_index_date(symbol: str) -> Optional[datetime]:
+    """
+    Get the latest date for which index bars exist for the given symbol.
+    Returns None when the symbol has no data at all.
+    """
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            row = conn.execute(
+                f"SELECT MAX(date) FROM {INDEX_BAR_TABLE} WHERE symbol = ?", (symbol,)
+            ).fetchone()
+        return pd.to_datetime(row[0]) if row and row[0] else None
+    except Exception as e:
+        logger.error(f"❌ Error getting latest index date for {symbol}: {e}", exc_info=True)
+        return None
+
+def get_earliest_index_date(symbol: str) -> Optional[datetime]:
+    """
+    Get the earliest date for which index bars exist for the given symbol.
+    Returns None when the symbol has no data at all.
+    """
+    try:
+        with sqlite3.connect(DB_PATH) as conn:
+            row = conn.execute(
+                f"SELECT MIN(date) FROM {INDEX_BAR_TABLE} WHERE symbol = ?", (symbol,)
+            ).fetchone()
+        return pd.to_datetime(row[0]) if row and row[0] else None
+    except Exception as e:
+        logger.error(f"❌ Error getting earliest index date for {symbol}: {e}", exc_info=True)
+        return None
+
+def query_index_symbol_list() -> list[str]:
+    """List all index symbols present in the database, sorted."""
+    try:
+        with get_db_connection() as conn:
+            rows = conn.execute(
+                f"SELECT DISTINCT symbol FROM {INDEX_BAR_TABLE} ORDER BY symbol"
+            ).fetchall()
+        return [r[0] for r in rows]
+    except Exception as e:
+        logger.error(f"❌ Error listing index symbols: {e}", exc_info=True)
+        return []
+
 if __name__ == "__main__":
     # Test query_daily_bars
     # codes = ['600570', '000332', '1']

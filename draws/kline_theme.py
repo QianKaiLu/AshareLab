@@ -390,3 +390,32 @@ ThemeRegistry.register(KlineTheme(
     font_size=12,
     text_font="Arial"
 ))
+
+# 浓缩咖啡 - 与市场日报图版的深暖色正文对齐
+#
+# 色值直接取自 tools/markdown_lab.py 模板里的 CSS 变量，**两边要么一起改要么都别改**：
+# 图是嵌在那份模板里的，底色对不上就会看出「贴上去的一块」。
+#   --bg #1a140f  --border #3c322b  --text #e6d7c3  --muted #b8a594  --primary #d19a66
+# plot_background 刻意与正文底色一致（不另起一块），靠网格与坐标文字分隔。
+#
+# up/down 是**红涨绿跌**（A 股惯例），与 KlineTheme 默认值一致，不要调 invert_candle_colors()。
+ThemeRegistry.register(KlineTheme(
+    name="espresso",
+    up_color="#d05a4a",        # 红涨（同模板 .up 类）
+    down_color="#6f9b6a",      # 绿跌（同模板 .down 类）
+    bbi_color="#e6d7c3",       # 暖白 - 均线
+    macd_color="#7fa8c9",      # 冷蓝 - 与暖主色反差
+    quick_line_color="#d19a66", # 琥珀 - 与正文主色同源
+    slow_line_color="#7fa8c9",  # 冷蓝
+    line_color_0="#d19a66",    # 琥珀 - 与正文主色同源，多线图的第 1 条
+    line_color_1="#7fa8c9",    # 冷蓝 - 与第 1 条对比度足够
+    line_color_2="#b07aa1",    # 灰紫 - 第 3 条备用
+    volume_opacity=0.5,
+    grid_color="#3c322b",      # 同模板 --border
+    card_background="#1a140f", # 同模板 --bg
+    plot_background="#1a140f",
+    card_border_color="#3c322b",
+    text_color="#b8a594",      # 同模板 --muted，坐标轴与图例用
+    font_size=12,
+    text_font="PingFang SC"    # 图表里有中文标签，需要 CJK 字体
+))

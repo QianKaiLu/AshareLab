@@ -895,12 +895,12 @@
  "newhigh": {
   "window": 20,
   "date": "2026-09-08",
-  "hs300_newhigh": 14,
-  "hs300_total": 287,
-  "hs300_pct": 4.9,
-  "csi2000_newhigh": 120,
-  "csi2000_total": 699,
-  "csi2000_pct": 17.2,
+  "hs300_newhigh": 15,
+  "hs300_total": 300,
+  "hs300_pct": 5.0,
+  "csi2000_newhigh": 389,
+  "csi2000_total": 2000,
+  "csi2000_pct": 19.4,
   "lean": "小票占优"
  },
  "_note": "历史快照：含涨停池/炸板池/赚钱效应/大小票分歧；板块榜与情绪总览是实时接口，仅当日快照含"

@@ -38,8 +38,12 @@ logger = get_analyze_logger()
 REPO = Path(__file__).resolve().parent.parent
 CHART_ROOT = REPO / "market_reports" / "charts"
 
-KLINE_DAYS = 60          # 日线 K 线回看天数
-MIN30_BARS = 160         # 30 分钟回看根数（约 20 个交易日，够看清背离的两个低点）
+KLINE_DAYS = 60          # 日线 K 线**展示**天数
+MIN30_BARS = 90          # 30 分钟**展示**根数（约 11 个交易日，够看清背离的两个低点）
+# 指标预热：多取一段用于算均线/MACD，算完只画展示段。
+# 不这样做的话，展示 60 根画 MA60 只有 1 个有效值、线画不出来；MACD 则要 35 根才收敛，
+# 展示段开头一大截是空的。取 120 是因为要覆盖 MA60（60）+ MACD 收敛（~35）还有余量。
+IND_WARMUP = 120
 CHART_W = 600            # 出图宽度（CSS px），与报告内容区同量级
 
 
@@ -105,31 +109,36 @@ def draw_daily_charts(target: str, out_dir: Optional[Path] = None) -> dict[str, 
     else:
         logger.warning(f"创新高数据仅 {len(nh)} 点，跳过该图")
 
-    # 活跃市值 K 线
+    # 活跃市值 K 线（多取预热段，均线从第一根就画得出来）
     amv = load_amv()
     if not amv.empty:
-        sub = amv[amv["date"] <= pd.Timestamp(day)].tail(KLINE_DAYS).reset_index(drop=True)
-        if len(sub) >= 5:
-            fig = candle_fig(sub, title=f"活跃市值 0AMV（近 {len(sub)} 个交易日）",
-                             height=380, ma_lines=(20,))
+        sub = amv[amv["date"] <= pd.Timestamp(day)].tail(
+            KLINE_DAYS + IND_WARMUP).reset_index(drop=True)
+        if len(sub) >= KLINE_DAYS:
+            fig = candle_fig(sub, title=f"活跃市值 0AMV（近 {KLINE_DAYS} 个交易日）",
+                             height=380, ma_lines=(20,), display_bars=KLINE_DAYS)
             made["amv"] = save_fig(fig, out / "amv.png", CHART_W, 380)
 
-    # 上证指数 K 线
+    # 上证指数 K 线（同上；MA60 需要至少 60 根预热才画得完整）
     idx = query_index_bars("sh000001", to_date=day)
     if not idx.empty:
-        sub = idx.tail(KLINE_DAYS).reset_index(drop=True)
-        fig = candle_fig(sub, title=f"上证指数（近 {len(sub)} 个交易日）",
-                         height=380, ma_lines=(20, 60))
-        made["shindex"] = save_fig(fig, out / "shindex.png", CHART_W, 380)
+        sub = idx.tail(KLINE_DAYS + IND_WARMUP).reset_index(drop=True)
+        if len(sub) >= KLINE_DAYS:
+            fig = candle_fig(sub, title=f"上证指数（近 {KLINE_DAYS} 个交易日）",
+                             height=380, ma_lines=(20, 60), display_bars=KLINE_DAYS)
+            made["shindex"] = save_fig(fig, out / "shindex.png", CHART_W, 380)
 
     # 上证 30 分钟 K 线 + MACD —— 为分钟级结构那节配图。
     # 取 30 分钟（不是 60/120）是因为它是入库的基础粒度，也是报告里讲背离用的那个周期。
     min30 = query_index_min_bars("sh000001", period=30, to_dt=f"{day} 23:59",
-                                 limit=MIN30_BARS)
+                                 limit=MIN30_BARS + IND_WARMUP)
     if not min30.empty:
+        # MACD 在**完整序列**上算（含预热段），画的时候只取尾部——否则展示段开头
+        # 三十多根没有 DIF/DEA，图上一大块是空的
         add_macd_to_dataframe(min30, inplace=True)
         fig = candle_macd_fig(
-            min30, title=f"上证 30 分钟（近 {len(min30)} 根）", height=520, ma_lines=(20,))
+            min30, title=f"上证 30 分钟（近 {MIN30_BARS} 根）", height=520,
+            ma_lines=(20,), display_bars=MIN30_BARS)
         made["min30"] = save_fig(fig, out / "min30.png", CHART_W, 520)
 
     for name, p in made.items():

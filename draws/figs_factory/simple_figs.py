@@ -139,30 +139,39 @@ def candle_fig(
     theme_name: str = DEFAULT_THEME,
     ma_lines: Sequence[int] = (),
     volume: bool = False,
+    display_bars: Optional[int] = None,
 ) -> go.Figure:
     """K 线图。`ma_lines` 给均线周期，如 (20, 60)。
+
+    **`display_bars` 用来做指标预热**：传的 df 可以比要展示的多，均线在**完整序列**
+    上算完再切最后 `display_bars` 根来画。不这样做的话，取 60 根画 MA60 就只有
+    1 个有效值、线根本画不出来；取 160 根画 MACD 则开头三十多根是空的。
+
+    调用方只需多取一段数据传进来，切分交给这里。
 
     up/down 用主题的 `up_color`/`down_color`——`espresso` 是**红涨绿跌**，
     与 A 股看盘习惯一致，不要调 `invert_candle_colors()`。
     """
     theme = _theme(theme_name)
-    x, xcfg = _x_axis(df)
+    # 均线在完整序列上算（含预热段），下面只画尾部 display_bars 根
+    ma_full = {w: pd.to_numeric(df["close"], errors="coerce").rolling(w).mean()
+               for w in ma_lines if len(df) >= w}
+
+    view = df.tail(display_bars).reset_index(drop=True) if display_bars else df
+    x, xcfg = _x_axis(view)
     fig = go.Figure()
 
     fig.add_trace(go.Candlestick(
-        x=x, open=df["open"], high=df["high"], low=df["low"], close=df["close"],
+        x=x, open=view["open"], high=view["high"], low=view["low"], close=view["close"],
         increasing=dict(fillcolor=theme.up_color, line=dict(color=theme.up_color, width=1)),
         decreasing=dict(fillcolor=theme.down_color, line=dict(color=theme.down_color, width=1)),
         name="K线", showlegend=False,
     ))
 
     ma_palette = [theme.line_color_0, theme.line_color_1]
-    for i, w in enumerate(ma_lines):
-        if len(df) < w:
-            continue
-        ma = pd.to_numeric(df["close"], errors="coerce").rolling(w).mean()
+    for i, (w, ma) in enumerate(ma_full.items()):
         fig.add_trace(go.Scatter(
-            x=x, y=ma, mode="lines", name=f"MA{w}",
+            x=x, y=ma.tail(len(view)).reset_index(drop=True), mode="lines", name=f"MA{w}",
             line=dict(color=ma_palette[i % len(ma_palette)], width=1.4),
         ))
 
@@ -179,17 +188,26 @@ def candle_macd_fig(
     theme_name: str = DEFAULT_THEME,
     ma_lines: Sequence[int] = (),
     price_ratio: float = 0.72,
+    display_bars: Optional[int] = None,
 ) -> go.Figure:
     """K 线 + MACD 双面板。上图价格（可带均线），下图 MACD（DIF/DEA 线 + 柱）。
 
     **入参需已算好 MACD 列**（`macd_dif` / `macd_dea` / `macd_bar`）——本函数不引
     `indicators`，保持图工厂只管画、不管算。
 
+    `display_bars` 同 `candle_fig`：调用方在**完整序列**上算好 MACD（含预热段）
+    再传进来，这里只画尾部。MACD 需要约 35 根才收敛，若只取展示用的根数直接算，
+    开头一大段会是空的。
+
     为什么不复用既有的 `ztalk_fig_v2`：它只接受 `code` 并自己去查个股表，
     指数与分钟线都用不了（同 `candle_fig` 的理由）。
     """
     theme = _theme(theme_name)
-    x, xcfg = _x_axis(df)
+    ma_full = {w: pd.to_numeric(df["close"], errors="coerce").rolling(w).mean()
+               for w in ma_lines if len(df) >= w}
+
+    view = df.tail(display_bars).reset_index(drop=True) if display_bars else df
+    x, xcfg = _x_axis(view)
 
     fig = make_subplots(
         rows=2, cols=1, shared_xaxes=True,
@@ -197,34 +215,31 @@ def candle_macd_fig(
     )
 
     fig.add_trace(go.Candlestick(
-        x=x, open=df["open"], high=df["high"], low=df["low"], close=df["close"],
+        x=x, open=view["open"], high=view["high"], low=view["low"], close=view["close"],
         increasing=dict(fillcolor=theme.up_color, line=dict(color=theme.up_color, width=1)),
         decreasing=dict(fillcolor=theme.down_color, line=dict(color=theme.down_color, width=1)),
         name="K线", showlegend=False,
     ), row=1, col=1)
 
     ma_palette = [theme.line_color_0, theme.line_color_1]
-    for i, w in enumerate(ma_lines):
-        if len(df) < w:
-            continue
-        ma = pd.to_numeric(df["close"], errors="coerce").rolling(w).mean()
+    for i, (w, ma) in enumerate(ma_full.items()):
         fig.add_trace(go.Scatter(
-            x=x, y=ma, mode="lines", name=f"MA{w}",
+            x=x, y=ma.tail(len(view)).reset_index(drop=True), mode="lines", name=f"MA{w}",
             line=dict(color=ma_palette[i % len(ma_palette)], width=1.4),
         ), row=1, col=1)
 
     # MACD：柱按正负上色（正=红涨、负=绿跌，与 K 线同口径）
-    if "macd_bar" in df.columns:
-        bar = pd.to_numeric(df["macd_bar"], errors="coerce")
+    if "macd_bar" in view.columns:
+        bar = pd.to_numeric(view["macd_bar"], errors="coerce")
         fig.add_trace(go.Bar(
             x=x, y=bar, name="MACD柱", showlegend=False,
             marker=dict(color=[theme.up_color if (pd.notna(v) and v >= 0)
                                else theme.down_color for v in bar]),
         ), row=2, col=1)
     for col, name in (("macd_dif", "DIF"), ("macd_dea", "DEA")):
-        if col in df.columns:
+        if col in view.columns:
             fig.add_trace(go.Scatter(
-                x=x, y=pd.to_numeric(df[col], errors="coerce"), mode="lines", name=name,
+                x=x, y=pd.to_numeric(view[col], errors="coerce"), mode="lines", name=name,
                 line=dict(color=theme.line_color_0 if name == "DIF" else theme.line_color_1,
                           width=1.3),
             ), row=2, col=1)

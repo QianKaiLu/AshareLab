@@ -220,7 +220,7 @@ PYTHONPATH=. conda run --live-stream -n stock python workflow/render_report.py \
 
 ### 4c 内容要求
 
-**写完必须逐项勾选 `references/image_report_format.md` 里那张 9 项清单**——那是
+**写完必须逐项勾选 `references/image_report_format.md` 里那张 10 项清单**——那是
 唯一权威版本，不在这里抄第二遍（抄两处必然漂移，2026-09-16 就是因为要求只写在
 一处、且是描述性措辞，导致图版把术语解释整节漏掉了）。
 

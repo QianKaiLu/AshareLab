@@ -1,14 +1,23 @@
 """市场日报配图：把分析数据画成图，供图片版报告嵌入。
 
-四张图对应报告里最需要「一眼看出趋势」的四组数据：
+六张图，对应报告里最需要「一眼看出趋势」的几组数据：
 
-    limitup.png   涨停家数折线        —— 情绪的日频读数
-    newhigh.png   创 20 日新高双线    —— 游资（中证2000）与机构（沪深300）的态度
-    amv.png       活跃市值 K 线       —— 资金闸门本体
-    shindex.png   上证指数 K 线       —— 价格位置
+    limitup.png          涨停家数折线     —— 情绪的日频读数
+    newhigh_hs300.png    沪深300 创新高   —— 机构态度
+    newhigh_csi2000.png  中证2000 创新高  —— 游资态度
+    amv.png              活跃市值 K 线    —— 资金闸门本体
+    shindex.png          上证指数 K 线    —— 价格位置
+    min30.png            上证 30 分钟 K 线 + MACD —— 分钟级结构与背离
 
-**涨停家数折线只画有数据的日期**：20260820 之前的快照 `limit_up` 是空 list（抓取
-失败），不是「当天没有涨停」。用 0 填补会画出一条从 0 起跳的假线，比不画更糟。
+几个不显然但重要的约定：
+
+- **涨停家数只画有数据的日期**：20260820 之前的快照 `limit_up` 是空 list（抓取失败），
+  不是「当天没有涨停」。用 0 填补会画出一条从 0 起跳的假线，比不画更糟。
+- **创新高拆成两张**，各配一色（机构=琥珀、游资=蓝）。放一张图上的问题：两者量级
+  差得多（沪深300 常年 2~15%、中证2000 可到 40%），共用一个纵轴会把沪深300 压成
+  贴着底边的一条线。对比放在正文里说，不必靠同一张图叠出来。
+- **K 线多取一段做指标预热**（`IND_WARMUP`），算完只画展示段。不这样做的话，
+  展示 60 根画 MA60 只有 1 个有效值、线根本画不出来。
 
 用法:
     python -m market.charts [YYYYMMDD]
@@ -23,11 +32,13 @@ import pandas as pd
 
 from datas.query_stock import query_index_bars, query_index_min_bars
 from draws.figs_factory.simple_figs import (
+    DEFAULT_THEME as CHART_THEME,
     candle_fig,
     candle_macd_fig,
     line_fig,
     save_fig,
 )
+from draws.kline_theme import ThemeRegistry
 from indicators.macd import add_macd_to_dataframe
 from market.amv import load_amv
 from market.fetch import load_history
@@ -105,14 +116,19 @@ def draw_daily_charts(target: str, out_dir: Optional[Path] = None) -> dict[str, 
     # 两者的**对比**放在文字里说（谁在动、差值多少），不必靠同一张图叠出来。
     nh = _newhigh_df(target)
     if len(nh) >= 2:
-        for key, col, label in (("newhigh_hs300", "沪深300", "沪深300（机构）"),
-                                ("newhigh_csi2000", "中证2000", "中证2000（游资）")):
+        # 两张图各给一色：机构=琥珀、游资=蓝。凑成一对时颜色有区分，
+        # 读者扫一眼就能认出「刚才那张是哪个口径」——不必读标题。
+        theme = ThemeRegistry.get(name=CHART_THEME)
+        for key, col, label, color in (
+                ("newhigh_hs300", "沪深300", "沪深300（机构）", theme.line_color_0),
+                ("newhigh_csi2000", "中证2000", "中证2000（游资）", theme.line_color_1)):
             if col not in nh.columns:
                 continue
             fig = line_fig(nh[["date", col]], [(col, label)],
                            title=f"{label} 创 20 日新高占比（近 {len(nh)} 个交易日）",
                            height=280, y_label="%",
-                           annotate_suffix="%", annotate_digits=1)
+                           annotate_suffix="%", annotate_digits=1,
+                           palette=[color])
             made[key] = save_fig(fig, out / f"{key}.png", CHART_W, 280)
     else:
         logger.warning(f"创新高数据仅 {len(nh)} 点，跳过该图")

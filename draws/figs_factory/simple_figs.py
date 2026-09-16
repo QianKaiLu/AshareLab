@@ -92,6 +92,7 @@ def line_fig(
     annotate_last: bool = True,
     annotate_suffix: str = "",
     annotate_digits: int = 0,
+    palette: Optional[Sequence[str]] = None,
 ) -> go.Figure:
     """折线图。
 
@@ -102,12 +103,15 @@ def line_fig(
         annotate_suffix / annotate_digits: 末端标注的单位与小数位。
             **百分比必须带 `%` 且保留一位小数** —— 否则 8.8 会被格式化成「9」，
             读者会当成「9 只」而不是「9%」（2026-09-16 实测踩过）
+        palette: 覆盖默认配色。单序列的图默认用 line_color_0（琥珀），想让两张
+            并列的图各用一色时传进来（如机构=琥珀、游资=蓝）
     """
     theme = _theme(theme_name)
     x, xcfg = _x_axis(df)
     fig = go.Figure()
 
-    palette = [theme.line_color_0, theme.line_color_1, theme.line_color_2]
+    palette = list(palette) if palette else [
+        theme.line_color_0, theme.line_color_1, theme.line_color_2]
 
     for i, (col, label) in enumerate(series):
         if col not in df.columns:

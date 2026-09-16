@@ -213,7 +213,18 @@ output/
 ocp/output/
 media_factory/datas/
 
-# 市场日报（market_reports/ 的 md 与 png 都入 git，由用户 2026-09-15 决定）
+# 市场日报：只有文字版（YYYY-MM-DD.md）入 git，它是可回溯的记录。
+# 图片版（-image.md / -image.png）与配图（charts/）是派生产物，随时能从文字版重出，
+# 且 PNG 体积大（图版 1.8M/天 + 配图 0.6M/天），不入 git。
+market_reports/*-image.md
+market_reports/*-image.png
+market_reports/charts/
+
+# B1 日更同理：存档（YYYY-MM-DD.md，含回测用 CSV）入 git，图版是派生产物不入。
+# 与市场日报的差别在于 B1 的图版另存 -image 而非覆盖存档，因为存档里那段 CSV
+# 是回测脚本要读的，不能被砍掉。
+b1_results/*-image.md
+b1_results/*-image.png
 
 # ai models
 models/

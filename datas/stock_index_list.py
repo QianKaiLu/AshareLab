@@ -57,54 +57,59 @@ def update_index_stock_list(force_update: bool = False):
         logger.info("Index stock lists are up to date. No update needed.")
 
 
-def fetch_index_stock_list():
-    """Fetch and save the latest HS300 and CSI500 constituent stock lists.
+# 指数代码 → (输出路径, 期望成分数)。期望数用于校验抓取完整性。
+INDEX_SPECS = (
+    ("000300", hs300_list_path, 300, "沪深300"),
+    ("000905", csi500_list_path, 500, "中证500"),
+    ("932000", csi2000_list_path, 2000, "中证2000"),
+    ("000510", csi_a500_list_path, 500, "中证A500"),
+)
 
-    Retrieves data via akshare, renames columns for consistency, saves to CSV,
-    and updates a dummy file's timestamp on success.
+
+def fetch_index_stock_list():
+    """抓取并保存指数成分名单。数据源是**中证指数公司官方**（csindex）。
+
+    **不要换回 `ak.index_stock_cons()`。** 那个接口（东财源）返回的行数看着对
+    （沪深300 给 300 行、中证2000 给 2000 行），但**大量重复、同时漏掉真实成分**：
+    2026-09-17 实测，沪深300 的 300 行里只有 287 个唯一代码，中证2000 的 2000 行里
+    只有 699 个唯一代码。而官方源给出的 300 / 2000 只，**库里全都有行情**。
+
+    这个缺陷静默影响过多个下游：创 20 日新高的分母（曾报 287/699 而非 300/2000）、
+    `hunter/hunt_pools.py` 的三个选股池、广度分析与回测。
+
+    写成 `code,name,list_date` 三列，其中 `list_date` 是**名单快照日期**——官方源不
+    提供「纳入日期」，所以这个字段的语义与旧版不同。消费方（`*_code_list()`、
+    `market/fetch.py:_index_members`）只读 `code` 列。
     """
     done = True
-    column_mapping = {
-        "品种代码": "code",
-        "品种名称": "name",
-        "纳入日期": "list_date"
-    }
-    
-    logger.info("Updating HS300 lists...")
-    df_300 = ak.index_stock_cons(symbol="399300")
-    if not df_300.empty:
-        df_300 = df_300.rename(columns=column_mapping)
-        df_300.to_csv(hs300_list_path, index=False)
-        logger.info(f"Done with {len(df_300)} entries.")
-    else:
-        done = False
+    for symbol, path, expect, name in INDEX_SPECS:
+        logger.info(f"Updating {name} lists...")
+        try:
+            df = ak.index_stock_cons_csindex(symbol=symbol)
+        except Exception as e:
+            logger.error(f"{name} 抓取失败: {type(e).__name__}: {e}")
+            done = False
+            continue
 
-    logger.info("Updating CSI500 lists...")
-    df_500 = ak.index_stock_cons(symbol="000905")
-    if not df_500.empty:
-        df_500 = df_500.rename(columns=column_mapping)
-        df_500.to_csv(csi500_list_path, index=False)
-        logger.info(f"Done with {len(df_500)} entries.")
-    else:
-        done = False
-        
-    logger.info("Updating CSI2000 lists...")
-    df_2000 = ak.index_stock_cons(symbol="932000")
-    if not df_2000.empty:
-        df_2000 = df_2000.rename(columns=column_mapping)
-        df_2000.to_csv(csi2000_list_path, index=False)
-        logger.info(f"Done with {len(df_2000)} entries.")
-    else:
-        done = False
-        
-    logger.info("Updating CSIA500 lists...")
-    df_a500 = ak.index_stock_cons(symbol="000510")
-    if not df_a500.empty:
-        df_a500 = df_a500.rename(columns=column_mapping)
-        df_a500.to_csv(csi_a500_list_path, index=False)
-        logger.info(f"Done with {len(df_a500)} entries.")
-    else:
-        done = False
+        if df is None or df.empty or "成分券代码" not in df.columns:
+            logger.error(f"{name} 返回为空或列不符: {list(df.columns) if df is not None else None}")
+            done = False
+            continue
+
+        out = pd.DataFrame({
+            "code": df["成分券代码"].astype(str).str.zfill(6),
+            "name": df["成分券名称"].astype(str),
+            "list_date": df["日期"].astype(str) if "日期" in df.columns else "",
+        })
+        uniq = out["code"].nunique()
+        if uniq < expect:
+            # 宁可整批放弃也不要写一份残缺名单——它会被当成权威数据用很久
+            logger.error(f"{name} 只取到 {uniq} 个唯一代码（期望 {expect}），放弃本次写入")
+            done = False
+            continue
+
+        out.to_csv(path, index=False)
+        logger.info(f"Done with {len(out)} rows / {uniq} unique codes.")
 
     if done:
         # Update the dummy file's timestamp to mark successful update

@@ -23,7 +23,9 @@ from typing import Any, Optional
 from market.amv import amv_timing
 from market.fetch import load_history
 from market.index import index_overview
-from market.sector import oversold_sectors
+from market.risks import market_risks
+from market.sector import newhigh_sectors, oversold_sectors
+from market.stage import market_stage
 
 # ---- L1 情绪阈值（来自调研版经验值，待用回溯数据标定）
 ZT_CRAZY, ZT_HOT, ZT_COLD = 80, 60, 30
@@ -388,10 +390,13 @@ def analyze(date: Optional[str] = None, days: int = 5) -> dict:
         "L0指数": index_overview(target, days),
         "L1情绪": emotion(hist, target),
         "L1走势": zt_trend(hist),
+        "L0阶段": market_stage(target),
         "L2风向": divergence(hist, target),
         "L2基差": snap.get("basis"),
         "L2ETF": snap.get("etf"),
         "L2超跌板块": oversold_sectors(target),
+        "L2创新高板块": newhigh_sectors(target),
+        "L2风险信号": market_risks(target),
         "L3涨停分布": zt_industry_agg(zt)[:10],
         "L3连板梯队": board_ladder(zt),
         "L3延续性": zt_persist(hist, days),
@@ -440,7 +445,7 @@ def render(a: dict) -> str:
         L.append("")
     else:
         L.append(f"## L0 指数：**{ix['概览']}**　→ {ix['60线概览']}")
-        for label in ("主要", "宽基"):
+        for label in ("主要", "宽基", "信号"):
             group = [r for r in ix["指数"] if r["组"] == label]
             if group:
                 L.append("　".join(
@@ -450,14 +455,31 @@ def render(a: dict) -> str:
         if ma:
             L.append("距60线（由近到远）：" + "　".join(
                 f"{r['名称']} {r['距60线']:+.2f}%" for r in ma))
-        if ix["风格"]:
-            L.append(f"风格：中证1000 − 沪深300 = {ix['风格']['值']:+.2f}pp"
-                     f" → {ix['风格']['解读']}")
+        for ax in ix["风格"]:
+            L.append(f"风格·{ax['轴']}：{ax['正极']} − {ax['负极']} = {ax['值']:+.2f}pp"
+                     f" → {ax['解读']}")
         if ix.get("共振"):
             r = ix["共振"]
             L.append(f"券商+沪深300+创业板：{r['明细']}"
                      + ("　→ **共振，疑似聪明资金进场**" if r["共振"] else "　→ 未共振"))
         L.append(f"> 口径：{ix['口径']}")
+        L.append("")
+
+    # ---- L0 阶段：L0 两段的结论——该用哪套打法
+    st = a.get("L0阶段") or {}
+    if not st.get("error"):
+        lean_text = {"out": "（资金流出，偏向下破位）",
+                     "in": "（资金流入）"}.get(st.get("倾向"), "")
+        L.append(f"## L0 阶段：**{st['阶段']}**{lean_text}")
+        L.append(f"→ {st['打法']}")
+        for w in st["依据"]:
+            L.append(f"  · {w}")
+        r = st["读数"]
+        L.append("　".join(f"{k} {v}" for k, v in r.items() if v is not None))
+        if st.get("周线提示"):
+            L.append(f"　{st['周线提示']}")
+        if st.get("滞后提示"):
+            L.append(f"⚠ {st['滞后提示']}")
         L.append("")
 
     # ---- L1
@@ -517,11 +539,41 @@ def render(a: dict) -> str:
             L.append("> 口径：当月合约，负=贴水（期货比现货悲观）。交割日收敛到 0、"
                      "换月后立刻转负是期限结构，跨换月日别做环比")
         if etf:
-            L.append(f"{etf['ETF']} 成交 {etf['成交量'] / 1e8:.2f} 亿股"
-                     f"（近 20 日均量 {etf['近20日均量'] / 1e8:.2f} 亿股，{etf['倍数']} 倍）"
-                     + ("　⚠ 异常放量——疑似神秘资金进场" if etf.get("异常") else ""))
+            # 三只一起看才知道护的是哪一头：只护 510300 是托指数，三只齐动才是全面进场
+            L.append("宽基ETF（看「汪汪队」护哪一头）：" + "　".join(
+                f"{e['名称']} {e['倍数']} 倍" for e in etf["etfs"])
+                + f"　→ {etf['解读']}")
             if etf.get("滞后"):
                 L.append(f"> ⚠ ETF 日线只到 {etf['日期']}，不是当日读数")
+        L.append("")
+
+    # ---- L2 风险信号（躲大跌清单，判断对象是指数）
+    rk = a.get("L2风险信号") or {}
+    if not rk.get("error") and rk.get("扫描"):
+        L.append(f"## L2 风险信号　触发 {rk['触发总数']} 条")
+        for s in rk["扫描"]:
+            if s.get("error"):
+                continue
+            hits = s.get("触发") or []
+            L.append(f"**{s['名称']}**" + ("" if hits else "　无触发"))
+            for h in hits:
+                detail = h.get("读数") or h.get("破位") or h.get("后高") or ""
+                L.append(f"　· {h['信号']}：{detail}")
+                if h.get("说明"):
+                    L.append(f"　　{h['说明']}")
+        L.append(f"> 口径：{rk['口径']}")
+        L.append("")
+
+    # ---- L2 创新高板块（找方向的入口：谁在突破）
+    nhs = a.get("L2创新高板块") or {}
+    if not nhs.get("error") and nhs.get("行业"):
+        L.append(f"## L2 创新高板块　共 {nhs['创新高总数']} 只 / {nhs['覆盖行业']} 个行业"
+                 f"（创 {nhs['窗口']} 日新高）")
+        L.append("　".join(f"{r['行业']} {r['家数']}" for r in nhs["行业"][:10]))
+        if nhs.get("前3集中度") is not None:
+            L.append(f"前 3 行业集中度 {nhs['前3集中度']}%"
+                     + ("（抱团集中）" if nhs["前3集中度"] >= 40 else "（分散）"))
+        L.append(f"> 口径：{nhs['口径']}")
         L.append("")
 
     # ---- L2 超跌板块（跨全市场的行业扫描，与上面的快照类指标不同源）

@@ -27,19 +27,28 @@ MA_WINDOW = 60
 CORE = (("sh000001", "上证"), ("sz399001", "深证"), ("sz399006", "创业板"),
         ("sh000688", "科创50"), ("bj899050", "北证50"))
 BROAD = (("sh000300", "沪深300"), ("sh000905", "中证500"), ("sh000852", "中证1000"),
-         ("sz399303", "国证2000"), ("sh000985", "中证全指"), ("sh000016", "上证50"),
-         ("sz399975", "证券公司"))
+         ("sz399303", "国证2000"), ("sh000985", "中证全指"), ("sh000016", "上证50"))
 
-# 「券商 + 沪深300 + 创业板」三者同时上涨 → 聪明资金进场
-# （来源：reference_articles/modoo/大富翁(4)）。券商是先行指标，单看它容易假信号，
-# 三个一起动才算数。
+# 信号用的行业指数。不是宽基，是每日观察要看的两个「温度计」：
+#   证券公司 —— 先行指标，与沪深300、创业板共振 = 聪明资金进场
+#   银行     —— 防御方向，弱市里资金切银行是典型动作
+STYLE = (("sz399975", "证券公司"), ("sz399986", "银行"))
+
+# 「券商 + 沪深300 + 创业板」三者同时上涨 → 聪明资金进场。
+# 券商是先行指标，单看它容易假信号，三个一起动才算数。
 RESONANCE = (("sz399975", "证券公司"), ("sh000300", "沪深300"), ("sz399006", "创业板"))
 
-# 大小盘风格：中证1000 − 沪深300，正=小盘占优
-STYLE_SMALL, STYLE_BIG = "sh000852", "sh000300"
-STYLE_GAP = 0.5         # 差值超过此值（pp）才算某一边占优
+# 两个风格轴。差值超过 STYLE_GAP（pp）才算某一边占优。
+#   大小盘 —— 中证1000 − 沪深300：游资还是机构主导
+#   攻防   —— 银行 − 创业板：资金是在避险还是进攻
+STYLE_AXES = (
+    ("大小盘", "sh000852", "中证1000", "sh000300", "沪深300"),
+    ("攻防", "sz399986", "银行", "sz399006", "创业板"),
+)
+STYLE_GAP = 0.5
 
-CALIBER = "涨跌幅为当日，位置为距各自 60 日线；风格 = 中证1000 − 沪深300 当日之差"
+CALIBER = ("涨跌幅为当日，位置为距各自 60 日线；风格 = 正极指数当日 − 负极指数当日。"
+           "「信号」组不是宽基，是每日观察用的行业温度计（券商看聪明资金、银行看防御）")
 
 
 def _norm_date(target: str) -> str:
@@ -82,7 +91,7 @@ def index_overview(target: str, days: int = 5) -> dict:
     """宽基指数概览。缺数据时返回 {"error": ...}。"""
     day = _norm_date(target)
     rows = []
-    for label, group in (("主要", CORE), ("宽基", BROAD)):
+    for label, group in (("主要", CORE), ("宽基", BROAD), ("信号", STYLE)):
         for symbol, name in group:
             r = _one(symbol, name, day, days, label)
             if r:
@@ -91,12 +100,22 @@ def index_overview(target: str, days: int = 5) -> dict:
         return {"error": f"index_bars_daily 无 {day} 之前的数据"}
 
     by = {r["symbol"]: r for r in rows}
-    style = None
-    if STYLE_SMALL in by and STYLE_BIG in by and by[STYLE_SMALL]["当日"] is not None:
-        gap = by[STYLE_SMALL]["当日"] - by[STYLE_BIG]["当日"]
-        lean = ("小盘占优" if gap > STYLE_GAP
-                else "大盘占优" if gap < -STYLE_GAP else "均衡")
-        style = {"值": round(gap, 2), "解读": lean}
+
+    axes = []
+    for label, sym_a, name_a, sym_b, name_b in STYLE_AXES:
+        if sym_a not in by or sym_b not in by:
+            continue
+        if by[sym_a]["当日"] is None or by[sym_b]["当日"] is None:
+            continue
+        gap = by[sym_a]["当日"] - by[sym_b]["当日"]
+        if abs(gap) <= STYLE_GAP:
+            lean = "均衡"
+        elif label == "大小盘":
+            lean = "小盘占优" if gap > 0 else "大盘占优"
+        else:
+            lean = "防御占优" if gap > 0 else "进攻占优"
+        axes.append({"轴": label, "正极": name_a, "负极": name_b,
+                     "值": round(gap, 2), "解读": lean})
 
     trio = [(by[s]["当日"], n) for s, n in RESONANCE
             if s in by and by[s]["当日"] is not None]
@@ -132,7 +151,7 @@ def index_overview(target: str, days: int = 5) -> dict:
         "指数": rows,
         "概览": breadth,
         "60线概览": ma_note,
-        "风格": style,
+        "风格": axes,
         "共振": resonance,
         "口径": CALIBER,
     }
@@ -149,8 +168,9 @@ def render_index(a: dict) -> str:
         if r["距60线"] is not None:
             bits.append(f"距60线 {r['距60线']:+.2f}%")
         lines.append("　".join(bits))
-    if a["风格"]:
-        lines.append(f"\n风格：中证1000 − 沪深300 = {a['风格']['值']:+.2f}pp → {a['风格']['解读']}")
+    for ax in a["风格"]:
+        lines.append(f"风格·{ax['轴']}：{ax['正极']} − {ax['负极']} = {ax['值']:+.2f}pp"
+                     f" → {ax['解读']}")
     if a.get("共振"):
         r = a["共振"]
         lines.append(f"券商+沪深300+创业板：{r['明细']}"

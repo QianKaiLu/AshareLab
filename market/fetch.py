@@ -43,6 +43,10 @@ BOARD_BLACKLIST = ("HS300", "沪深300", "上证50", "中证", "融资融券", "
 
 HISTORY_DIR = Path(__file__).parent / "history"
 
+# 只有当天快照才抓得到的字段（实时接口无历史参数）。重抓历史日期时这些必须保留，
+# 否则一次补抓就把当初的实时读数抹掉了——见 fetch_snapshot 里的说明。
+REALTIME_KEYS = ("market", "boards_em", "industry_ths", "concept_sina")
+
 
 def history_path(date: str) -> Path:
     return HISTORY_DIR / f"{date}.json"
@@ -238,6 +242,49 @@ def _index_members(filename: str) -> set[str]:
                 for r in csv.DictReader(f) if r.get("code")}
 
 
+def _newhigh_flags(date: str, window: int = 20):
+    """收盘价创 window 日新高的布尔 Series（按 code 索引），或返回错误字符串。
+
+    抽出来给 `fetch_newhigh_divergence`（要家数）与 `fetch_newhigh_codes`（要名单）
+    共用——同一个计算抄两遍，改口径时必然漏掉一处。
+    """
+    day = f"{date[:4]}-{date[4:6]}-{date[6:8]}" if "-" not in date else date
+    if not DB_PATH.exists():
+        return "行情库不存在"
+
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        dates = [r[0] for r in conn.execute(
+            "select distinct date from stock_bars_daily_qfq where date <= ? "
+            "order by date desc limit ?", (day, window))]
+        if len(dates) < window:
+            return f"{day} 之前不足 {window} 个交易日"
+        start = dates[-1]
+        df = pd.read_sql(
+            "select code, date, close from stock_bars_daily_qfq "
+            "where date >= ? and date <= ?", conn, params=(start, day))
+    finally:
+        conn.close()
+
+    if df.empty:
+        return f"{day} 无行情数据"
+    piv = df.pivot(index="date", columns="code", values="close").sort_index()
+    if len(piv) < window:
+        return f"{day} 数据不足 {window} 日"
+    last = piv.iloc[-1]
+    is_nh = last >= piv.max()          # 收盘创窗口内新高
+    is_nh.attrs["last_date"] = str(piv.index[-1])[:10]
+    return is_nh
+
+
+def fetch_newhigh_codes(date: str, window: int = 20) -> set[str]:
+    """创 window 日新高的**股票代码集合**（收盘价口径）。取不到返回空集。"""
+    is_nh = _newhigh_flags(date, window)
+    if isinstance(is_nh, str):
+        return set()
+    return {str(c) for c, v in is_nh.items() if v}
+
+
 def fetch_newhigh_divergence(date: str, window: int = 20) -> dict:
     """大小票分歧：沪深300 与 中证2000 的创 N 日新高家数（modoo 复盘法）。
 
@@ -248,33 +295,14 @@ def fetch_newhigh_divergence(date: str, window: int = 20) -> dict:
     （收盘 = 近 window 日最高收盘）；行情软件若用最高价口径家数会略多。
     指数成分用当前名单快照，回溯早期数据有成分变动偏差。
     """
-    day = f"{date[:4]}-{date[4:6]}-{date[6:8]}" if "-" not in date else date
+    is_nh = _newhigh_flags(date, window)
+    if isinstance(is_nh, str):
+        return {"error": is_nh}
+
     hs300 = _index_members("hs300_stock_list.csv")
     csi2000 = _index_members("csi2000_stock_list.csv")
-    if not hs300 or not csi2000 or not DB_PATH.exists():
-        return {"error": "缺少指数成分名单或行情库"}
-
-    conn = sqlite3.connect(DB_PATH)
-    try:
-        dates = [r[0] for r in conn.execute(
-            "select distinct date from stock_bars_daily_qfq where date <= ? "
-            "order by date desc limit ?", (day, window))]
-        if len(dates) < window:
-            return {"error": f"{day} 之前不足 {window} 个交易日"}
-        start = dates[-1]
-        df = pd.read_sql(
-            "select code, date, close from stock_bars_daily_qfq "
-            "where date >= ? and date <= ?", conn, params=(start, day))
-    finally:
-        conn.close()
-
-    if df.empty:
-        return {"error": f"{day} 无行情数据"}
-    piv = df.pivot(index="date", columns="code", values="close").sort_index()
-    if len(piv) < window:
-        return {"error": f"{day} 数据不足 {window} 日"}
-    last = piv.iloc[-1]
-    is_nh = last >= piv.max()          # 收盘创窗口内新高
+    if not hs300 or not csi2000:
+        return {"error": "缺少指数成分名单"}
 
     def stat(members: set[str]) -> tuple[int, int]:
         cols = [c for c in is_nh.index if c in members]
@@ -290,7 +318,7 @@ def fetch_newhigh_divergence(date: str, window: int = 20) -> dict:
         lean = "小票占优" if gap > 2 else ("大票占优" if gap < -2 else "均衡")
     return {
         "window": window,
-        "date": str(piv.index[-1])[:10],
+        "date": str(is_nh.attrs.get("last_date", ""))[:10],
         "hs300_newhigh": n3, "hs300_total": t3, "hs300_pct": p3,
         "csi2000_newhigh": n2, "csi2000_total": t2, "csi2000_pct": p2,
         "lean": lean,
@@ -371,46 +399,79 @@ def fetch_basis(date: str) -> dict:
     return out
 
 
-# ---- 沪深300ETF 放量
-ETF_SYMBOL = "sh510300"
-ETF_NAME = "沪深300ETF"
+# ---- 宽基 ETF 放量
+# 三只一起看才知道「汪汪队」护的是哪一头：
+#   只护 510300 = 托指数；三只齐动 = 全面进场；只护 159915 = 护成长
+ETF_SYMBOLS = (("sh510300", "沪深300ETF"), ("sh510050", "上证50ETF"),
+               ("sz159915", "创业板ETF"))
 ETF_MA_WINDOW = 20
 # 放量阈值与 portfolio/monitor.py:VOL_SPIKE_RATIO 同口径，不另造
 ETF_SPIKE = 2.0
 
 
-def fetch_etf_volume(date: str) -> dict:
-    """沪深300ETF 成交量与放量倍数。
-
-    文章用它判断「神秘资金」（汪汪队）是否进场——异常放量即进场信号。
-    东财的 fund_etf_hist_em 连接被拒（老问题），走新浪。
-    """
-    day = f"{date[:4]}-{date[4:6]}-{date[6:8]}" if "-" not in date else date
-    df = ak.fund_etf_hist_sina(symbol=ETF_SYMBOL)
+def _one_etf(symbol: str, name: str, day: str) -> Optional[dict]:
+    """单只 ETF 的成交量与放量倍数。无数据返回 None。"""
+    try:
+        df = ak.fund_etf_hist_sina(symbol=symbol)
+    except Exception:
+        return None
     if df is None or df.empty:
-        raise RuntimeError(f"{ETF_SYMBOL} 无数据")
+        return None
+
     df = df.copy()
     # 该接口的 date 列是 datetime.date 对象，不是字符串，不能直接和字符串比
     df["date"] = pd.to_datetime(df["date"])
     df = df[df["date"] <= pd.Timestamp(day)]
     if df.empty:
-        raise RuntimeError(f"{ETF_SYMBOL} 无 {day} 之前的数据")
+        return None
 
     vol = pd.to_numeric(df["volume"], errors="coerce").dropna()
+    if vol.empty:
+        return None
     cur = float(vol.iloc[-1])
     base = float(vol.tail(ETF_MA_WINDOW).mean())
     ratio = (cur / base) if base else None
-    used = df["date"].iloc[-1].strftime("%Y-%m-%d")
     return {
-        "日期": used,
-        # 新浪这支 ETF 的日线当天常还没出（实测 09-15 只到 09-14），
-        # 所以必须标明实际用的是哪天，不能让用户以为是当日读数
-        "滞后": used != day,
-        "ETF": ETF_NAME,
-        "成交量": int(cur),
-        "近20日均量": int(base),
+        "symbol": symbol, "名称": name,
+        "日期": df["date"].iloc[-1].strftime("%Y-%m-%d"),
+        "成交量": int(cur), "近20日均量": int(base),
         "倍数": round(ratio, 2) if ratio else None,
         "异常": bool(ratio and ratio >= ETF_SPIKE),
+    }
+
+
+def fetch_etf_volume(date: str) -> dict:
+    """三只宽基 ETF 的成交量与放量倍数。
+
+    用来判断「神秘资金」（汪汪队）是否进场——异常放量即进场信号。
+    **要看三只**：只护 510300 是托指数，三只齐动才是全面进场。
+    东财的 fund_etf_hist_em 连接被拒（老问题），走新浪。
+    """
+    day = f"{date[:4]}-{date[4:6]}-{date[6:8]}" if "-" not in date else date
+    etfs = [r for r in (_one_etf(s, n, day) for s, n in ETF_SYMBOLS) if r]
+    if not etfs:
+        raise RuntimeError("三只 ETF 都没取到数据")
+
+    spike = [e["名称"] for e in etfs if e["异常"]]
+    if not spike:
+        read = "无异常放量"
+    elif len(spike) == 1 and spike[0] == "沪深300ETF":
+        read = "仅沪深300ETF 放量，偏托指数"
+    elif len(spike) == len(etfs):
+        read = "三只齐放量，疑似资金全面进场"
+    else:
+        read = f"{'、'.join(spike)} 放量"
+
+    # 三只的实际数据日期可能不同（新浪有的当天出、有的隔天出），
+    # 取最早的那个当整体口径，宁可标滞后也不要让用户以为是当日读数
+    used = min(e["日期"] for e in etfs)
+    return {
+        "日期": used,
+        # 新浪的 ETF 日线当天常还没出（早上实测 510300 只到前一交易日）
+        "滞后": used != day,
+        "etfs": etfs,
+        "异常数": len(spike),
+        "解读": read,
     }
 
 
@@ -447,8 +508,24 @@ def fetch_snapshot(date: str) -> dict:
         grab("industry_ths", fetch_industry_ths)      # 降级备份
         grab("concept_sina", fetch_concept_sina)      # 降级备份
     else:
-        snap["_note"] = ("历史快照：含涨停池/炸板池/赚钱效应/大小票分歧；"
+        # 重抓历史日期时，实时源的字段抓不到。若该日已有快照，**必须保留旧的**——
+        # 否则一次「补抓 basis」就会把当初实时抓到的涨跌家数、板块榜静默抹掉。
+        # （2026-09-16 实测踩过：为补 ETF 格式重抓 09-15，丢了涨跌比与板块榜。）
+        old = {}
+        p = history_path(date)
+        if p.exists():
+            try:
+                old = json.loads(p.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                old = {}
+        kept = [k for k in REALTIME_KEYS if k not in snap and k in old]
+        for k in kept:
+            snap[k] = old[k]
+
+        snap["_note"] = ("历史快照：含涨停池/炸板池/赚钱效应/大小票分歧/基差/ETF；"
                          "板块榜与情绪总览是实时接口，仅当日快照含")
+        if kept:
+            snap["_note"] += f"（本次重抓保留了原有的实时字段：{'、'.join(kept)}）"
 
     return snap
 

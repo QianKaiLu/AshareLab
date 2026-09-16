@@ -1,4 +1,4 @@
-"""日常行情更新：池子同步（每周）→ 增量行情 → 换手率回填 → 指数日线 → 数据质量校验。
+"""日常行情更新：池子同步（每周）→ 增量行情 → 换手率回填 → 指数日线 → 指数分钟线 → 数据质量校验。
 
 设计要点：
 - 池子同步默认每 7 天一次（.pool_synced 的 mtime 记时间），--force-pool 可强制。
@@ -7,14 +7,17 @@
   代码表抓取不完整时会把在市股票误判为退市，删掉的行情要重抓 20 年。
 - 新股在池子同步后自然进入抓取范围：worker 发现库中无该股数据，会走 akshare 全量。
 - 每步失败不阻断后续：行情抓不到不该妨碍换手率回填，反之亦然。
-- 指数日线（11 只宽基）走独立表和独立模块，详见 datas/fetch_index_bars.py。
-  它的新鲜度基准取个股表的 MAX(date)，而不是 latest_trade_day()——后者不认节假日。
+- 指数日线走独立表和独立模块，详见 datas/fetch_index_bars.py。它的新鲜度基准取
+  个股表的 MAX(date)，而不是 latest_trade_day()——后者不认节假日。
+- 指数分钟线同理，详见 datas/fetch_index_min_bars.py。**只抓 30 分钟存库**，
+  60/120 由查询时按交易时段合成（新浪不支持 scale=120，且要避免两套口径并存）。
 
 用法:
     python workflow/daily_update.py                # 常规日更
     python workflow/daily_update.py --force-pool   # 强制刷新池子
     python workflow/daily_update.py --skip-pool    # 只更行情
-    python workflow/daily_update.py --skip-index   # 不更新指数
+    python workflow/daily_update.py --skip-index   # 不更新指数日线
+    python workflow/daily_update.py --skip-min     # 不更新指数分钟线
     python workflow/daily_update.py --dry-run      # 只报告池子差异，不写库
 """
 import argparse
@@ -30,6 +33,8 @@ from datas.create_database import (
 )
 from datas.fetch_all_market import fetch_stock_bars_parallel
 from datas.fetch_index_bars import INDEX_POOL, update_all_indices
+from datas.fetch_index_min_bars import DEFAULT_SYMBOLS as MIN_SYMBOLS
+from datas.fetch_index_min_bars import update_all as update_min_bars
 from datas.fetch_stock_bars import (
     backfill_turnover_rate,
     find_dates_missing_turnover_rate,
@@ -58,6 +63,8 @@ def run() -> int:
                         help="只报告池子差异，不写库（不抓行情）")
     parser.add_argument("--skip-index", action="store_true",
                         help="跳过指数日线更新，只更个股")
+    parser.add_argument("--skip-min", action="store_true",
+                        help="跳过指数分钟线更新")
     parser.add_argument("--pool-interval", type=int, default=POOL_SYNC_INTERVAL_DAYS,
                         help=f"池子同步间隔天数（默认 {POOL_SYNC_INTERVAL_DAYS}）")
     args = parser.parse_args()
@@ -76,9 +83,9 @@ def run() -> int:
     age = pool_sync_age_days()
     age_text = "从未同步" if age is None else f"{age:.1f} 天前"
     if args.skip_pool:
-        stage(f"1/5 股票池（跳过，上次 {age_text}）")
+        stage(f"1/6 股票池（跳过，上次 {age_text}）")
     elif args.force_pool or needs_pool_sync(args.pool_interval):
-        stage(f"1/5 股票池同步（上次 {age_text}）")
+        stage(f"1/6 股票池同步（上次 {age_text}）")
         result = sync_stock_pool(dry_run=args.dry_run)
 
         if result.get("skipped"):
@@ -104,7 +111,7 @@ def run() -> int:
                 logger.info(f"雪球详情补齐 {ok}/{tried} 只"
                             + ("（雪球需登录态时会全部失败，属预期）" if ok == 0 else ""))
     else:
-        stage(f"1/5 股票池（{age_text}同步过，间隔未到 {args.pool_interval} 天，跳过）")
+        stage(f"1/6 股票池（{age_text}同步过，间隔未到 {args.pool_interval} 天，跳过）")
 
     if args.dry_run:
         logger.info("=== dry-run 结束，未抓行情 ===")
@@ -112,33 +119,33 @@ def run() -> int:
 
     # ------------------------------------------------------------ 2. 增量行情
     codes = query_all_stock_code_list()
-    stage(f"2/5 增量行情（{len(codes)} 只，tushare 主源）")
+    stage(f"2/6 增量行情（{len(codes)} 只，tushare 主源）")
     failed = fetch_stock_bars_parallel(codes, source="tushare")
     logger.info(f"tushare 轮失败 {len(failed)} 只")
 
     # 新股（库中无锚点）在 tushare 轮会直接落进 failed，由这一轮走 akshare 全量补
     if failed:
-        stage(f"3/5 akshare 兜底（{len(failed)} 只）")
+        stage(f"3/6 akshare 兜底（{len(failed)} 只）")
         still_failed = fetch_stock_bars_parallel(failed, source="akshare")
         if still_failed:
             logger.warning(f"仍失败 {len(still_failed)} 只: {list(still_failed)[:30]}")
     else:
-        stage("3/5 akshare 兜底（无需）")
+        stage("3/6 akshare 兜底（无需）")
 
     # ------------------------------------------------------------ 4. 换手率
     missing_dates = find_dates_missing_turnover_rate()
     if missing_dates:
-        stage(f"4/5 换手率回填（{len(missing_dates)} 个交易日）")
+        stage(f"4/6 换手率回填（{len(missing_dates)} 个交易日）")
         updated = backfill_turnover_rate(missing_dates)
         logger.info(f"换手率更新 {updated} 行")
     else:
-        stage("4/5 换手率（无缺口）")
+        stage("4/6 换手率（无缺口）")
 
     # ------------------------------------------------------------ 5. 指数日线
     if args.skip_index:
-        stage(f"5/5 指数日线（跳过，{len(INDEX_POOL)} 只）")
+        stage(f"5/6 指数日线（跳过，{len(INDEX_POOL)} 只）")
     else:
-        stage(f"5/5 指数日线（{len(INDEX_POOL)} 只，主源 akshare）")
+        stage(f"5/6 指数日线（{len(INDEX_POOL)} 只，主源 akshare）")
         idx_stats = update_all_indices(target_str)
         logger.info(f"指数写入 {idx_stats['rows']} 行，"
                     f"达标 {idx_stats['ok']}/{idx_stats['total']} 只")
@@ -146,6 +153,18 @@ def run() -> int:
             logger.warning(f"抓取失败 {len(idx_stats['failed'])} 只: {idx_stats['failed']}")
         if idx_stats["stale"]:
             logger.warning(f"落后于基准 {len(idx_stats['stale'])} 只: {idx_stats['stale']}")
+
+    # ------------------------------------------------------------ 6. 指数分钟线
+    if args.skip_min:
+        stage(f"6/6 指数分钟线（跳过，{len(MIN_SYMBOLS)} 只）")
+    else:
+        stage(f"6/6 指数分钟线（{len(MIN_SYMBOLS)} 只，新浪源）")
+        min_stats = update_min_bars()
+        logger.info(f"分钟线写入 {min_stats['rows']} 行，"
+                    f"成功 {min_stats['成功']}/{min_stats['更新']} 只")
+        for r in min_stats["明细"]:
+            if not r["ok"]:
+                logger.warning(f"分钟线抓取失败: {r['symbol']}")
 
     # ------------------------------------------------------------ 校验
     with get_db_connection() as conn:

@@ -65,28 +65,102 @@ def _swing_highs(close: pd.Series, k: int = SWING_K) -> list[int]:
     return out
 
 
-def bearish_divergence(close: pd.Series, dif: pd.Series) -> Optional[dict]:
-    """顶背离：最近两个摆动高点，价格后高但 DIF 后低。
+def bearish_divergence(close: pd.Series, dif: pd.Series,
+                       bar: Optional[pd.Series] = None) -> Optional[dict]:
+    """顶背离：最近两个摆动高点，价格后高但**指标后低**。
 
-    含义是「股价创新高而 MACD 不创新高」——买盘不足。只取最近两个高点，
+    含义是「股价创新高而动能不创新高」——买盘不足。只取最近两个高点，
     且后一个必须够近（DIV_RECENT 内），否则老背离早失效了。
+    与底背离对称：DIF 与 MACD 柱两个判据都查，任一成立即报。
     """
-    sub, d = close.tail(DIV_LOOKBACK).reset_index(drop=True), dif.tail(DIV_LOOKBACK).reset_index(drop=True)
+    sub = close.tail(DIV_LOOKBACK).reset_index(drop=True)
+    d = dif.tail(DIV_LOOKBACK).reset_index(drop=True)
+    b = bar.tail(DIV_LOOKBACK).reset_index(drop=True) if bar is not None else None
+
     highs = _swing_highs(sub)
     if len(highs) < 2:
         return None
     i, j = highs[-2], highs[-1]
     if len(sub) - 1 - j > DIV_RECENT:
         return None                                  # 后一个高点太久远
-    if sub.iloc[j] <= sub.iloc[i] or d.iloc[j] >= d.iloc[i]:
+    if sub.iloc[j] <= sub.iloc[i]:
+        return None                                  # 价格没创新高
+
+    bases = []
+    if d.iloc[j] < d.iloc[i]:
+        bases.append(f"DIF {d.iloc[i]:,.2f}→{d.iloc[j]:,.2f}")
+    if b is not None and pd.notna(b.iloc[i]) and pd.notna(b.iloc[j]) and b.iloc[j] < b.iloc[i]:
+        bases.append(f"MACD柱 {b.iloc[i]:,.2f}→{b.iloc[j]:,.2f}")
+    if not bases:
         return None
-    # 背离后若已跌破前一个高点之前的低点，形态已被证伪，不再算数
+
     return {
         "信号": "顶背离",
-        "前高": f"{sub.iloc[i]:,.2f}（DIF {d.iloc[i]:,.2f}）",
-        "后高": f"{sub.iloc[j]:,.2f}（DIF {d.iloc[j]:,.2f}）",
+        "前高": f"{sub.iloc[i]:,.2f}",
+        "后高": f"{sub.iloc[j]:,.2f}",
+        "依据": "；".join(bases),
+        "判据": "DIF" if bases[0].startswith("DIF") else "MACD柱",
         "距今": len(sub) - 1 - j,
-        "说明": "价格创新高而 MACD 未创新高，买盘不足——顶背离后的反拉是减仓点",
+        "说明": "价格创新高而动能未创新高，买盘不足——顶背离后的反拉是减仓点",
+    }
+
+
+def _swing_lows(close: pd.Series, k: int = SWING_K) -> list[int]:
+    """局部低点索引：该点比前后各 k 根都低（且唯一最低）。"""
+    out = []
+    for i in range(k, len(close) - k):
+        w = close.iloc[i - k:i + k + 1]
+        if close.iloc[i] == w.min() and int((w == close.iloc[i]).sum()) == 1:
+            out.append(i)
+    return out
+
+
+def bullish_divergence(close: pd.Series, dif: pd.Series,
+                       bar: Optional[pd.Series] = None) -> Optional[dict]:
+    """底背离：最近两个摆动低点，价格后低但**指标后高**。
+
+    与顶背离互为镜像，是**买点**信号（价格创新低而动能未创新低，卖压不足）。
+    交易系统里「小级别入场：120/60 分钟关键位底部钝化确认入场与加仓点」用的就是它。
+
+    **两个判据都查，任一成立即报**——实测算过它们不等价（2026-09-16 上证 30 分钟）：
+
+        摆动低点        收盘      DIF      MACD柱
+        09-11 10:30   3859.28   -12.18    -15.97
+        09-16 10:00   3844.15   -12.93     -3.32
+
+    价格创新低，但 **DIF 也创新低（不构成背离）、柱却大幅抬高（构成背离）**。
+    只用 DIF 会漏掉这个信号，而它正是那天行情的起点。柱更灵敏，DIF 更严格，
+    所以返回里标明是哪个判据成立的。
+    """
+    sub = close.tail(DIV_LOOKBACK).reset_index(drop=True)
+    d = dif.tail(DIV_LOOKBACK).reset_index(drop=True)
+    b = bar.tail(DIV_LOOKBACK).reset_index(drop=True) if bar is not None else None
+
+    lows = _swing_lows(sub)
+    if len(lows) < 2:
+        return None
+    i, j = lows[-2], lows[-1]
+    if len(sub) - 1 - j > DIV_RECENT:
+        return None
+    if sub.iloc[j] >= sub.iloc[i]:
+        return None                       # 价格没创新低，谈不上底背离
+
+    bases = []
+    if d.iloc[j] > d.iloc[i]:
+        bases.append(f"DIF {d.iloc[i]:,.2f}→{d.iloc[j]:,.2f}")
+    if b is not None and pd.notna(b.iloc[i]) and pd.notna(b.iloc[j]) and b.iloc[j] > b.iloc[i]:
+        bases.append(f"MACD柱 {b.iloc[i]:,.2f}→{b.iloc[j]:,.2f}")
+    if not bases:
+        return None
+
+    return {
+        "信号": "底背离",
+        "前低": f"{sub.iloc[i]:,.2f}",
+        "后低": f"{sub.iloc[j]:,.2f}",
+        "依据": "；".join(bases),
+        "判据": "DIF" if bases[0].startswith("DIF") else "MACD柱",
+        "距今": len(sub) - 1 - j,
+        "说明": "价格创新低而动能未创新低，卖压不足——底背离后的回踩是介入点",
     }
 
 
@@ -179,7 +253,7 @@ def scan_series(name: str, df: pd.DataFrame) -> dict:
 
     # 活跃市值没有成交量（它是市值量纲），缺 volume 列时跳过需要量能的信号
     hits = [h for h in (
-        bearish_divergence(close, m["macd_dif"]),
+        bearish_divergence(close, m["macd_dif"], m["macd_bar"]),
         platform_breakdown(close, pct),
         (volume_spike_yin(close, pct, pd.to_numeric(df["volume"], errors="coerce"))
          if "volume" in df.columns else None),

@@ -23,6 +23,7 @@ from typing import Any, Optional
 from market.amv import amv_timing
 from market.fetch import load_history
 from market.index import index_overview
+from market.intraday import intraday_state
 from market.risks import market_risks
 from market.sector import newhigh_sectors, oversold_sectors
 from market.stage import market_stage
@@ -420,6 +421,9 @@ def analyze(date: Optional[str] = None, days: int = 5) -> dict:
         "L1情绪": emotion(hist, target),
         "L1走势": zt_trend(hist),
         "L0阶段": market_stage(target),
+        "L0分钟级": intraday_state(
+            to_dt=(f"{target[:4]}-{target[4:6]}-{target[6:8]} 23:59"
+                   if "-" not in target else f"{target} 23:59")),
         "L2风向": divergence(hist, target),
         "L2基差": snap.get("basis"),
         "L2ETF": snap.get("etf"),
@@ -509,6 +513,38 @@ def render(a: dict) -> str:
             L.append(f"　{st['周线提示']}")
         if st.get("滞后提示"):
             L.append(f"⚠ {st['滞后提示']}")
+        L.append("")
+
+    # ---- L0 分钟级（上证的多周期结构，服务于日内 T 与加仓点判断）
+    mi = a.get("L0分钟级") or {}
+    if not mi.get("error") and mi.get("周期"):
+        L.append(f"## L0 分钟级（上证）　数据截至 {mi['数据截至']}")
+        txt = mi["一致性"]
+        L.append(txt if "**" in txt else f"**{txt}**")
+        for r in mi["周期"]:
+            m = r["MACD"]
+            bits = [f"{r['周期']} 收 {r['收盘']:,.2f}"]
+            if r["位置"]:
+                bits.append(f"{r['位置']}（{r['距BBI']:+.2f}%）")
+            bits.append(f"MACD {'水上' if m['水上'] else '水下'}"
+                        f"{'金叉' if m['金叉'] else '死叉'}"
+                        + (f"柱{m['柱']}" if m["柱"] else ""))
+            if r["KDJ_J"] is not None:
+                bits.append(f"J {r['KDJ_J']}"
+                            + (f"（{r['J状态']}）" if r["J状态"] else ""))
+            L.append("　".join(bits))
+            k = r["关键位"]
+            L.append(f"　关键位 {k['低']:,.2f} ~ {k['高']:,.2f}"
+                     f"　距高 {k['距高']:+.2f}%、距低 {k['距低']:+.2f}%")
+            if r["顶背离"]:
+                dv = r["顶背离"]
+                L.append(f"　⚠ 顶背离（卖点）：{dv['前高']} → {dv['后高']}"
+                         f"　依据 {dv['依据']}　{dv['距今']} 根前")
+            if r["底背离"]:
+                dv = r["底背离"]
+                L.append(f"　◆ 底背离（买点）：{dv['前低']} → {dv['后低']}"
+                         f"　依据 {dv['依据']}　{dv['距今']} 根前")
+        L.append(f"> 口径：{mi['口径']}")
         L.append("")
 
     # ---- L1

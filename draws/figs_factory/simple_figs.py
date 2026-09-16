@@ -90,6 +90,8 @@ def line_fig(
     theme_name: str = DEFAULT_THEME,
     y_label: str = "",
     annotate_last: bool = True,
+    annotate_suffix: str = "",
+    annotate_digits: int = 0,
 ) -> go.Figure:
     """折线图。
 
@@ -97,6 +99,9 @@ def line_fig(
         df: 含 `date` 列（可选，用于 x 轴标签）与各 series 的列
         series: [(列名, 图例名), ...]，按顺序取 line_color_0/1/2 上色
         annotate_last: 在每条线末端标注末值——报告图里读者最关心「现在多少」
+        annotate_suffix / annotate_digits: 末端标注的单位与小数位。
+            **百分比必须带 `%` 且保留一位小数** —— 否则 8.8 会被格式化成「9」，
+            读者会当成「9 只」而不是「9%」（2026-09-16 实测踩过）
     """
     theme = _theme(theme_name)
     x, xcfg = _x_axis(df)
@@ -120,7 +125,8 @@ def line_fig(
             yshift = 0 if len(series) == 1 else (7 if i % 2 == 0 else -7)
             fig.add_annotation(
                 x=x[last_i], y=float(y.loc[last_i]),
-                text=f"{y.loc[last_i]:,.0f}", showarrow=False,
+                text=f"{y.loc[last_i]:,.{annotate_digits}f}{annotate_suffix}",
+                showarrow=False,
                 xanchor="left", xshift=6, yshift=yshift,
                 font=dict(color=color, size=10, family=theme.text_font),
             )

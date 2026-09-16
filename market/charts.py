@@ -98,14 +98,22 @@ def draw_daily_charts(target: str, out_dir: Optional[Path] = None) -> dict[str, 
     else:
         logger.warning(f"涨停家数数据仅 {len(zt)} 点，跳过该图")
 
-    # 创 20 日新高
+    # 创 20 日新高 —— **拆成两张**。
+    # 放一张图上的问题：两者量级差得多（沪深300 常年 2~15%，中证2000 可到 40%），
+    # 共用一个纵轴会把沪深300 压成贴着底边的一条线；而各自独立刻度后，
+    # 「这条线现在处于什么水平」对每条线都看得清。
+    # 两者的**对比**放在文字里说（谁在动、差值多少），不必靠同一张图叠出来。
     nh = _newhigh_df(target)
     if len(nh) >= 2:
-        fig = line_fig(nh, [("沪深300", "沪深300（机构）"),
-                            ("中证2000", "中证2000（游资）")],
-                       title=f"创 20 日新高占比（近 {len(nh)} 个交易日，%）", height=300,
-                       y_label="%")
-        made["newhigh"] = save_fig(fig, out / "newhigh.png", CHART_W, 300)
+        for key, col, label in (("newhigh_hs300", "沪深300", "沪深300（机构）"),
+                                ("newhigh_csi2000", "中证2000", "中证2000（游资）")):
+            if col not in nh.columns:
+                continue
+            fig = line_fig(nh[["date", col]], [(col, label)],
+                           title=f"{label} 创 20 日新高占比（近 {len(nh)} 个交易日）",
+                           height=280, y_label="%",
+                           annotate_suffix="%", annotate_digits=1)
+            made[key] = save_fig(fig, out / f"{key}.png", CHART_W, 280)
     else:
         logger.warning(f"创新高数据仅 {len(nh)} 点，跳过该图")
 

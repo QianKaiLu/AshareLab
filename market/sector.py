@@ -28,6 +28,7 @@ import pandas as pd
 
 from datas.query_stock import query_close_matrix, query_stock_industry_map
 from indicators.kdj import add_kdj_to_dataframe
+from market.fetch import fetch_newhigh_codes
 
 LOOKBACK = 120          # 合成指数取多长窗口（KDJ(9) 需要足够历史让 K/D 收敛）
 KDJ_PERIOD = 9
@@ -111,6 +112,67 @@ def oversold_sectors(target: str, top: int = TOP_DEFAULT,
         "提示": note,
         "口径": CALIBER,
     }
+
+
+def newhigh_sectors(target: str, window: int = 20, top: int = 10) -> dict:
+    """创 window 日新高的股票按行业聚合。
+
+    「创 20 日新高 → 找资金抱团板块」——家数只说明突破的**广度**，
+    下钻到行业才知道是**谁**在突破。这是找方向的入口：哪类票在创新高，
+    就去对应板块找预案。
+
+    这里统计的是**全市场**的创新高家数（不只是沪深300/中证2000 成分），
+    所以总数会比 L2 那两个口径大。
+    """
+    codes = fetch_newhigh_codes(target, window)
+    if not codes:
+        return {"error": f"{target} 取不到创新高名单（数据不足或行情库缺失）"}
+
+    industry = query_stock_industry_map()
+    if not industry:
+        return {"error": "stock_base_info 无行业字段"}
+
+    by_ind: dict[str, list[str]] = {}
+    for c in codes:
+        name = industry.get(c)
+        if name:
+            by_ind.setdefault(name, []).append(c)
+    if not by_ind:
+        return {"error": "创新高名单与行业表对不上（代码格式？）"}
+
+    rows = [{"行业": k, "家数": len(v), "个股": sorted(v)[:5]}
+            for k, v in sorted(by_ind.items(), key=lambda kv: -len(kv[1]))]
+
+    # 集中度：前 3 大行业占全部创新高家的比例。越高说明抱团越集中
+    total = sum(r["家数"] for r in rows)
+    top3 = sum(r["家数"] for r in rows[:3])
+    concentration = round(top3 / total * 100, 1) if total else None
+
+    return {
+        "数据日期": target,
+        "窗口": window,
+        "创新高总数": total,
+        "覆盖行业": len(rows),
+        "行业": rows[:top],
+        "前3集中度": concentration,
+        "口径": (f"全市场收盘价创 {window} 日新高的股票按行业聚合；"
+                 "家数为该行业内创新高的只数，非全部成分；"
+                 "集中度 = 前三行业家数 ÷ 创新高总数，越高说明抱团越集中"),
+    }
+
+
+def render_newhigh_sectors(a: dict) -> str:
+    if a.get("error"):
+        return f"❌ {a['error']}"
+    lines = [f"# 创 {a['窗口']} 日新高的行业分布　{a['数据日期']}"
+             f"　共 {a['创新高总数']} 只 / {a['覆盖行业']} 个行业", ""]
+    for r in a["行业"]:
+        lines.append(f"  {r['行业']:<10} {r['家数']:>3} 只   "
+                     f"{' '.join(r['个股'][:3])}")
+    if a["前3集中度"] is not None:
+        lines.append(f"\n前 3 行业集中度：{a['前3集中度']}%")
+    lines.append(f"\n> {a['口径']}")
+    return "\n".join(lines)
 
 
 def render_sectors(a: dict) -> str:

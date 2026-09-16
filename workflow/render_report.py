@@ -1,19 +1,20 @@
-"""市场日报图版渲染：markdown → PNG。
+"""报告图版渲染：markdown → PNG（市场日报、B1 日更通用）。
 
-薄封装，**不做任何数据加工**——图版的排版由 `qk-stock-market-daily` skill 的步骤 4
-按 `references/image_report_format.md` 重写完成，这里只负责渲染。
+薄封装，**不做任何数据加工**——图版的排版由各 skill 按自己的
+`references/image_report_format.md` 重写完成，这里只负责渲染。
 
-不把 `market/analyze.py:render()` 的输出直接喂进来的原因见那份规范：它是逐行拼接的
-紧凑文本，渲染器的 `nl2br` 会把单换行变成 `<br>`，整段粘成一块文字墙。
+**为什么必须重写而不是直接渲终端输出**：`market/analyze.py:render()` 那种逐行拼接的
+紧凑文本，配合渲染器开着的 `nl2br`，相邻两行会被粘进同一个 `<p>`，成一块没有呼吸感
+的文字墙。实测记录见 `qk-stock-market-daily/references/image_report_format.md`。
 
-归档约定与 `b1_results/`、`portfolio/swing/daily/` 一致：日期命名的 markdown 落
-`market_reports/YYYY-MM-DD.md` 并**入 git**（那是可回溯的记录）；PNG 落在同目录但
-**不入 git**（1.1MB/天，一年 275MB，且随时可从 md 重新渲染）。
+归档约定：日期命名的 markdown 与其 PNG 同目录存放（`market_reports/`、`b1_results/`），
+**两个都入 git**（用户 2026-09-15 决定）。
 
 用法:
-    python workflow/render_market_report.py                    # market_reports/ 下最新的一份
-    python workflow/render_market_report.py market_reports/2026-09-15.md
-    python workflow/render_market_report.py <md> --no-open
+    python workflow/render_report.py                                # market_reports/ 最新一份
+    python workflow/render_report.py --dir b1_results               # B1 存档最新一份
+    python workflow/render_report.py b1_results/2026-09-15.md       # 指定文件
+    python workflow/render_report.py <md> --no-open                 # 不自动打开
 """
 from __future__ import annotations
 
@@ -28,16 +29,15 @@ from tools.markdown_lab import render_markdown_to_image
 logger = get_analyze_logger()
 
 REPO = Path(__file__).resolve().parent.parent
-REPORT_DIR = REPO / "market_reports"
-DEFAULT_GLOB = "*.md"
+DEFAULT_DIR = "market_reports"
 
 
-def latest_markdown() -> Optional[Path]:
-    """market_reports/ 下最新的图版 markdown。按文件名排序取（日期命名，字典序即时间序），
+def latest_markdown(report_dir: Path) -> Optional[Path]:
+    """目录下最新的图版 markdown。按文件名排序取（日期命名，字典序即时间序），
     同一天重跑覆盖同名文件，所以不需要看 mtime。"""
-    if not REPORT_DIR.is_dir():
+    if not report_dir.is_dir():
         return None
-    files = sorted(REPORT_DIR.glob(DEFAULT_GLOB))
+    files = sorted(report_dir.glob("*.md"))
     return files[-1] if files else None
 
 
@@ -65,15 +65,20 @@ def render(md_path: Path, out_path: Optional[Path] = None,
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="市场日报图版渲染")
-    ap.add_argument("md", nargs="?", help="图版 markdown 路径，缺省取 output/ 下最新的")
+    ap = argparse.ArgumentParser(description="报告图版渲染（市场日报 / B1 日更通用）")
+    ap.add_argument("md", nargs="?", help="图版 markdown 路径，缺省取 --dir 下最新的")
+    ap.add_argument("--dir", default=DEFAULT_DIR,
+                    help=f"缺省扫描的目录（默认 {DEFAULT_DIR}，B1 用 b1_results）")
     ap.add_argument("--out", help="输出 PNG 路径，缺省与 md 同名")
-    ap.add_argument("--no-open", action="store_true", help="渲染后不打开文件夹")
+    ap.add_argument("--no-open", action="store_true", help="渲染后不自动打开")
     args = ap.parse_args()
 
-    md = Path(args.md) if args.md else latest_markdown()
+    report_dir = Path(args.dir)
+    if not report_dir.is_absolute():
+        report_dir = REPO / report_dir
+    md = Path(args.md) if args.md else latest_markdown(report_dir)
     if md is None:
-        logger.error(f"❌ {REPORT_DIR} 下没有 markdown，先生成图版报告")
+        logger.error(f"❌ {report_dir} 下没有 markdown，先生成图版报告")
         return 1
     md.parent.mkdir(parents=True, exist_ok=True)
 

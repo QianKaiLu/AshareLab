@@ -137,12 +137,24 @@ template = Template("""
     text-decoration: underline;
     color: #e6af7a;
   }
+  /* 语义上的「好 / 坏」——个股分析报告在用 */
   .positive {
     color: var(--success);
     font-weight: 600;
   }
   .negative {
     color: var(--danger);
+    font-weight: 600;
+  }
+  /* 涨跌方向：A 股惯例红涨绿跌，与上面两个类的语义**不同**。
+     市场日报图版用这两个；不要拿 .positive/.negative 当涨跌使唤——
+     它们表达的是「利好/利空」，与价格方向不是一回事。 */
+  .up {
+    color: #d05a4a;
+    font-weight: 600;
+  }
+  .down {
+    color: #6f9b6a;
     font-weight: 600;
   }
 </style>

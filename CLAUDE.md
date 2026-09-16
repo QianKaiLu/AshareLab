@@ -66,8 +66,12 @@ conda run -n stock video-process "<视频URL>" --no-open
 ```python
 df = query_bars_by_days(code, days=500)
 add_kdj_to_dataframe(df, inplace=True)      # → kdj_k / kdj_d / kdj_j
-add_macd_to_dataframe(df, inplace=True)     # → MACD_DIF / MACD_DEA / MACD_BAR
+add_macd_to_dataframe(df, inplace=True)     # → macd_dif / macd_dea / macd_bar
 ```
+
+**列名一律小写**（`macd_dif` 不是 `MACD_DIF`，`kdj_j` 不是 `KDJ_J`）。这些指标只吃
+`open/high/low/close` 列名，所以**指数与分钟线都能直接套用**——`price_limit` 除外，
+它按股票代码前缀推涨跌停，指数没有涨跌停，喂进去会静默返回 10%。
 
 现有指标：`macd`、`kdj`、`rsi`、`bbi`、`volume_ma`、`zxdkx`、`price_limit`（涨跌停幅度与归一化实体 `body_norm`，出货判定主尺子，需传 `code` 按板块/日期取幅度）。
 

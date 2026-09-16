@@ -15,6 +15,7 @@ DB_PATH = DB_DIR / "ashare_data.db"
 STOCK_INFO_TABLE = "stock_base_info"
 DAILY_BAR_TABLE = "stock_bars_daily_qfq"
 INDEX_BAR_TABLE = "index_bars_daily"
+INDEX_MIN_TABLE = "index_bars_min"
 
 EARLIEST_DATE = "20050101"
 
@@ -111,14 +112,41 @@ def create_index_bar_table():
 
         conn.commit()
 
+def create_index_min_table():
+    """指数分钟线。
+
+    **只存基础粒度（30 分钟）**，60/120 由 `datas/fetch_index_min_bars.py` 的
+    `aggregate_bars()` 在读时合成。这样有两个好处：一是源本身就缺 120 分钟，
+    二是避免「原生 60 分钟」与「由 30 分钟合成的 60 分钟」两套数据并存而互相打架。
+    """
+    with get_db_connection() as conn:
+        conn.execute(f"""
+        CREATE TABLE IF NOT EXISTS {INDEX_MIN_TABLE} (
+            symbol TEXT NOT NULL, -- 指数代码 (带交易所前缀，如 sh000001)
+            period INTEGER NOT NULL, -- 周期（分钟），当前只存 30
+            dt TEXT NOT NULL, -- 时刻，YYYY-MM-DD HH:MM（bar 的**结束**时刻）
+            open REAL, close REAL, high REAL, low REAL,
+            volume INTEGER, -- 成交量 (股)
+            PRIMARY KEY (symbol, period, dt)
+        );
+        """)
+        conn.execute(f"CREATE INDEX IF NOT EXISTS idx_{INDEX_MIN_TABLE}_dt "
+                     f"ON {INDEX_MIN_TABLE} (dt);")
+        conn.execute(f"CREATE INDEX IF NOT EXISTS idx_{INDEX_MIN_TABLE}_symbol "
+                     f"ON {INDEX_MIN_TABLE} (symbol);")
+        conn.commit()
+
+
 def prepare_database(recreate: bool = False):
     if recreate:
         delete_table_if_exists(f"{STOCK_INFO_TABLE}")
         delete_table_if_exists(f"{DAILY_BAR_TABLE}")
         delete_table_if_exists(f"{INDEX_BAR_TABLE}")
+        delete_table_if_exists(f"{INDEX_MIN_TABLE}")
     create_stock_info_table()
     create_daily_bar_table()
     create_index_bar_table()
+    create_index_min_table()
     with get_db_connection() as conn:
         conn.execute('PRAGMA journal_mode=WAL;')
         conn.execute('PRAGMA synchronous=NORMAL;')

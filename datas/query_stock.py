@@ -511,6 +511,57 @@ def get_earliest_index_date(symbol: str) -> Optional[datetime]:
         logger.error(f"❌ Error getting earliest index date for {symbol}: {e}", exc_info=True)
         return None
 
+def query_index_min_bars(
+    symbol: str,
+    period: int = 30,
+    from_dt: Optional[str] = None,
+    to_dt: Optional[str] = None,
+    limit: Optional[int] = None,
+) -> pd.DataFrame:
+    """
+    Query index minute bars, aggregated to `period` (30 / 60 / 120).
+
+    Only 30-minute bars are stored; 60 / 120 are synthesized on read via
+    `fetch_index_min_bars.aggregate_bars()`. Same reason as the daily index
+    queries: symbol is 'sh000001'-style and must NOT go through to_std_code.
+
+    Returns:
+        pd.DataFrame with a datetime `dt` column, ascending; empty if nothing found.
+    """
+    from datas.create_database import INDEX_MIN_TABLE
+    from datas.fetch_index_min_bars import BASE_PERIOD, aggregate_bars
+
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        query = f"SELECT * FROM {INDEX_MIN_TABLE} WHERE symbol = ? AND period = ?"
+        params: list[Any] = [symbol, BASE_PERIOD]
+        if from_dt:
+            query += " AND dt >= ?"
+            params.append(str(from_dt))
+        if to_dt:
+            query += " AND dt <= ?"
+            params.append(str(to_dt))
+        query += " ORDER BY dt ASC"
+
+        df = pd.read_sql_query(query, conn, params=params)
+        if df.empty:
+            return pd.DataFrame()
+
+        df["dt"] = pd.to_datetime(df["dt"])
+        if period != BASE_PERIOD:
+            df = aggregate_bars(df, period)
+        if limit:
+            df = df.tail(limit).reset_index(drop=True)
+        return df
+
+    except Exception as e:
+        logger.error(f"❌ Error querying min bars for {symbol}: {e}", exc_info=True)
+        return pd.DataFrame()
+    finally:
+        if conn:
+            conn.close()
+
 def query_index_symbol_list() -> list[str]:
     """List all index symbols present in the database, sorted."""
     try:

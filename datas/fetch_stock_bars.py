@@ -385,6 +385,7 @@ def fetch_daily_bar_from_tushare(
     to_date: Optional[str] = None,
     adjust: str = "qfq",
     last_adjusted_close: Optional[float] = None,
+    anchor_date: Optional[str] = None,
 ) -> Optional[pd.DataFrame]:
     """
     Fetch daily stock bars from tushare.
@@ -448,11 +449,22 @@ def fetch_daily_bar_from_tushare(
                     )
 
             if adjust == "qfq" and last_adjusted_close is not None:
-                raw_anchor_close = float(df['close'].iloc[0])
-                if raw_anchor_close > 0:
-                    scale = last_adjusted_close / raw_anchor_close
-                    for col in ['open', 'high', 'low', 'close', 'change']:
-                        df[col] = df[col] * scale
+                # 缩放的前提是「窗口最旧一根 = 锚点日」，但**这个前提必须校验**：
+                # 若锚点日在 tushare 里没有数据（停牌、口径差异），df.iloc[0] 会落在
+                # 更晚的一根上，整窗按错误比例平移后静默续接，历史看着连续其实基准错了。
+                # 之前只有注释声明这个前提，没有检查。
+                first_date = str(df.at[df.index[0], 'trade_date'])
+                if anchor_date and first_date != str(anchor_date).replace('-', ''):
+                    logger.warning(
+                        f"{code}: 增量窗口首根 {first_date} ≠ 锚点日 {anchor_date}，"
+                        f"跳过缩放（锚点错位会让整窗按错误比例平移）"
+                    )
+                else:
+                    raw_anchor_close = float(df['close'].iloc[0])
+                    if raw_anchor_close > 0:
+                        scale = last_adjusted_close / raw_anchor_close
+                        for col in ['open', 'high', 'low', 'close', 'change']:
+                            df[col] = df[col] * scale
 
             column_mapping = {
                 'trade_date': 'date',
@@ -538,6 +550,24 @@ def save_daily_bars_to_database(df: pd.DataFrame):
     if df.empty:
         logger.warning("Warning: Empty DataFrame, nothing to save.")
         return
+
+    # 非正价闸门。**这道闸门挡的是「整段历史被换复权口径」**，不是个别脏行：
+    # 东财的 qfq 是减法式（从原价里减累计分红），分红累计超过早期股价时就变负——
+    # 000708 累计分红 8.74 元 > 2005 年股价 5.23 元，2005~2018 整段被压成负数。
+    # 一旦写进去就是 UPSERT 整段覆盖，旧值找不回来（2026-09-17 实测踩过）。
+    # 宁可这次不写、报错让人来看，也不要静默污染。
+    price_cols = [c for c in ("open", "high", "low", "close") if c in df.columns]
+    if price_cols:
+        bad = (df[price_cols] <= 0).any(axis=1)
+        if bad.any():
+            code = df["code"].iloc[bad.idxmax()] if "code" in df.columns else "?"
+            logger.error(
+                f"❌ 拒绝写入 {code}: {int(bad.sum())}/{len(df)} 行出现非正价"
+                f"（最低 {df[price_cols].min().min():.2f}）。"
+                f"这通常是复权口径问题——检查数据源是否用了减法式前复权"
+                f"（东财 stock_zh_a_hist 是减法式，新浪 stock_zh_a_daily 是乘法式）"
+            )
+            return
 
     write_df = df.copy()
     write_df['date'] = write_df['date'].dt.strftime("%Y-%m-%d")  # 转为字符串存入 SQLite

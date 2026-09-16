@@ -5,6 +5,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datas.fetch_stock_bars import (
     logger,
     fetch_daily_bar_from_akshare,
+    fetch_daily_bar_from_sina,
     fetch_daily_bar_from_tushare,
     save_daily_bars_to_database,
     ExDividendDetected,
@@ -89,12 +90,22 @@ def worker_fetch_stock_and_queue(code: str, result_queue: Queue, source: str = "
             try:
                 df = fetch_daily_bar_from_tushare(
                     code=code, from_date=latest_date.strftime("%Y%m%d"),
-                    last_adjusted_close=last_adjusted_close)
+                    last_adjusted_close=last_adjusted_close,
+                    anchor_date=latest_date.strftime("%Y%m%d"))
             except ExDividendDetected as e:
                 # 除权使库中整条历史的复权基准失效，补增量会在锚点处留下断层，
                 # 必须用 qfq 源从头重取覆盖历史。
-                logger.warning(f"{e}，改走 akshare qfq 全量重取")
-                df = fetch_daily_bar_from_akshare(code=code, from_date=EARLIEST_DATE)
+                #
+                # **必须走新浪，不能用 fetch_daily_bar_from_akshare。** 后者优先东财，
+                # 而东财的 qfq 是**减法式**（原价 − 累计分红），分红累计超过早期股价
+                # 时整段历史会变负——000708 累计分红 8.74 元 > 2005 年股价 5.23 元，
+                # 2005~2018 全段被压成负数并 UPSERT 覆盖了旧数据（2026-09-17 实测）。
+                # 新浪是乘法式（× 复权因子），恒为正。
+                #
+                # 也不用 baostock：虽然同为乘法式且更权威，但它**非线程安全**，
+                # 而这里是 3 线程池（FETCH_WORKERS）。
+                logger.warning(f"{e}，改走新浪 qfq 全量重取")
+                df = fetch_daily_bar_from_sina(code=code, from_date=EARLIEST_DATE)
         if df is not None and not df.empty:
             result_queue.put(df)
             return True

@@ -55,113 +55,143 @@ def _ma(s: pd.Series, n: int) -> pd.Series:
     return pd.to_numeric(s, errors="coerce").rolling(n).mean()
 
 
-def _swing_highs(close: pd.Series, k: int = SWING_K) -> list[int]:
-    """局部高点索引：该点比前后各 k 根都高（且唯一最高）。"""
+def _swing_highs(high: pd.Series, k: int = SWING_K) -> list[int]:
+    """局部高点索引：该点比前后各 k 根都高（且唯一最高）。
+
+    **传 bar 的最高价，不是收盘价。** 顶部的定义是「最高价的高点」——用收盘价会
+    指向另一根 K 线，与实际看的顶不是同一个位置。
+    """
     out = []
-    for i in range(k, len(close) - k):
-        w = close.iloc[i - k:i + k + 1]
-        if close.iloc[i] == w.max() and int((w == close.iloc[i]).sum()) == 1:
+    for i in range(k, len(high) - k):
+        w = high.iloc[i - k:i + k + 1]
+        if high.iloc[i] == w.max() and int((w == high.iloc[i]).sum()) == 1:
             out.append(i)
     return out
 
 
-def bearish_divergence(close: pd.Series, dif: pd.Series,
+def bearish_divergence(high: pd.Series, dif: pd.Series,
                        bar: Optional[pd.Series] = None) -> Optional[dict]:
     """顶背离：最近两个摆动高点，价格后高但**指标后低**。
 
     含义是「股价创新高而动能不创新高」——买盘不足。只取最近两个高点，
     且后一个必须够近（DIV_RECENT 内），否则老背离早失效了。
     与底背离对称：DIF 与 MACD 柱两个判据都查，任一成立即报。
+
+    **第一个参数传 bar 的最高价**，不是收盘价——见 `_swing_highs` 的说明。
     """
-    sub = close.tail(DIV_LOOKBACK).reset_index(drop=True)
+    return _divergence(high, dif, bar, kind="top")
+
+
+def _divergence(extreme: pd.Series, dif: pd.Series, bar: Optional[pd.Series],
+                kind: str) -> Optional[dict]:
+    """顶/底背离的公共实现。`kind` 取 'top' 或 'bottom'。
+
+    **不是简单取最后两个摆动点比一比**——中间常夹着更小的摆动点，会把真正的
+    背离对拆散。实测（2026-09-16 上证 30 分钟的底）：
+
+        09-11 11:00   低 3852.03   柱 -18.29
+        09-15 10:00   低 3870.42   柱   2.50   ← 夹在中间，本身不构成背离
+        09-16 10:30   低 3842.72   柱  -3.53
+
+    只比最后两个（09-15 ↔ 09-16）得不出背离，跨过它才对。所以从最新的摆动点
+    往回扫，返回最近一个「更极端 + 指标反向」的组合。
+    """
+    sub = extreme.tail(DIV_LOOKBACK).reset_index(drop=True)
     d = dif.tail(DIV_LOOKBACK).reset_index(drop=True)
     b = bar.tail(DIV_LOOKBACK).reset_index(drop=True) if bar is not None else None
 
-    highs = _swing_highs(sub)
-    if len(highs) < 2:
+    levels = _swing_highs(sub) if kind == "top" else _swing_lows(sub)
+    if len(levels) < 2:
         return None
-    i, j = highs[-2], highs[-1]
+    j = levels[-1]
     if len(sub) - 1 - j > DIV_RECENT:
-        return None                                  # 后一个高点太久远
-    if sub.iloc[j] <= sub.iloc[i]:
-        return None                                  # 价格没创新高
-
-    bases = []
-    if d.iloc[j] < d.iloc[i]:
-        bases.append(f"DIF {d.iloc[i]:,.2f}→{d.iloc[j]:,.2f}")
-    if b is not None and pd.notna(b.iloc[i]) and pd.notna(b.iloc[j]) and b.iloc[j] < b.iloc[i]:
-        bases.append(f"MACD柱 {b.iloc[i]:,.2f}→{b.iloc[j]:,.2f}")
-    if not bases:
         return None
 
-    return {
-        "信号": "顶背离",
-        "前高": f"{sub.iloc[i]:,.2f}",
-        "后高": f"{sub.iloc[j]:,.2f}",
-        "依据": "；".join(bases),
-        "判据": "DIF" if bases[0].startswith("DIF") else "MACD柱",
-        "距今": len(sub) - 1 - j,
-        "说明": "价格创新高而动能未创新高，买盘不足——顶背离后的反拉是减仓点",
-    }
+    # 从最近的往前扫，第一个真正构成背离的组合即为结果
+    for i in reversed(levels[:-1]):
+        if kind == "top":
+            if sub.iloc[j] <= sub.iloc[i]:
+                continue                  # 价格没创新高
+            bases = []
+            if d.iloc[j] < d.iloc[i]:
+                bases.append(f"DIF {d.iloc[i]:,.2f}→{d.iloc[j]:,.2f}")
+            if b is not None and pd.notna(b.iloc[i]) and pd.notna(b.iloc[j]) \
+                    and b.iloc[j] < b.iloc[i]:
+                bases.append(f"MACD柱 {b.iloc[i]:,.2f}→{b.iloc[j]:,.2f}")
+            if not bases:
+                continue
+            return {
+                "信号": "顶背离",
+                "前高": f"{sub.iloc[i]:,.2f}",
+                "后高": f"{sub.iloc[j]:,.2f}",
+                "依据": "；".join(bases),
+                "判据": "DIF" if bases[0].startswith("DIF") else "MACD柱",
+                "距今": len(sub) - 1 - j,
+                "间隔": len(levels) - 1 - levels.index(i) - 1,
+                "说明": "价格创新高而动能未创新高，买盘不足——顶背离后的反拉是减仓点",
+            }
+        else:
+            if sub.iloc[j] >= sub.iloc[i]:
+                continue                  # 价格没创新低
+            bases = []
+            if d.iloc[j] > d.iloc[i]:
+                bases.append(f"DIF {d.iloc[i]:,.2f}→{d.iloc[j]:,.2f}")
+            if b is not None and pd.notna(b.iloc[i]) and pd.notna(b.iloc[j]) \
+                    and b.iloc[j] > b.iloc[i]:
+                bases.append(f"MACD柱 {b.iloc[i]:,.2f}→{b.iloc[j]:,.2f}")
+            if not bases:
+                continue
+            return {
+                "信号": "底背离",
+                "前低": f"{sub.iloc[i]:,.2f}",
+                "后低": f"{sub.iloc[j]:,.2f}",
+                "依据": "；".join(bases),
+                "判据": "DIF" if bases[0].startswith("DIF") else "MACD柱",
+                "距今": len(sub) - 1 - j,
+                "间隔": len(levels) - 1 - levels.index(i) - 1,
+                "说明": "价格创新低而动能未创新低，卖压不足——底背离后的回踩是介入点",
+            }
+    return None
 
 
-def _swing_lows(close: pd.Series, k: int = SWING_K) -> list[int]:
-    """局部低点索引：该点比前后各 k 根都低（且唯一最低）。"""
+def _swing_lows(low: pd.Series, k: int = SWING_K) -> list[int]:
+    """局部低点索引：该点比前后各 k 根都低（且唯一最低）。
+
+    **传 bar 的最低价，不是收盘价。** 实测差异（2026-09-16 上证 30 分钟）：
+
+        09-16 10:00   低 3843.83   收 3844.15   ← 收盘最低
+        09-16 10:30   低 3842.72   收 3853.56   ← 最低价最低
+
+    用收盘价会选中 10:00、用最低价才是 10:30，而后者才是看图时认定的那个底。
+    两对算出来的背离强度也差很多（柱收缩 -18.29→-3.53 vs -15.97→-3.32）。
+    """
     out = []
-    for i in range(k, len(close) - k):
-        w = close.iloc[i - k:i + k + 1]
-        if close.iloc[i] == w.min() and int((w == close.iloc[i]).sum()) == 1:
+    for i in range(k, len(low) - k):
+        w = low.iloc[i - k:i + k + 1]
+        if low.iloc[i] == w.min() and int((w == low.iloc[i]).sum()) == 1:
             out.append(i)
     return out
 
 
-def bullish_divergence(close: pd.Series, dif: pd.Series,
+def bullish_divergence(low: pd.Series, dif: pd.Series,
                        bar: Optional[pd.Series] = None) -> Optional[dict]:
-    """底背离：最近两个摆动低点，价格后低但**指标后高**。
+    """底背离：价格创新低但**指标后高**。与顶背离互为镜像，是**买点**信号。
 
-    与顶背离互为镜像，是**买点**信号（价格创新低而动能未创新低，卖压不足）。
     交易系统里「小级别入场：120/60 分钟关键位底部钝化确认入场与加仓点」用的就是它。
 
     **两个判据都查，任一成立即报**——实测算过它们不等价（2026-09-16 上证 30 分钟）：
 
-        摆动低点        收盘      DIF      MACD柱
-        09-11 10:30   3859.28   -12.18    -15.97
-        09-16 10:00   3844.15   -12.93     -3.32
+        摆动低点        最低       DIF      MACD柱
+        09-11 11:00   3852.03   -12.98    -18.29
+        09-16 10:30   3842.72   -13.48     -3.53
 
     价格创新低，但 **DIF 也创新低（不构成背离）、柱却大幅抬高（构成背离）**。
-    只用 DIF 会漏掉这个信号，而它正是那天行情的起点。柱更灵敏，DIF 更严格，
+    只用 DIF 会漏掉这个信号，而它正是那天行情的起点。柱更灵敏、DIF 更严格，
     所以返回里标明是哪个判据成立的。
+
+    **第一个参数传 bar 的最低价**，不是收盘价——见 `_swing_lows` 的说明。
     """
-    sub = close.tail(DIV_LOOKBACK).reset_index(drop=True)
-    d = dif.tail(DIV_LOOKBACK).reset_index(drop=True)
-    b = bar.tail(DIV_LOOKBACK).reset_index(drop=True) if bar is not None else None
-
-    lows = _swing_lows(sub)
-    if len(lows) < 2:
-        return None
-    i, j = lows[-2], lows[-1]
-    if len(sub) - 1 - j > DIV_RECENT:
-        return None
-    if sub.iloc[j] >= sub.iloc[i]:
-        return None                       # 价格没创新低，谈不上底背离
-
-    bases = []
-    if d.iloc[j] > d.iloc[i]:
-        bases.append(f"DIF {d.iloc[i]:,.2f}→{d.iloc[j]:,.2f}")
-    if b is not None and pd.notna(b.iloc[i]) and pd.notna(b.iloc[j]) and b.iloc[j] > b.iloc[i]:
-        bases.append(f"MACD柱 {b.iloc[i]:,.2f}→{b.iloc[j]:,.2f}")
-    if not bases:
-        return None
-
-    return {
-        "信号": "底背离",
-        "前低": f"{sub.iloc[i]:,.2f}",
-        "后低": f"{sub.iloc[j]:,.2f}",
-        "依据": "；".join(bases),
-        "判据": "DIF" if bases[0].startswith("DIF") else "MACD柱",
-        "距今": len(sub) - 1 - j,
-        "说明": "价格创新低而动能未创新低，卖压不足——底背离后的回踩是介入点",
-    }
+    return _divergence(low, dif, bar, kind="bottom")
 
 
 def platform_breakdown(close: pd.Series, pct: pd.Series) -> Optional[dict]:
@@ -253,7 +283,8 @@ def scan_series(name: str, df: pd.DataFrame) -> dict:
 
     # 活跃市值没有成交量（它是市值量纲），缺 volume 列时跳过需要量能的信号
     hits = [h for h in (
-        bearish_divergence(close, m["macd_dif"], m["macd_bar"]),
+        bearish_divergence(pd.to_numeric(df["high"], errors="coerce"),
+                           m["macd_dif"], m["macd_bar"]),
         platform_breakdown(close, pct),
         (volume_spike_yin(close, pct, pd.to_numeric(df["volume"], errors="coerce"))
          if "volume" in df.columns else None),
@@ -295,6 +326,16 @@ def market_risks(target: str) -> dict:
     }
 
 
+def _detail(h: dict) -> str:
+    """挑出信号的详情。各信号的字段名不同，背离要把**价格对**也带上——
+    只给「依据」看不出是哪两个点之间的背离。"""
+    if "前高" in h:
+        return f"{h['前高']} → {h['后高']}　{h.get('依据', '')}"
+    if "前低" in h:
+        return f"{h['前低']} → {h['后低']}　{h.get('依据', '')}"
+    return h.get("读数") or h.get("破位") or ""
+
+
 def render_risks(a: dict) -> str:
     if a.get("error"):
         return f"❌ {a['error']}"
@@ -307,7 +348,7 @@ def render_risks(a: dict) -> str:
         lines.append(f"**{s['名称']}**（{s['数据日期']} 收 {s['收盘']:,.2f}）"
                      + (f"　触发 {len(hits)} 条" if hits else "　无触发"))
         for h in hits:
-            lines.append(f"  · {h['信号']}：{h.get('读数') or h.get('破位') or ''}")
+            lines.append(f"  · {h['信号']}：{_detail(h)}")
             if h.get("说明"):
                 lines.append(f"    {h['说明']}")
         lines.append("")

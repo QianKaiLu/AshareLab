@@ -68,8 +68,9 @@ def _one_period(symbol: str, period: int, to_dt: Optional[str]) -> Optional[dict
 
     # 两个方向都要看：顶背离是卖点，底背离是买点（系统里「小级别关键位底部钝化
     # 确认入场与加仓点」用的就是后者）。只报一个方向等于少了一半信息。
-    div = bearish_divergence(d["close"], d["macd_dif"], d["macd_bar"])
-    div_bull = bullish_divergence(d["close"], d["macd_dif"], d["macd_bar"])
+    # 顶部传 high、底部传 low——用收盘价会指向另一根 K 线。
+    div = bearish_divergence(d["high"], d["macd_dif"], d["macd_bar"])
+    div_bull = bullish_divergence(d["low"], d["macd_dif"], d["macd_bar"])
 
     return {
         "周期": f"{period}分钟",

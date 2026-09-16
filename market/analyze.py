@@ -25,6 +25,7 @@ from market.fetch import load_history
 from market.index import index_overview
 from market.intraday import intraday_state
 from market.risks import market_risks
+from market.risks import _detail as risk_detail
 from market.sector import newhigh_sectors, oversold_sectors
 from market.stage import market_stage
 
@@ -627,8 +628,7 @@ def render(a: dict) -> str:
             hits = s.get("触发") or []
             L.append(f"**{s['名称']}**" + ("" if hits else "　无触发"))
             for h in hits:
-                detail = h.get("读数") or h.get("破位") or h.get("后高") or ""
-                L.append(f"　· {h['信号']}：{detail}")
+                L.append(f"　· {h['信号']}：{risk_detail(h)}")
                 if h.get("说明"):
                     L.append(f"　　{h['说明']}")
         L.append(f"> 口径：{rk['口径']}")

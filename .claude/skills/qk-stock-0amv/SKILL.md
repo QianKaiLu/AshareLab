@@ -1,6 +1,6 @@
 ---
 name: qk-stock-0amv
-description: 录入并查询指南针 0AMV（活跃市值指数 / 活筹指数）的每日走势。该指标是指南针平台专有品种，无公开数据接口。两条来源：主力是人工从客户端读数后录入；另有一条从指南针本地数据文件 day.vdat 直接提取的批量路径（需 Windows 且已装客户端，尚未在 mac 上验证）。触发场景：(1) 用户报当日或历史 0AMV 数值，形式可能是表格、截图、JSON、CSV 或口述，如「今天 0AMV 开 17.2 万 高 17.4 万 低 17.0 万 收 17.2 万」(2) 用户说「记一下 0AMV」「补录 0AMV」「0AMV 入库」(3) 用户问「0AMV 最近走势」「0AMV 存了多少条」「0AMV 有没有缺口」「活跃市值怎么样」(4) 用户输入 /qk-stock-0amv (5) 用户发指南针行情表格截图并要求提取入库 (6) 讨论大盘环境、择时、仓位，需要活跃市值判断时。数据落 manual_data/0AMV.csv。
+description: 录入并查询指南针 0AMV（活跃市值指数 / 活筹指数）的每日走势。该指标是指南针平台专有品种，无公开数据接口。三条来源：主力是人工从客户端读数后录入；一条是从指南针本地数据文件 day.vdat 直接提取的批量路径（需 Windows 且已装客户端，尚未在 mac 上验证）；还有一条是第三方仓库的现成 JSON，**仅在数据陈旧时用作参照**，不接入任何日常流程。触发场景：(1) 用户报当日或历史 0AMV 数值，形式可能是表格、截图、JSON、CSV 或口述，如「今天 0AMV 开 17.2 万 高 17.4 万 低 17.0 万 收 17.2 万」(2) 用户说「记一下 0AMV」「补录 0AMV」「0AMV 入库」(3) 用户问「0AMV 最近走势」「0AMV 存了多少条」「0AMV 有没有缺口」「活跃市值怎么样」(4) 用户输入 /qk-stock-0amv (5) 用户发指南针行情表格截图并要求提取入库 (6) 讨论大盘环境、择时、仓位，需要活跃市值判断时。数据落 manual_data/0AMV.csv。
 ---
 
 # 0AMV 活跃市值手工录入
@@ -113,6 +113,33 @@ D:\Program Files\Compass\WavMain\ANALYSE\Data\ChinaStk\Z_SK\day.vdat
 **当前状态**：用户是 macOS，这条路**尚未跑通**，后续可能在 Windows 上试。跑通后仍应把结果导入 `manual_data/0AMV.csv`（`add --json -` + `--commit`），**保持单一真相源不变**。
 
 **已有引导数据**：`manual_data/0AMV_compass_raw.json` —— 1993-01-03 ~ 2026-09-11 共 8206 根，取自上述仓库的 `cache/compass/0AMV.json`，关键数值（2026-09-11 / 08-19 / 07-01）已经用户与客户端核对确认。格式为 `{symbol,name,source,source_code,kind,freq,last_updated,bar_count,bars[]}`，与 CSV 不同，导入前需转换。
+
+## 来源 C：第三方仓库的现成数据（**仅在数据陈旧时用作参照**）
+
+[`li-fujian/a-trend-data`](https://github.com/li-fujian/a-trend-data) 的
+`cache/compass/0AMV.json` 有一份现成的 0AMV 日线（8206 根，1993 年起）。
+
+```bash
+curl -sL "https://raw.githubusercontent.com/li-fujian/a-trend-data/master/cache/compass/0AMV.json"
+```
+
+**这是别人的仓库，不是我们的依赖。** 它提交与否不受我们掌控，**不要写进任何日常
+流程**（不接日更、不做定时抓取）。
+
+**它的用途只有一个**：当我们自己的 `0AMV.csv` 有一段时间没更新，去看看它那边
+是否也停滞了——如果它更新了而我们没有，说明是**我们的录入漏了**，把它上面的数据
+同步下来补上即可。如果它也没更新，那大概率是上游（指南针客户端）那边的问题。
+
+> 初次导入时核对过：关键点位与指南针客户端逐点比对一致（2026-09-11 / 08-19 /
+> 07-01 三个锚点全对）。但**每次同步仍要回显给用户确认**，这是外部数据，
+> 不能因为上次对就默认这次也对。
+
+格式与 `manual_data/0AMV.csv` 不同（它是 `{symbol, name, bars:[{date,open,high,low,close,...}]}`），
+导入前要用本技能第 1 步的 `add --json -` 转换，**不要直接覆盖 CSV**。
+
+来源 B 与 C 的关系：B 是它的**方法**（读客户端 day.vdat），C 是它的**产物**（已导出的
+JSON）。B 需要 Windows + 指南针客户端；C 只需要网络。两者都比手工录入省事，但都不该
+取代 `0AMV.csv` 作为唯一真相源。
 
 ## 注意
 

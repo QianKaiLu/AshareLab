@@ -29,6 +29,11 @@ from market.stage import market_stage
 
 # ---- L1 情绪阈值（来自调研版经验值，待用回溯数据标定）
 ZT_CRAZY, ZT_HOT, ZT_COLD = 80, 60, 30
+# 涨停「及格线」——与上面的状态机阈值用途不同：状态机判周期位置，及格线判
+# **赚钱效应够不够用**。源材料的及格线随市况变化：牛市 >80、震荡市 >60。
+# 低于及格线 → 短线需谨慎、空仓或轻仓。
+ZT_PASS_BULL = 80
+ZT_PASS_RANGE = 60
 LIMIT_DOWN_COLD = 15
 BOARD_HOT, BOARD_COLD = 5, 2
 ZBR_HOT, ZBR_COLD = 0.25, 0.40          # 炸板率
@@ -136,7 +141,31 @@ def emotion(hist: dict[str, dict], target: str) -> dict:
         "昨日涨停溢价中位": premium,
         "涨跌比": (f"{market.get('up'):.0f}:{market.get('down'):.0f}"
                    if market.get("up") and market.get("down") else None),
+        # 赚钱效应「及格线」：分市况，与状态机阈值是两个用途
+        "及格线": zt_pass_line(n_zt, stage),
     }
+
+
+def zt_pass_line(n_zt: int, stage: str) -> dict:
+    """涨停家数的及格线判定。
+
+    源材料：牛市 >80 及格、震荡市 >60 及格；低于及格线说明赚钱效应差，
+    短线需谨慎、空仓或轻仓。
+
+    市况由 L1 的状态机映射——发酵/高潮/启动算牛，其余算震荡。这里刻意不引
+    `market.stage`（那是价格形态口径），避免两个模块互相依赖。
+    """
+    bull = stage in ("发酵期", "高潮期", "启动期")
+    line = ZT_PASS_BULL if bull else ZT_PASS_RANGE
+    label = "牛市" if bull else "震荡市"
+    gap = n_zt - line
+    if gap >= 0:
+        read = "及格"
+    elif gap >= -10:
+        read = "略低于及格线"
+    else:
+        read = "不及格——赚钱效应差，短线需谨慎、空仓或轻仓"
+    return {"市况": label, "线": line, "差": gap, "判定": read}
 
 
 def zt_trend(hist: dict[str, dict], days: int = 8) -> list[dict]:
@@ -504,6 +533,11 @@ def render(a: dict) -> str:
         if e["涨跌比"]:
             bits.append(f"涨跌比 {e['涨跌比']}")
         L.append("　".join(bits))
+        # 赚钱效应的及格线：与状态机是两个用途，单列一行免得被读成同一件事
+        pl = e.get("及格线") or {}
+        if pl:
+            L.append(f"赚钱效应：{pl['市况']}及格线 {pl['线']}，"
+                     f"现 {e['涨停']}（{pl['差']:+d}）→ {pl['判定']}")
         if e["反向证据"]:
             L.append("⚠ 反向证据：" + "；".join(e["反向证据"]))
 

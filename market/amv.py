@@ -43,9 +43,17 @@ AMV_CSV = REPO / "manual_data" / "0AMV.csv"
 MA_WINDOW = 60
 SLOPE_DAYS = 5          # 60 线斜率取样窗口
 BAND_PCT = 2.0          # 距 60 线 ±2% 内算变盘窗口
-ENTRY_PCT = 4.0         # 入场触发：单日涨幅 ≥ 此值
-BIG_ENTRY_PCT = 5.0     # 大波段级别
+ENTRY_PCT = 4.0         # 主题级：跟随增量资金炒主题
+MAIN_ENTRY_PCT = 8.0    # 主线级：可炒主线（源材料的 5-8% 区间上沿）
 RISK_PCT = -2.3         # 波段终结风险：单日跌幅 ≤ 此值
+BULL_RUN_PCT = 7.0      # 十年一牛：连续累计涨幅起点
+BULL_RUN_DAYS = 3       # 连续多少日累计才算「连续」
+
+# 分级的措辞取自源材料（4% 主题 / 8% 主题主线 / 连续 7-20% 十年一牛）
+LEVEL_LABELS = (
+    (MAIN_ENTRY_PCT, "主线级"),
+    (ENTRY_PCT, "主题级"),
+)
 
 ZONE_BULL, ZONE_BEAR = "多头", "空头"
 ZONE_TURN, ZONE_MIXED = "变盘窗口", "纠结"
@@ -57,6 +65,9 @@ POSITION_BY_ZONE = {
     ZONE_MIXED: ("谨慎，不重仓", "指标不一致，方向不明"),
 }
 POSITION_ENTRY = ("可满仓", "多头区间 + 当日 ≥+4% 新波段（对称交易.md）")
+POSITION_BULL_RUN = ("可满仓并可长期持有",
+                     f"连续 {BULL_RUN_DAYS} 日以上累计 ≥{BULL_RUN_PCT:.0f}%——"
+                     f"十年一牛级别，可随意布局")
 
 CALIBER = ("60 日线与 MACD 均基于活跃市值自身序列（非大盘）；"
            "距线 2% 以内算变盘窗口；区间判定只用当日及之前的数据")
@@ -142,13 +153,41 @@ def amv_timing(target: str, days: int = 10) -> dict:
     pct = float(pct) if pd.notna(pct) else (
         (c / float(close.iloc[-2]) - 1) * 100 if len(close) > 1 else 0.0)
 
+    # 连续累计涨幅：源材料的「十年一牛」看的是连续 7-20%，不是单日
+    run_sum, run_days = 0.0, 0
+    cp = df["change_pct"]
+    for i in range(len(cp) - 1, -1, -1):
+        v = cp.iloc[i]
+        if pd.isna(v) or v <= 0:
+            break
+        run_sum += float(v)
+        run_days += 1
+
+    # 加速向下跳空：低开（开在前一日最低之下）**且**大跌。
+    # 源材料把它与「单日流出 >2.3%」并列为两种截然不同的信号——同样是大幅下跌，
+    # 普通阴跌是波段终结，跳空加速下杀反而接近底部（恐慌一步到位）。
+    #
+    # **实测（2026-09-17，上证 8726 根日线）**：这条只在**价格指数**、且只在
+    # **短期**成立，强度也弱于源材料的措辞——
+    #     大跌日中的跳空组   次日反弹胜率 61.6%（211 样本）
+    #     全部大跌日         次日反弹胜率 55.9%（556 样本）
+    #   3 日以上优势消失，20 日胜率与普通大跌日持平（48% vs 49%）。
+    # 而在**活跃市值自身**上，跳空后是继续跌：跳空 >3% 时 20 日中位 -21%。
+    # 所以报告里按源材料措辞呈现（那是使用者的系统），但别当成已证实的底部信号。
+    prev_low = float(df["low"].iloc[-2]) if len(df) > 1 else None
+    gap_down = (prev_low is not None and float(df["open"].iloc[-1]) < prev_low
+                and pct <= RISK_PCT)
+
     # 当日信号
     today_signal = None
     if pct >= ENTRY_PCT:
-        level = "大波段" if pct >= BIG_ENTRY_PCT else "小波段"
+        level = next((lbl for th, lbl in LEVEL_LABELS if pct >= th), "主题级")
         today_signal = (f"入场触发（{level} +{pct:.2f}%）"
                         + ("，站上 60 线，进攻" if above
                            else "，但未站上 60 线，疑似诱多，需站上确认"))
+    elif gap_down:
+        today_signal = (f"加速向下跳空（低开且 {pct:.2f}%）——"
+                        f"往往是见底信号，不是恐慌信号")
     elif pct <= RISK_PCT:
         today_signal = f"波段终结风险（{pct:.2f}%）"
 
@@ -165,7 +204,12 @@ def amv_timing(target: str, days: int = 10) -> dict:
         elif v <= RISK_PCT:
             recent.append({"date": r["date"].strftime("%m-%d"), "涨跌": v, "类型": "波段终结风险"})
 
-    if zone == ZONE_BULL and pct >= ENTRY_PCT:
+    # 连续累计达标 → 十年一牛级别（可随意布局并长期持有）
+    bull_run = (run_days >= BULL_RUN_DAYS and run_sum >= BULL_RUN_PCT)
+
+    if bull_run:
+        position, basis = POSITION_BULL_RUN
+    elif zone == ZONE_BULL and pct >= ENTRY_PCT:
         position, basis = POSITION_ENTRY
     else:
         position, basis = POSITION_BY_ZONE[zone]
@@ -190,6 +234,8 @@ def amv_timing(target: str, days: int = 10) -> dict:
         "仓位依据": basis,
         "今日信号": today_signal,
         "近期信号": recent,
+        "连续上涨": {"天数": run_days, "累计": round(run_sum, 2), "达标": bull_run},
+        "跳空": gap_down,
         "走势": [{"date": r["date"].strftime("%m-%d"),
                   "涨跌": round(float(r["change_pct"]), 2)}
                  for _, r in tail.iterrows() if pd.notna(r.get("change_pct"))],

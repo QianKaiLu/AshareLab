@@ -193,8 +193,8 @@ PYTHONPATH=. conda run --live-stream -n stock python -m market.table --days 30  
 PYTHONPATH=. conda run --live-stream -n stock python -m market.charts 20260915
 ```
 
-   四张图落在 `market_reports/charts/YYYY-MM-DD/`：涨停家数折线、创 20 日新高双线、
-   活跃市值 K 线、上证 K 线。脚本自带 `assert` 校验落盘。
+   五张图落在 `market_reports/charts/YYYY-MM-DD/`：涨停家数折线、创 20 日新高双线、
+   活跃市值 K 线、上证 K 线、上证 30 分钟 K 线+MACD。脚本自带 `assert` 校验落盘。
 
    单独看某一层（排查或按需取材）：
 
@@ -224,12 +224,12 @@ PYTHONPATH=. conda run --live-stream -n stock python workflow/render_report.py \
 唯一权威版本，不在这里抄第二遍（抄两处必然漂移，2026-09-16 就是因为要求只写在
 一处、且是描述性措辞，导致图版把术语解释整节漏掉了）。
 
-清单涵盖：四张图各就其位、术语解释独立成段、两个 20 日新高的含义与分母、宽基点评
+清单涵盖：五张图各就其位、术语解释独立成段、两个 20 日新高的含义与分母、宽基点评
 而非罗列、上证形态独立成节、阶段那节说清打法、不引用出处、无 emoji 无横线。
 
 其中**最容易漏的两项**单独提醒：
 
-- **四张图必须都用上，且放到对应的那一节**。图存在不等于用对了——2026-09-16 那版
+- **五张图必须都用上，且放到对应的那一节**。图存在不等于用对了——2026-09-16 那版
   把涨停折线放到了「操作含义」节，而讲「涨停 32→89」的情绪节反而没有图
 - **术语解释对图版与文字版同等要求**。图版会独立传播，读者更需要它
 

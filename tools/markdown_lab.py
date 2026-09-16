@@ -62,6 +62,18 @@ template = Template("""
   h1 { font-size: 1.8rem; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
   h2 { font-size: 1.45rem; }
   h3 { font-size: 1.25rem; }
+  /* 章节标题前一个小琥珀块：取代「一、二、三」这类列序——编号是呆板的，
+     而一个色块既能让各节视觉上分得开，又不必给章节排座次 */
+  h2::before {
+    content: "";
+    display: inline-block;
+    width: 4px;
+    height: 0.82em;
+    background: var(--primary);
+    margin-right: 10px;
+    vertical-align: -0.04em;
+    border-radius: 2px;
+  }
 
   /* 引用块 —— 左边橙棕条+暖暗背景 */
   blockquote {
@@ -157,6 +169,20 @@ template = Template("""
     color: #6f9b6a;
     font-weight: 600;
   }
+  /* 旁注：术语解释这类「辅助信息」用。与 blockquote（章节小结）刻意区分——
+     引用块是琥珀色粗边 + 大字，表示「这是本章结论」；旁注是灰色细边 + 小字 +
+     弱化色，表示「可以跳过，需要时回查」。层级不同，不能长一个样。
+     另：两个相邻的 `>` 块会被 markdown 合并成同一个 blockquote，所以旁注不能用
+     引用块写，否则会跟章节小结粘在一起。 */
+  .aside {
+    border-left: 3px solid var(--border);
+    padding: 2px 0 2px 14px;
+    margin: 22px 0;
+    color: var(--muted);
+    font-size: 0.92em;
+    line-height: 1.7;
+  }
+  .aside b { color: #d6c7b5; }
 </style>
 </head>
 <body>{{ content }}</body>

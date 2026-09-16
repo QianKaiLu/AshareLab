@@ -19,6 +19,7 @@ from typing import Optional, Sequence
 
 import pandas as pd
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 from draws.kline_theme import ThemeRegistry
 
@@ -33,10 +34,17 @@ def _theme(name: str):
 
 
 def _x_axis(df: pd.DataFrame) -> tuple[list[int], dict]:
-    """返回 (x_index, update_xaxes 的参数字典)。"""
+    """返回 (x_index, update_xaxes 的参数字典)。
+
+    时间列名兼容 `date`（日线）与 `dt`（分钟线）——两者的标签格式不同：
+    日线只到日，分钟线还要带上时刻（同一交易日有 8 根 30 分钟 bar，只标月-日会看不出区别）。
+    """
     x = list(range(len(df)))
-    if "date" in df.columns:
-        labels = pd.to_datetime(df["date"]).dt.strftime("%m-%d").tolist()
+    tcol = "date" if "date" in df.columns else ("dt" if "dt" in df.columns else None)
+    if tcol:
+        ts = pd.to_datetime(df[tcol])
+        fmt = "%m-%d" if tcol == "date" else "%m-%d %H:%M"
+        labels = ts.dt.strftime(fmt).tolist()
         nticks = min(len(labels), MAX_TICKS)
         step = max(1, len(labels) // nticks)
         idx = list(range(0, len(labels), step))
@@ -161,6 +169,72 @@ def candle_fig(
     _base_layout(fig, theme, title, height)
     fig.update_xaxes(**xcfg)
     fig.update_layout(xaxis_rangeslider_visible=False)
+    return fig
+
+
+def candle_macd_fig(
+    df: pd.DataFrame,
+    title: str = "",
+    height: int = 520,
+    theme_name: str = DEFAULT_THEME,
+    ma_lines: Sequence[int] = (),
+    price_ratio: float = 0.72,
+) -> go.Figure:
+    """K 线 + MACD 双面板。上图价格（可带均线），下图 MACD（DIF/DEA 线 + 柱）。
+
+    **入参需已算好 MACD 列**（`macd_dif` / `macd_dea` / `macd_bar`）——本函数不引
+    `indicators`，保持图工厂只管画、不管算。
+
+    为什么不复用既有的 `ztalk_fig_v2`：它只接受 `code` 并自己去查个股表，
+    指数与分钟线都用不了（同 `candle_fig` 的理由）。
+    """
+    theme = _theme(theme_name)
+    x, xcfg = _x_axis(df)
+
+    fig = make_subplots(
+        rows=2, cols=1, shared_xaxes=True,
+        vertical_spacing=0.04, row_heights=[price_ratio, 1 - price_ratio],
+    )
+
+    fig.add_trace(go.Candlestick(
+        x=x, open=df["open"], high=df["high"], low=df["low"], close=df["close"],
+        increasing=dict(fillcolor=theme.up_color, line=dict(color=theme.up_color, width=1)),
+        decreasing=dict(fillcolor=theme.down_color, line=dict(color=theme.down_color, width=1)),
+        name="K线", showlegend=False,
+    ), row=1, col=1)
+
+    ma_palette = [theme.line_color_0, theme.line_color_1]
+    for i, w in enumerate(ma_lines):
+        if len(df) < w:
+            continue
+        ma = pd.to_numeric(df["close"], errors="coerce").rolling(w).mean()
+        fig.add_trace(go.Scatter(
+            x=x, y=ma, mode="lines", name=f"MA{w}",
+            line=dict(color=ma_palette[i % len(ma_palette)], width=1.4),
+        ), row=1, col=1)
+
+    # MACD：柱按正负上色（正=红涨、负=绿跌，与 K 线同口径）
+    if "macd_bar" in df.columns:
+        bar = pd.to_numeric(df["macd_bar"], errors="coerce")
+        fig.add_trace(go.Bar(
+            x=x, y=bar, name="MACD柱", showlegend=False,
+            marker=dict(color=[theme.up_color if (pd.notna(v) and v >= 0)
+                               else theme.down_color for v in bar]),
+        ), row=2, col=1)
+    for col, name in (("macd_dif", "DIF"), ("macd_dea", "DEA")):
+        if col in df.columns:
+            fig.add_trace(go.Scatter(
+                x=x, y=pd.to_numeric(df[col], errors="coerce"), mode="lines", name=name,
+                line=dict(color=theme.line_color_0 if name == "DIF" else theme.line_color_1,
+                          width=1.3),
+            ), row=2, col=1)
+
+    _base_layout(fig, theme, title, height)
+    fig.update_xaxes(**xcfg)
+    fig.update_xaxes(showgrid=False, zeroline=False, row=2, col=1)
+    fig.update_yaxes(showgrid=True, gridcolor=theme.grid_color, gridwidth=0.5,
+                     zeroline=False, row=2, col=1)
+    fig.update_layout(xaxis_rangeslider_visible=False, barmode="relative")
     return fig
 
 

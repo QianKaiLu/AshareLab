@@ -21,8 +21,14 @@ from typing import Optional
 
 import pandas as pd
 
-from datas.query_stock import query_index_bars
-from draws.figs_factory.simple_figs import candle_fig, line_fig, save_fig
+from datas.query_stock import query_index_bars, query_index_min_bars
+from draws.figs_factory.simple_figs import (
+    candle_fig,
+    candle_macd_fig,
+    line_fig,
+    save_fig,
+)
+from indicators.macd import add_macd_to_dataframe
 from market.amv import load_amv
 from market.fetch import load_history
 from tools.log import get_analyze_logger
@@ -32,7 +38,8 @@ logger = get_analyze_logger()
 REPO = Path(__file__).resolve().parent.parent
 CHART_ROOT = REPO / "market_reports" / "charts"
 
-KLINE_DAYS = 60          # K 线回看天数
+KLINE_DAYS = 60          # 日线 K 线回看天数
+MIN30_BARS = 160         # 30 分钟回看根数（约 20 个交易日，够看清背离的两个低点）
 CHART_W = 600            # 出图宽度（CSS px），与报告内容区同量级
 
 
@@ -114,6 +121,16 @@ def draw_daily_charts(target: str, out_dir: Optional[Path] = None) -> dict[str, 
         fig = candle_fig(sub, title=f"上证指数（近 {len(sub)} 个交易日）",
                          height=380, ma_lines=(20, 60))
         made["shindex"] = save_fig(fig, out / "shindex.png", CHART_W, 380)
+
+    # 上证 30 分钟 K 线 + MACD —— 为分钟级结构那节配图。
+    # 取 30 分钟（不是 60/120）是因为它是入库的基础粒度，也是报告里讲背离用的那个周期。
+    min30 = query_index_min_bars("sh000001", period=30, to_dt=f"{day} 23:59",
+                                 limit=MIN30_BARS)
+    if not min30.empty:
+        add_macd_to_dataframe(min30, inplace=True)
+        fig = candle_macd_fig(
+            min30, title=f"上证 30 分钟（近 {len(min30)} 根）", height=520, ma_lines=(20,))
+        made["min30"] = save_fig(fig, out / "min30.png", CHART_W, 520)
 
     for name, p in made.items():
         assert p.is_file() and p.stat().st_size > 0, f"{name} 图未落盘: {p}"

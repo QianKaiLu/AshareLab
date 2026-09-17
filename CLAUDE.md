@@ -95,7 +95,12 @@ def hunt_xxx(df: pd.DataFrame) -> Optional[dict]:
     return {"kdj_j": j_val} if matched else None
 ```
 
-并发规模：抓数据 3 workers（`datas/fetch_all_market.py`，东财/tushare 扛不住高并发），扫描 20 workers。抓取 worker 间有 `REQUEST_DELAY` 防突发限流。
+并发规模：日更抓数据 3 workers（`datas/fetch_all_market.py`，东财/tushare 扛不住高并发），扫描 20 workers。抓取 worker 间有 `REQUEST_DELAY` 防突发限流。
+
+**全量重建走 4 进程**（`fetch_full_history_parallel`），不是线程：akshare 的新浪接口用
+py_mini_racer（V8）算复权因子，V8 实例不是线程安全的，多线程并发会 FATAL 掉整个进程
+（实测 3 线程 200 只必崩）；fork 也不行（子进程继承父进程的 V8 状态，进程池崩）。
+所以重建入口必须有 `if __name__ == "__main__"` 保护——spawn 会 `import __main__`。
 
 ### 绘图层
 

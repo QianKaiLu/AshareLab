@@ -1,7 +1,8 @@
 from tqdm import tqdm
 import pandas as pd
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import (ProcessPoolExecutor, ThreadPoolExecutor,
+                                as_completed)
 from datas.fetch_stock_bars import (
     logger,
     fetch_daily_bar_from_akshare,
@@ -20,6 +21,9 @@ from tools.stock_tools import latest_trade_day
 # 东财 / tushare 都扛不住高并发，8 workers 无间隔会把接口打崩（RemoteDisconnected）
 REQUEST_DELAY = 0.5  # seconds between requests to avoid burst rate limits
 FETCH_WORKERS = 3
+
+# 全量重建专用的进程数。为什么是进程不是线程，见 fetch_full_history_parallel。
+FULL_FETCH_WORKERS = 4
 
 
 def fetch_stock_bars_parallel(stock_codes, source: str = "tushare") -> list:
@@ -139,6 +143,61 @@ def database_writer(result_queue: Queue, stop_event: threading.Event):
                 result_queue.task_done()
         except Exception:
             break
+
+
+def _fetch_full_history_worker(code: str):
+    """子进程入口：抓一只股票的全量前复权历史。
+
+    必须是模块顶层函数（spawn 靠 pickle 传引用），且**只抓不写**——
+    写库统一回主进程，沿用本模块「单写者」的原始设计。
+    """
+    try:
+        df = fetch_daily_bar_from_sina(code=code, from_date=EARLIEST_DATE)
+    except Exception as e:
+        logger.warning(f"{code} 全量抓取异常: {type(e).__name__}: {e}")
+        return code, None
+    return code, df
+
+
+def fetch_full_history_parallel(stock_codes, workers: int = FULL_FETCH_WORKERS) -> list:
+    """多进程全量抓取（新浪 qfq 全历史），主进程入库。返回失败的代码列表。
+
+    **为什么用进程而不是本模块其它地方的线程**：akshare 的新浪行情接口内部用
+    py_mini_racer（V8）算复权因子，而 V8 实例不是线程安全的——多线程并发调用会
+    直接 FATAL 掉整个进程（实测 3 线程跑 200 只必崩，栈顶是
+    `address_pool_manager.cc(67) Check failed: !pool->IsInitialized()`）。
+    每进程独立持有 V8 实例则完全稳定且更快：实测 4 进程单只 0.077s、120/120 成功、
+    无限流；对照单线程 0.351s、3 线程直接崩。
+
+    **必须用 spawn，不能用 fork**：fork 会让子进程继承父进程的 V8 状态，
+    实测进程池崩掉（BrokenProcessPool）。因此调用方入口脚本要有
+    `if __name__ == "__main__"` 保护——spawn 会 `import __main__`，
+    没有保护就会递归重跑整个脚本。
+
+    北交所不在此函数的覆盖范围内（新浪不支持 8xxxxx/4xxxxx/92xxxx），
+    由调用方另行处理。
+    """
+    failed: list[str] = []
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        futures = {executor.submit(_fetch_full_history_worker, code): code
+                   for code in stock_codes}
+        for future in tqdm(as_completed(futures), total=len(futures)):
+            code = futures[future]
+            try:
+                _, df = future.result()
+            except Exception as e:
+                logger.error(f"{code} 子进程失败: {type(e).__name__}: {e}")
+                failed.append(code)
+                continue
+            if df is None or df.empty:
+                failed.append(code)
+                continue
+            # 写库返回 0（被闸门拒 / 过滤后为空）同样算失败：
+            # 抓到了不等于入库了，只看抓取结果会漏报（重建时实测丢过 3 只）
+            if not save_daily_bars_to_database(df):
+                logger.error(f"{code}: 抓取成功但未入库")
+                failed.append(code)
+    return failed
 
 
 if __name__ == "__main__":

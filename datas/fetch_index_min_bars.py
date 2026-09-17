@@ -172,7 +172,8 @@ def update_symbol(symbol: str) -> dict:
 
 def update_all(symbols=DEFAULT_SYMBOLS) -> dict:
     out = [update_symbol(s) for s in symbols]
-    return {"更新": len(out), "成功": sum(1 for r in out if r["ok"]), "明细": out}
+    return {"更新": len(out), "成功": sum(1 for r in out if r["ok"]),
+            "rows": sum(r["rows"] for r in out), "明细": out}
 
 
 if __name__ == "__main__":

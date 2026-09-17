@@ -541,15 +541,39 @@ def fetch_daily_bar_from_tushare(
     logger.error(f"Failed to fetch {code} after {max_retries} retries (rate limited)")
     return None
 
-def save_daily_bars_to_database(df: pd.DataFrame):
+def save_daily_bars_to_database(df: pd.DataFrame) -> int:
     """
     Save daily bar DataFrame to SQLite database with UPSERT behavior.
     If (code, date) exists → UPDATE; else → INSERT.
     Requires SQLite >= 3.24.0 and PRIMARY KEY(code, date) in table.
+
+    Returns:
+        实际写入的行数。被闸门拒绝、或过滤后无有效行时为 0——
+        调用方据此判断「这只股票是否真的入库」，**抓取成功不等于入库成功**。
     """
     if df.empty:
         logger.warning("Warning: Empty DataFrame, nothing to save.")
-        return
+        return 0
+
+    # 先丢弃「无信息量的占位行」：开 / 高 / 低全为 0 且当日无成交。
+    # 新浪偶发这类行（实测 2024-11-06 有三只科创板各带一行），close 保留前收、
+    # volume 为 0，不携带任何价格信息，留着还会拉平均线——与 baostock 默认
+    # 丢弃停牌日是同一处理原则。
+    # **必须在闸门之前做**：否则这种单行占位会让闸门把整只股票误判成
+    # 「整段复权口径污染」而整只拒写，股票就从库里消失了（重建时实测丢过 3 只）。
+    if {"open", "high", "low", "volume"}.issubset(df.columns):
+        # close > 0 是必要条件：占位行的 close 保留前收，而真正的复权污染行
+        # 整段（含 close）都是负的，绝不能在这里被悄悄丢掉
+        dead = (((df[["open", "high", "low"]] <= 0).all(axis=1))
+                & (df["volume"] == 0) & (df["close"] > 0))
+        if dead.any():
+            code = df["code"].iloc[0] if "code" in df.columns else "?"
+            logger.warning(f"{code}: 丢弃 {int(dead.sum())}/{len(df)} 行无成交占位数据"
+                           f"（开/高/低均为 0）")
+            df = df.loc[~dead]
+        if df.empty:
+            logger.warning("过滤占位行后无有效数据，跳过")
+            return 0
 
     # 非正价闸门。**这道闸门挡的是「整段历史被换复权口径」**，不是个别脏行：
     # 东财的 qfq 是减法式（从原价里减累计分红），分红累计超过早期股价时就变负——
@@ -567,7 +591,7 @@ def save_daily_bars_to_database(df: pd.DataFrame):
                 f"这通常是复权口径问题——检查数据源是否用了减法式前复权"
                 f"（东财 stock_zh_a_hist 是减法式，新浪 stock_zh_a_daily 是乘法式）"
             )
-            return
+            return 0
 
     write_df = df.copy()
     write_df['date'] = write_df['date'].dt.strftime("%Y-%m-%d")  # 转为字符串存入 SQLite
@@ -613,6 +637,8 @@ def save_daily_bars_to_database(df: pd.DataFrame):
             # logger.info(f"💾 Upserted {len(write_df)} records into {DAILY_BAR_TABLE}")
         except Exception as e:
             logger.error(f"💔 Failed to upsert bars: {e}", exc_info=True)
+            return 0
+    return len(write_df)
 
 
 def find_dates_missing_turnover_rate(min_missing: int = 100) -> list[str]:

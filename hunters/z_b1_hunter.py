@@ -370,9 +370,21 @@ def _check_pullback_volume(df: pd.DataFrame, post: pd.DataFrame,
     if vol_ratio < VOL_RATIO_THRESHOLD and body_ratio < VOL_RATIO_THRESHOLD:
         return None
 
+    # 「地量」是绝对口径，与上面两个相对口径互补：末日量在近 60 日成交量中的分位，
+    # 越低越接近地量（0.15 以下优秀、0.35 以上不足）。
+    #
+    # 为什么必须单独测：last_day_volume_ratio 的分母是**点火期放量**，点火越猛这个
+    # 比值越好看，但绝对成交量可能仍是这只票自己的常态水平——想卖的人没走干净。
+    # 2026-09-17 实测两只背离：唐人神 0.271 优秀 / 分位 0.483 不足，
+    # 新五丰 0.301 优秀 / 分位 0.733 不足，两只在扫描排序里都排在前列，
+    # 过完 b1_review 体检才掉档。
+    vol60 = df["volume"].iloc[-60:]
+    floor_vol_percentile = round(float((vol60 < last_row["volume"]).mean()), 3)
+
     return {
         "last_day_volume_ratio": last_vol_ratio,
         "prev_day_volume_ratio": prev_vol_ratio,
+        "floor_vol_percentile": floor_vol_percentile,
         "three_vol_ratio": round(vol_ratio, 2),
         "three_body_ratio": round(body_ratio, 2) if body_ratio != float('inf') else None,
     }
@@ -564,7 +576,7 @@ def main():
     METRIC_KEYS = (
         "variant", "kdj_j", "price_change_pct", "amplitude_pct",
         "fire_date", "fire_days", "fire_pct", "top_vol_ratio",
-        "last_day_volume_ratio", "prev_day_volume_ratio",
+        "last_day_volume_ratio", "prev_day_volume_ratio", "floor_vol_percentile",
         "three_vol_ratio", "three_body_ratio",
         "pos_in_breakout_range", "is_high_position",
         "stop_loss_line", "stop_loss_price", "support_price",

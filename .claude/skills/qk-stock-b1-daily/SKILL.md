@@ -73,7 +73,7 @@ PYTHONPATH=. conda run --live-stream -n stock python workflow/daily_update.py > 
 PYTHONPATH=. conda run --live-stream -n stock python -m hunters.z_b1_hunter > logs/b1_hunt_$(date +%Y%m%d).log 2>&1
 ```
 
-- 日志中每只命中输出两行：名称行 + 指标行，指标行字段：`variant, kdj_j, price_change_pct, amplitude_pct, fire_date, fire_days, fire_pct, top_vol_ratio, last_day_volume_ratio, prev_day_volume_ratio, three_vol_ratio, three_body_ratio, pos_in_breakout_range, is_high_position, stop_loss_line, stop_loss_price, support_price`
+- 日志中每只命中输出两行：名称行 + 指标行，指标行字段：`variant, kdj_j, price_change_pct, amplitude_pct, fire_date, fire_days, fire_pct, top_vol_ratio, last_day_volume_ratio, prev_day_volume_ratio, floor_vol_percentile, three_vol_ratio, three_body_ratio, pos_in_breakout_range, is_high_position, stop_loss_line, stop_loss_price, support_price`
 - 命中 40~80 只属正常范围；先给用户命中总数，再进步骤 3
 
 ## 步骤 3：分级评价
@@ -98,18 +98,30 @@ PYTHONPATH=. conda run --live-stream -n stock python -m hunters.z_b1_hunter > lo
 | 维度 | 字段 | 优秀 | 勉强 |
 |---|---|---|---|
 | 顶部无量 | top_vol_ratio | ≤0.8 | 0.8~1.3 |
-| 末日缩量 | last_day_volume_ratio | ≤0.25（极致，范本参照 0.253） | 0.25~0.45 |
+| 相对缩量 | last_day_volume_ratio | ≤0.25（极致，范本参照 0.253） | 0.25~0.45 |
+| **绝对地量** | **floor_vol_percentile** | **≤0.15** | **0.15~0.35** |
 | 回调位置 | pos_in_breakout_range | ≤0.35（越低越充分） | 0.35~0.5 |
 | J 值 | kdj_j | ≤13 完美一；13~16 完美二模糊 | >16 归完美四分支 |
 | 红肥绿瘦 | three_vol_ratio / three_body_ratio | ≥1.2（任一） | <1.2 |
 
-纪律：J 值只是过滤不是质量指标；量能优先于绝对指标；顶部无量 >1.3 或末日量 >0.45 属量能链残缺 → 第三梯队。
+**两个缩量口径都要看，背离时以绝对地量为准。** `last_day_volume_ratio` 的分母是
+**点火期放量**——点火越猛比值越好看，但绝对成交量可能仍是这只票自己的常态水平
+（想卖的人没走干净）。`floor_vol_percentile` 是末日量在**近 60 日**成交量中的分位，
+越低越接近地量。
+
+2026-09-17 实测两只严重背离，只看前者会把它们排到最前：唐人神 0.271 优秀 / 分位
+0.483 不足，新五丰 0.301 优秀 / 分位 0.733 不足；过完 `qk-stock-b1-review` 体检
+才掉到「洗盘可能没到位」。**所以扫描给出的排序只是初筛，进第一梯队前必须核对
+绝对地量。**
+
+纪律：J 值只是过滤不是质量指标；量能优先于绝对指标；顶部无量 >1.3、末日量 >0.45、
+或地量分位 >0.5 属量能链残缺 → 第三梯队。
 
 ### 分级规则
 
-- **第一梯队 · 优秀范本**：量能链完整（顶部无量 ≤0.8 且末日缩量 ≤0.25）+ 回调充分（位置 ≤0.35），J 深勾或红肥绿瘦突出。选 5~8 只
-- **第二梯队 · 合格可试错**：主链成立，个别环节偏弱（缩量 0.25~0.35、位置 0.35~0.5、红肥绿瘦单边）
-- **第三梯队 · 勉强、需等待**：顶部无量 >0.8（点火后出现过放量）、末日量 >0.45（没缩下来）、或位置 >0.5（未回调）
+- **第一梯队 · 优秀范本**：量能链完整（顶部无量 ≤0.8 且末日缩量 ≤0.25 **且绝对地量 ≤0.35**）+ 回调充分（位置 ≤0.35），J 深勾或红肥绿瘦突出。选 5~8 只
+- **第二梯队 · 合格可试错**：主链成立，个别环节偏弱（缩量 0.25~0.35、绝对地量 0.35~0.5、位置 0.35~0.5、红肥绿瘦单边）
+- **第三梯队 · 勉强、需等待**：顶部无量 >0.8（点火后出现过放量）、末日量 >0.45（没缩下来）、绝对地量 >0.5（绝对量没降下来）、或位置 >0.5（未回调）
 - **完美四组**：区分「真高位」（is_high_position=True，止损用白线、仓位压缩）与「位置超限被归入」（股价贴区间上沿，未回调到位）。真高位单独列出，其余并入第三梯队或备注
 
 ### 输出格式

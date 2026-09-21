@@ -1,0 +1,3395 @@
+{
+ "date": "20260921",
+ "errors": [
+  "boards_em: ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))"
+ ],
+ "limit_up": [
+  {
+   "code": "000504",
+   "name": "南华生物",
+   "industry": "医疗服务",
+   "boards": 3,
+   "seal_amt": 183280948.0,
+   "first_seal": "092500",
+   "turnover": 1.6222320795059204
+  },
+  {
+   "code": "000607",
+   "name": "华媒控股",
+   "industry": "广告营销",
+   "boards": 1,
+   "seal_amt": 105206387.0,
+   "first_seal": "092500",
+   "turnover": 2.6094021797180176
+  },
+  {
+   "code": "001216",
+   "name": "华瓷股份",
+   "industry": "家居用品",
+   "boards": 5,
+   "seal_amt": 278775424.0,
+   "first_seal": "092500",
+   "turnover": 0.8624439835548401
+  },
+  {
+   "code": "600743",
+   "name": "华远控股",
+   "industry": "房地产服",
+   "boards": 1,
+   "seal_amt": 99322687.0,
+   "first_seal": "092500",
+   "turnover": 0.6985819339752197
+  },
+  {
+   "code": "600630",
+   "name": "龙头股份",
+   "industry": "服装家纺",
+   "boards": 3,
+   "seal_amt": 69662208.0,
+   "first_seal": "092501",
+   "turnover": 10.797085762023926
+  },
+  {
+   "code": "600301",
+   "name": "华锡有色",
+   "industry": "小金属",
+   "boards": 1,
+   "seal_amt": 186263824.0,
+   "first_seal": "092502",
+   "turnover": 2.0795295238494873
+  },
+  {
+   "code": "600825",
+   "name": "新华传媒",
+   "industry": "出版",
+   "boards": 1,
+   "seal_amt": 2488694228.0,
+   "first_seal": "092502",
+   "turnover": 0.2380121499300003
+  },
+  {
+   "code": "603230",
+   "name": "内蒙新华",
+   "industry": "出版",
+   "boards": 4,
+   "seal_amt": 86492326.0,
+   "first_seal": "092502",
+   "turnover": 10.628140449523926
+  },
+  {
+   "code": "002453",
+   "name": "华软科技",
+   "industry": "化学制品",
+   "boards": 3,
+   "seal_amt": 109824037.0,
+   "first_seal": "093000",
+   "turnover": 6.707918643951416
+  },
+  {
+   "code": "002614",
+   "name": "奥佳华",
+   "industry": "其他家电",
+   "boards": 1,
+   "seal_amt": 134393750.0,
+   "first_seal": "093000",
+   "turnover": 2.4998083114624023
+  },
+  {
+   "code": "002172",
+   "name": "澳洋健康",
+   "industry": "医疗服务",
+   "boards": 1,
+   "seal_amt": 78997408.0,
+   "first_seal": "093003",
+   "turnover": 15.074483871459961
+  },
+  {
+   "code": "601123",
+   "name": "马矿股份",
+   "industry": "冶钢原料",
+   "boards": 2,
+   "seal_amt": 90631885.0,
+   "first_seal": "093003",
+   "turnover": 15.859630584716797
+  },
+  {
+   "code": "000910",
+   "name": "大亚圣象",
+   "industry": "家居用品",
+   "boards": 2,
+   "seal_amt": 11647982.0,
+   "first_seal": "093006",
+   "turnover": 9.089484214782715
+  },
+  {
+   "code": "002303",
+   "name": "美盈森",
+   "industry": "包装印刷",
+   "boards": 1,
+   "seal_amt": 107545548.0,
+   "first_seal": "093015",
+   "turnover": 3.210078477859497
+  },
+  {
+   "code": "603316",
+   "name": "诚邦股份",
+   "industry": "半导体",
+   "boards": 2,
+   "seal_amt": 51245881.0,
+   "first_seal": "093017",
+   "turnover": 8.689749717712402
+  },
+  {
+   "code": "601811",
+   "name": "新华文轩",
+   "industry": "出版",
+   "boards": 2,
+   "seal_amt": 19101797.0,
+   "first_seal": "093021",
+   "turnover": 5.403228282928467
+  },
+  {
+   "code": "000756",
+   "name": "新华制药",
+   "industry": "化学制药",
+   "boards": 1,
+   "seal_amt": 122493179.0,
+   "first_seal": "093051",
+   "turnover": 4.259877681732178
+  },
+  {
+   "code": "600448",
+   "name": "华纺股份",
+   "industry": "纺织制造",
+   "boards": 3,
+   "seal_amt": 24319035.0,
+   "first_seal": "093100",
+   "turnover": 39.33420181274414
+  },
+  {
+   "code": "600664",
+   "name": "哈药股份",
+   "industry": "化学制药",
+   "boards": 1,
+   "seal_amt": 365287378.0,
+   "first_seal": "093105",
+   "turnover": 7.700949192047119
+  },
+  {
+   "code": "603580",
+   "name": "艾艾精工",
+   "industry": "塑料",
+   "boards": 1,
+   "seal_amt": 30722135.0,
+   "first_seal": "093125",
+   "turnover": 5.668410301208496
+  },
+  {
+   "code": "002860",
+   "name": "星帅尔",
+   "industry": "家电零部",
+   "boards": 1,
+   "seal_amt": 41708703.0,
+   "first_seal": "093154",
+   "turnover": 7.130138874053955
+  },
+  {
+   "code": "001376",
+   "name": "百通能源",
+   "industry": "电力",
+   "boards": 2,
+   "seal_amt": 119804686.0,
+   "first_seal": "093212",
+   "turnover": 7.714442729949951
+  },
+  {
+   "code": "688315",
+   "name": "诺禾致源",
+   "industry": "医疗服务",
+   "boards": 1,
+   "seal_amt": 60398250.0,
+   "first_seal": "093227",
+   "turnover": 4.300349235534668
+  },
+  {
+   "code": "002178",
+   "name": "延华智能",
+   "industry": "软件开发",
+   "boards": 1,
+   "seal_amt": 7254748.0,
+   "first_seal": "093348",
+   "turnover": 6.604944705963135
+  },
+  {
+   "code": "603068",
+   "name": "博通集成",
+   "industry": "半导体",
+   "boards": 2,
+   "seal_amt": 19451518.0,
+   "first_seal": "093421",
+   "turnover": 13.706850051879883
+  },
+  {
+   "code": "002367",
+   "name": "康力电梯",
+   "industry": "专用设备",
+   "boards": 1,
+   "seal_amt": 48861533.0,
+   "first_seal": "093436",
+   "turnover": 3.552574396133423
+  },
+  {
+   "code": "001389",
+   "name": "广合科技",
+   "industry": "元件",
+   "boards": 1,
+   "seal_amt": 87430235.0,
+   "first_seal": "093439",
+   "turnover": 9.167903900146484
+  },
+  {
+   "code": "603636",
+   "name": "南威软件",
+   "industry": "IT服务Ⅱ",
+   "boards": 1,
+   "seal_amt": 8106826.0,
+   "first_seal": "093454",
+   "turnover": 9.618610382080078
+  },
+  {
+   "code": "002589",
+   "name": "瑞康医药",
+   "industry": "医药商业",
+   "boards": 2,
+   "seal_amt": 80446183.0,
+   "first_seal": "093518",
+   "turnover": 14.229517936706543
+  },
+  {
+   "code": "603663",
+   "name": "三祥新材",
+   "industry": "化学原料",
+   "boards": 1,
+   "seal_amt": 58644467.0,
+   "first_seal": "093522",
+   "turnover": 3.967477321624756
+  },
+  {
+   "code": "601086",
+   "name": "国芳集团",
+   "industry": "一般零售",
+   "boards": 2,
+   "seal_amt": 75268899.0,
+   "first_seal": "093654",
+   "turnover": 9.47368335723877
+  },
+  {
+   "code": "603001",
+   "name": "奥康国际",
+   "industry": "服装家纺",
+   "boards": 2,
+   "seal_amt": 7366034.0,
+   "first_seal": "093656",
+   "turnover": 7.12280797958374
+  },
+  {
+   "code": "600218",
+   "name": "全柴动力",
+   "industry": "汽车零部",
+   "boards": 1,
+   "seal_amt": 27280249.0,
+   "first_seal": "093702",
+   "turnover": 8.716850280761719
+  },
+  {
+   "code": "688112",
+   "name": "鼎阳科技",
+   "industry": "通用设备",
+   "boards": 1,
+   "seal_amt": 1976330.0,
+   "first_seal": "093813",
+   "turnover": 6.571447372436523
+  },
+  {
+   "code": "002585",
+   "name": "双星新材",
+   "industry": "塑料",
+   "boards": 1,
+   "seal_amt": 142586766.0,
+   "first_seal": "093948",
+   "turnover": 14.332657814025879
+  },
+  {
+   "code": "600613",
+   "name": "神奇制药",
+   "industry": "化学制药",
+   "boards": 1,
+   "seal_amt": 54843250.0,
+   "first_seal": "094025",
+   "turnover": 18.593297958374023
+  },
+  {
+   "code": "600281",
+   "name": "华阳新材",
+   "industry": "小金属",
+   "boards": 1,
+   "seal_amt": 72795648.0,
+   "first_seal": "094139",
+   "turnover": 2.9042956829071045
+  },
+  {
+   "code": "603319",
+   "name": "美湖股份",
+   "industry": "汽车零部",
+   "boards": 1,
+   "seal_amt": 7633096.0,
+   "first_seal": "094246",
+   "turnover": 8.943132400512695
+  },
+  {
+   "code": "002869",
+   "name": "金溢科技",
+   "industry": "计算机设",
+   "boards": 1,
+   "seal_amt": 31020468.0,
+   "first_seal": "094400",
+   "turnover": 4.835866451263428
+  },
+  {
+   "code": "603258",
+   "name": "电魂网络",
+   "industry": "游戏Ⅱ",
+   "boards": 1,
+   "seal_amt": 25254056.0,
+   "first_seal": "094510",
+   "turnover": 1.9618676900863647
+  },
+  {
+   "code": "002084",
+   "name": "海鸥住工",
+   "industry": "家居用品",
+   "boards": 1,
+   "seal_amt": 50982880.0,
+   "first_seal": "094809",
+   "turnover": 8.623808860778809
+  },
+  {
+   "code": "600894",
+   "name": "广日股份",
+   "industry": "专用设备",
+   "boards": 1,
+   "seal_amt": 6775560.0,
+   "first_seal": "094909",
+   "turnover": 2.1976258754730225
+  },
+  {
+   "code": "603042",
+   "name": "华脉科技",
+   "industry": "通信设备",
+   "boards": 1,
+   "seal_amt": 79146531.0,
+   "first_seal": "094920",
+   "turnover": 18.158140182495117
+  },
+  {
+   "code": "001373",
+   "name": "翔腾新材",
+   "industry": "光学光电",
+   "boards": 1,
+   "seal_amt": 54307998.0,
+   "first_seal": "094924",
+   "turnover": 6.374006748199463
+  },
+  {
+   "code": "603289",
+   "name": "泰瑞机器",
+   "industry": "专用设备",
+   "boards": 1,
+   "seal_amt": 7487324.0,
+   "first_seal": "095001",
+   "turnover": 5.967064380645752
+  },
+  {
+   "code": "600593",
+   "name": "大连圣亚",
+   "industry": "旅游及景",
+   "boards": 1,
+   "seal_amt": 19000584.0,
+   "first_seal": "095105",
+   "turnover": 12.058444023132324
+  },
+  {
+   "code": "600785",
+   "name": "新华百货",
+   "industry": "一般零售",
+   "boards": 1,
+   "seal_amt": 50964416.0,
+   "first_seal": "095310",
+   "turnover": 8.872333526611328
+  },
+  {
+   "code": "920478",
+   "name": "峆一药业",
+   "industry": "化学制药",
+   "boards": 1,
+   "seal_amt": 19057833.0,
+   "first_seal": "095551",
+   "turnover": 30.505292892456055
+  },
+  {
+   "code": "002349",
+   "name": "精华制药",
+   "industry": "中药Ⅱ",
+   "boards": 1,
+   "seal_amt": 91740235.0,
+   "first_seal": "095606",
+   "turnover": 10.446798324584961
+  },
+  {
+   "code": "002388",
+   "name": "新亚制程",
+   "industry": "其他电子",
+   "boards": 1,
+   "seal_amt": 123925395.0,
+   "first_seal": "095818",
+   "turnover": 10.425138473510742
+  },
+  {
+   "code": "002724",
+   "name": "海洋王",
+   "industry": "照明设备",
+   "boards": 1,
+   "seal_amt": 78742764.0,
+   "first_seal": "100118",
+   "turnover": 6.8791584968566895
+  },
+  {
+   "code": "600721",
+   "name": "百花医药",
+   "industry": "医疗服务",
+   "boards": 1,
+   "seal_amt": 81965883.0,
+   "first_seal": "100207",
+   "turnover": 29.022350311279297
+  },
+  {
+   "code": "688026",
+   "name": "洁特生物",
+   "industry": "医疗器械",
+   "boards": 1,
+   "seal_amt": 11681525.0,
+   "first_seal": "100249",
+   "turnover": 11.478110313415527
+  },
+  {
+   "code": "001234",
+   "name": "泰慕士",
+   "industry": "服装家纺",
+   "boards": 1,
+   "seal_amt": 26114039.0,
+   "first_seal": "100512",
+   "turnover": 3.6783316135406494
+  },
+  {
+   "code": "600992",
+   "name": "贵绳股份",
+   "industry": "通用设备",
+   "boards": 1,
+   "seal_amt": 4304104.0,
+   "first_seal": "100757",
+   "turnover": 6.28400993347168
+  },
+  {
+   "code": "002792",
+   "name": "通宇通讯",
+   "industry": "通信设备",
+   "boards": 1,
+   "seal_amt": 39783172.0,
+   "first_seal": "101206",
+   "turnover": 20.31264305114746
+  },
+  {
+   "code": "002080",
+   "name": "中材科技",
+   "industry": "玻璃玻纤",
+   "boards": 1,
+   "seal_amt": 98920630.0,
+   "first_seal": "101333",
+   "turnover": 7.941944122314453
+  },
+  {
+   "code": "600714",
+   "name": "金瑞矿业",
+   "industry": "化学原料",
+   "boards": 1,
+   "seal_amt": 63688625.0,
+   "first_seal": "101417",
+   "turnover": 8.297977447509766
+  },
+  {
+   "code": "001317",
+   "name": "三羊马",
+   "industry": "铁路公路",
+   "boards": 2,
+   "seal_amt": 21561616.0,
+   "first_seal": "101439",
+   "turnover": 13.41596794128418
+  },
+  {
+   "code": "600812",
+   "name": "华北制药",
+   "industry": "化学制药",
+   "boards": 1,
+   "seal_amt": 20451780.0,
+   "first_seal": "101721",
+   "turnover": 5.1860575675964355
+  },
+  {
+   "code": "000829",
+   "name": "天音控股",
+   "industry": "专业连锁",
+   "boards": 1,
+   "seal_amt": 16090613.0,
+   "first_seal": "101909",
+   "turnover": 5.3237199783325195
+  },
+  {
+   "code": "300642",
+   "name": "透景生命",
+   "industry": "医疗器械",
+   "boards": 1,
+   "seal_amt": 96007230.0,
+   "first_seal": "102027",
+   "turnover": 25.735687255859375
+  },
+  {
+   "code": "002321",
+   "name": "华英农业",
+   "industry": "养殖业",
+   "boards": 1,
+   "seal_amt": 58018859.0,
+   "first_seal": "102424",
+   "turnover": 5.556078910827637
+  },
+  {
+   "code": "600127",
+   "name": "金健米业",
+   "industry": "农产品加",
+   "boards": 3,
+   "seal_amt": 127612863.0,
+   "first_seal": "102445",
+   "turnover": 28.448190689086914
+  },
+  {
+   "code": "603151",
+   "name": "邦基科技",
+   "industry": "饲料",
+   "boards": 1,
+   "seal_amt": 4495750.0,
+   "first_seal": "102833",
+   "turnover": 2.4836678504943848
+  },
+  {
+   "code": "600587",
+   "name": "新华医疗",
+   "industry": "医疗器械",
+   "boards": 1,
+   "seal_amt": 22697094.0,
+   "first_seal": "103028",
+   "turnover": 4.10907506942749
+  },
+  {
+   "code": "002022",
+   "name": "科华生物",
+   "industry": "医疗器械",
+   "boards": 1,
+   "seal_amt": 33345148.0,
+   "first_seal": "103157",
+   "turnover": 4.600872039794922
+  },
+  {
+   "code": "002246",
+   "name": "北化股份",
+   "industry": "化学制品",
+   "boards": 1,
+   "seal_amt": 26086687.0,
+   "first_seal": "103221",
+   "turnover": 6.690306186676025
+  },
+  {
+   "code": "600712",
+   "name": "南宁百货",
+   "industry": "一般零售",
+   "boards": 1,
+   "seal_amt": 6444249.0,
+   "first_seal": "103309",
+   "turnover": 13.592668533325195
+  },
+  {
+   "code": "688137",
+   "name": "近岸蛋白",
+   "industry": "生物制品",
+   "boards": 1,
+   "seal_amt": 13614072.0,
+   "first_seal": "103353",
+   "turnover": 13.973736763000488
+  },
+  {
+   "code": "002900",
+   "name": "哈三联",
+   "industry": "化学制药",
+   "boards": 1,
+   "seal_amt": 38878108.0,
+   "first_seal": "103715",
+   "turnover": 12.494973182678223
+  },
+  {
+   "code": "002907",
+   "name": "华森制药",
+   "industry": "中药Ⅱ",
+   "boards": 1,
+   "seal_amt": 35495900.0,
+   "first_seal": "103730",
+   "turnover": 7.1961469650268555
+  },
+  {
+   "code": "300110",
+   "name": "华仁药业",
+   "industry": "化学制药",
+   "boards": 1,
+   "seal_amt": 16658493.0,
+   "first_seal": "103848",
+   "turnover": 15.888304710388184
+  },
+  {
+   "code": "002622",
+   "name": "皓宸医疗",
+   "industry": "医疗服务",
+   "boards": 1,
+   "seal_amt": 16151904.0,
+   "first_seal": "104715",
+   "turnover": 5.435541152954102
+  },
+  {
+   "code": "000566",
+   "name": "海南海药",
+   "industry": "化学制药",
+   "boards": 1,
+   "seal_amt": 99908913.0,
+   "first_seal": "105457",
+   "turnover": 9.976303100585938
+  },
+  {
+   "code": "603819",
+   "name": "神力股份",
+   "industry": "电机Ⅱ",
+   "boards": 1,
+   "seal_amt": 44951108.0,
+   "first_seal": "110035",
+   "turnover": 3.8100054264068604
+  },
+  {
+   "code": "603020",
+   "name": "爱普股份",
+   "industry": "化学制品",
+   "boards": 1,
+   "seal_amt": 27475506.0,
+   "first_seal": "110545",
+   "turnover": 5.783895015716553
+  },
+  {
+   "code": "603395",
+   "name": "红四方",
+   "industry": "农化制品",
+   "boards": 1,
+   "seal_amt": 40708280.0,
+   "first_seal": "110616",
+   "turnover": 25.368186950683594
+  },
+  {
+   "code": "002259",
+   "name": "升达林业",
+   "industry": "燃气Ⅱ",
+   "boards": 1,
+   "seal_amt": 4498304.0,
+   "first_seal": "110703",
+   "turnover": 6.536505222320557
+  },
+  {
+   "code": "600503",
+   "name": "华丽家族",
+   "industry": "房地产开",
+   "boards": 1,
+   "seal_amt": 10089603.0,
+   "first_seal": "111457",
+   "turnover": 5.490908145904541
+  },
+  {
+   "code": "000020",
+   "name": "深华发Ａ",
+   "industry": "光学光电",
+   "boards": 1,
+   "seal_amt": 58725532.0,
+   "first_seal": "111706",
+   "turnover": 7.413936138153076
+  },
+  {
+   "code": "600606",
+   "name": "绿地控股",
+   "industry": "房地产开",
+   "boards": 2,
+   "seal_amt": 82124505.0,
+   "first_seal": "111805",
+   "turnover": 3.957540273666382
+  },
+  {
+   "code": "601579",
+   "name": "会稽山",
+   "industry": "非白酒",
+   "boards": 2,
+   "seal_amt": 56376059.0,
+   "first_seal": "111848",
+   "turnover": 7.1902995109558105
+  },
+  {
+   "code": "300829",
+   "name": "金丹科技",
+   "industry": "化学制品",
+   "boards": 1,
+   "seal_amt": 57243255.0,
+   "first_seal": "130051",
+   "turnover": 19.393888473510742
+  },
+  {
+   "code": "000995",
+   "name": "皇台酒业",
+   "industry": "白酒Ⅱ",
+   "boards": 1,
+   "seal_amt": 13035747.0,
+   "first_seal": "130109",
+   "turnover": 6.3530378341674805
+  },
+  {
+   "code": "603958",
+   "name": "哈森股份",
+   "industry": "服装家纺",
+   "boards": 1,
+   "seal_amt": 22964337.0,
+   "first_seal": "130455",
+   "turnover": 9.702284812927246
+  },
+  {
+   "code": "000560",
+   "name": "我爱我家",
+   "industry": "房地产服",
+   "boards": 1,
+   "seal_amt": 59156364.0,
+   "first_seal": "130630",
+   "turnover": 18.57851791381836
+  },
+  {
+   "code": "002963",
+   "name": "豪尔赛",
+   "industry": "装修装饰",
+   "boards": 1,
+   "seal_amt": 9853272.0,
+   "first_seal": "130757",
+   "turnover": 6.497509956359863
+  },
+  {
+   "code": "600857",
+   "name": "宁波中百",
+   "industry": "一般零售",
+   "boards": 1,
+   "seal_amt": 16951157.0,
+   "first_seal": "130847",
+   "turnover": 3.6823172569274902
+  },
+  {
+   "code": "001201",
+   "name": "东瑞股份",
+   "industry": "养殖业",
+   "boards": 1,
+   "seal_amt": 9876094.0,
+   "first_seal": "131033",
+   "turnover": 7.893470764160156
+  },
+  {
+   "code": "605196",
+   "name": "华通线缆",
+   "industry": "电网设备",
+   "boards": 1,
+   "seal_amt": 50277310.0,
+   "first_seal": "131649",
+   "turnover": 3.5453031063079834
+  },
+  {
+   "code": "002285",
+   "name": "世联行",
+   "industry": "房地产服",
+   "boards": 4,
+   "seal_amt": 42228174.0,
+   "first_seal": "131706",
+   "turnover": 14.727672576904297
+  },
+  {
+   "code": "600325",
+   "name": "华发股份",
+   "industry": "房地产开",
+   "boards": 1,
+   "seal_amt": 30790032.0,
+   "first_seal": "132207",
+   "turnover": 5.845544338226318
+  },
+  {
+   "code": "603175",
+   "name": "超颖电子",
+   "industry": "元件",
+   "boards": 1,
+   "seal_amt": 16106854.0,
+   "first_seal": "132517",
+   "turnover": 7.475667476654053
+  },
+  {
+   "code": "300691",
+   "name": "联合光电",
+   "industry": "计算机设",
+   "boards": 1,
+   "seal_amt": 41118147.0,
+   "first_seal": "132939",
+   "turnover": 13.562077522277832
+  },
+  {
+   "code": "000402",
+   "name": "金 融 街",
+   "industry": "房地产开",
+   "boards": 1,
+   "seal_amt": 4942580.0,
+   "first_seal": "134115",
+   "turnover": 5.56489372253418
+  },
+  {
+   "code": "002795",
+   "name": "永和智控",
+   "industry": "通用设备",
+   "boards": 1,
+   "seal_amt": 3537600.0,
+   "first_seal": "134415",
+   "turnover": 11.264263153076172
+  },
+  {
+   "code": "920427",
+   "name": "华维设计",
+   "industry": "工程咨询",
+   "boards": 1,
+   "seal_amt": 7773458.0,
+   "first_seal": "135557",
+   "turnover": 23.28386878967285
+  },
+  {
+   "code": "002755",
+   "name": "奥赛康",
+   "industry": "化学制药",
+   "boards": 1,
+   "seal_amt": 2714100.0,
+   "first_seal": "140527",
+   "turnover": 3.839303731918335
+  },
+  {
+   "code": "605566",
+   "name": "福莱蒽特",
+   "industry": "化学制品",
+   "boards": 1,
+   "seal_amt": 17588232.0,
+   "first_seal": "141038",
+   "turnover": 4.944652557373047
+  },
+  {
+   "code": "002042",
+   "name": "华孚时尚",
+   "industry": "纺织制造",
+   "boards": 1,
+   "seal_amt": 128625591.0,
+   "first_seal": "143415",
+   "turnover": 4.893783092498779
+  },
+  {
+   "code": "603093",
+   "name": "南华期货",
+   "industry": "多元金融",
+   "boards": 1,
+   "seal_amt": 40152712.0,
+   "first_seal": "143714",
+   "turnover": 3.06211519241333
+  },
+  {
+   "code": "000532",
+   "name": "华金资本",
+   "industry": "多元金融",
+   "boards": 2,
+   "seal_amt": 79140105.0,
+   "first_seal": "143748",
+   "turnover": 16.38212013244629
+  }
+ ],
+ "broken": [
+  {
+   "code": "003040",
+   "name": "楚天龙",
+   "industry": "通信设备",
+   "chg": 5.6776556968688965
+  },
+  {
+   "code": "603727",
+   "name": "博迈科",
+   "industry": "油服工程",
+   "chg": 6.25
+  },
+  {
+   "code": "600707",
+   "name": "彩虹股份",
+   "industry": "光学光电",
+   "chg": 6.601731300354004
+  },
+  {
+   "code": "605068",
+   "name": "明新旭腾",
+   "industry": "汽车零部",
+   "chg": 8.037094116210938
+  },
+  {
+   "code": "600869",
+   "name": "远东股份",
+   "industry": "电网设备",
+   "chg": 7.146193027496338
+  },
+  {
+   "code": "000559",
+   "name": "万向钱潮",
+   "industry": "汽车零部",
+   "chg": 6.352087020874023
+  },
+  {
+   "code": "600391",
+   "name": "航发科技",
+   "industry": "航空装备",
+   "chg": 6.289614677429199
+  },
+  {
+   "code": "301008",
+   "name": "宏昌科技",
+   "industry": "家电零部",
+   "chg": 15.21787166595459
+  },
+  {
+   "code": "002623",
+   "name": "亚玛顿",
+   "industry": "光伏设备",
+   "chg": 7.073434352874756
+  },
+  {
+   "code": "002094",
+   "name": "青岛金王",
+   "industry": "家居用品",
+   "chg": 7.2265625
+  },
+  {
+   "code": "001282",
+   "name": "三联锻造",
+   "industry": "汽车零部",
+   "chg": 5.330764293670654
+  },
+  {
+   "code": "000070",
+   "name": "特发信息",
+   "industry": "通信设备",
+   "chg": 7.231638431549072
+  },
+  {
+   "code": "600308",
+   "name": "华泰股份",
+   "industry": "造纸",
+   "chg": 6.211180210113525
+  },
+  {
+   "code": "600303",
+   "name": "曙光股份",
+   "industry": "商用车",
+   "chg": 5.3691277503967285
+  },
+  {
+   "code": "300426",
+   "name": "华智数媒",
+   "industry": "影视院线",
+   "chg": 13.915416717529297
+  },
+  {
+   "code": "600675",
+   "name": "中华企业",
+   "industry": "房地产开",
+   "chg": 6.060606002807617
+  },
+  {
+   "code": "002169",
+   "name": "智光电气",
+   "industry": "电网设备",
+   "chg": 9.157509803771973
+  },
+  {
+   "code": "600383",
+   "name": "金地集团",
+   "industry": "房地产开",
+   "chg": 9.777777671813965
+  },
+  {
+   "code": "000002",
+   "name": "万  科Ａ",
+   "industry": "房地产开",
+   "chg": 9.939759254455566
+  },
+  {
+   "code": "603351",
+   "name": "威尔药业",
+   "industry": "化学制药",
+   "chg": 7.9778828620910645
+  },
+  {
+   "code": "002482",
+   "name": "广田集团",
+   "industry": "装修装饰",
+   "chg": 5.223880767822266
+  },
+  {
+   "code": "002199",
+   "name": "东晶电子",
+   "industry": "元件",
+   "chg": 5.2419352531433105
+  },
+  {
+   "code": "603997",
+   "name": "继峰股份",
+   "industry": "汽车零部",
+   "chg": 9.307876586914062
+  },
+  {
+   "code": "000823",
+   "name": "超声电子",
+   "industry": "元件",
+   "chg": 7.784431457519531
+  },
+  {
+   "code": "002909",
+   "name": "集泰股份",
+   "industry": "化学制品",
+   "chg": 5.855161666870117
+  }
+ ],
+ "money_effect": {
+  "prev_zt_count": 78,
+  "promote_count": 21,
+  "promote_rate": 26.9,
+  "premium_median": 1.65,
+  "premium_mean": 3.23,
+  "red_ratio": 67.9
+ },
+ "newhigh": {
+  "window": 20,
+  "date": "2026-09-21",
+  "hs300_newhigh": 23,
+  "hs300_total": 300,
+  "hs300_pct": 7.7,
+  "csi2000_newhigh": 386,
+  "csi2000_total": 2000,
+  "csi2000_pct": 19.3,
+  "lean": "小票占优"
+ },
+ "basis": {
+  "IF": {
+   "合约": "IF2610",
+   "品种": "沪深300",
+   "现货": 4539.56,
+   "期货": 4520.0,
+   "基差": -19.56,
+   "基差率": -0.43,
+   "距交割": 25
+  },
+  "IC": {
+   "合约": "IC2610",
+   "品种": "中证500",
+   "现货": 7850.48,
+   "期货": 7797.4,
+   "基差": -53.08,
+   "基差率": -0.68,
+   "距交割": 25
+  },
+  "IM": {
+   "合约": "IM2610",
+   "品种": "中证1000",
+   "现货": 7766.34,
+   "期货": 7702.8,
+   "基差": -63.53,
+   "基差率": -0.82,
+   "距交割": 25
+  }
+ },
+ "etf": {
+  "日期": "2026-09-21",
+  "滞后": false,
+  "etfs": [
+   {
+    "symbol": "sh510300",
+    "名称": "沪深300ETF",
+    "日期": "2026-09-21",
+    "成交量": 570203884,
+    "近20日均量": 696069113,
+    "倍数": 0.82,
+    "异常": false
+   },
+   {
+    "symbol": "sh510050",
+    "名称": "上证50ETF",
+    "日期": "2026-09-21",
+    "成交量": 611346601,
+    "近20日均量": 478890523,
+    "倍数": 1.28,
+    "异常": false
+   },
+   {
+    "symbol": "sz159915",
+    "名称": "创业板ETF",
+    "日期": "2026-09-21",
+    "成交量": 1513054639,
+    "近20日均量": 1583431801,
+    "倍数": 0.96,
+    "异常": false
+   }
+  ],
+  "异常数": 0,
+  "解读": "无异常放量"
+ },
+ "market": {
+  "up": 4216.0,
+  "down": 914.0,
+  "flat": 79.0,
+  "limit_up": 104.0,
+  "real_limit_up": 96.0,
+  "limit_down": 3.0,
+  "real_limit_down": 3.0,
+  "activity": 80.75,
+  "date": "2026-09-21"
+ },
+ "industry_ths": [
+  {
+   "name": "医疗服务",
+   "pct": 5.1,
+   "net_inflow": 12.52,
+   "up": 55,
+   "down": 1,
+   "leader": "诺禾致源",
+   "leader_pct": 20.0
+  },
+  {
+   "name": "化学制药",
+   "pct": 4.67,
+   "net_inflow": 44.14,
+   "up": 154,
+   "down": 4,
+   "leader": "峆一药业",
+   "leader_pct": 29.91
+  },
+  {
+   "name": "生物制品",
+   "pct": 4.64,
+   "net_inflow": 15.45,
+   "up": 55,
+   "down": 1,
+   "leader": "近岸蛋白",
+   "leader_pct": 20.0
+  },
+  {
+   "name": "房地产",
+   "pct": 3.68,
+   "net_inflow": 33.55,
+   "up": 80,
+   "down": 6,
+   "leader": "绿地控股",
+   "leader_pct": 10.35
+  },
+  {
+   "name": "医疗器械",
+   "pct": 3.43,
+   "net_inflow": 10.91,
+   "up": 131,
+   "down": 8,
+   "leader": "透景生命",
+   "leader_pct": 19.99
+  },
+  {
+   "name": "农产品加工",
+   "pct": 3.31,
+   "net_inflow": 6.39,
+   "up": 41,
+   "down": 2,
+   "leader": "乖宝宠物",
+   "leader_pct": 11.0
+  },
+  {
+   "name": "中药",
+   "pct": 3.26,
+   "net_inflow": 15.2,
+   "up": 66,
+   "down": 2,
+   "leader": "华森制药",
+   "leader_pct": 10.03
+  },
+  {
+   "name": "油气开采及服务",
+   "pct": 2.91,
+   "net_inflow": 7.76,
+   "up": 17,
+   "down": 1,
+   "leader": "海油工程",
+   "leader_pct": 7.76
+  },
+  {
+   "name": "零售",
+   "pct": 2.91,
+   "net_inflow": 7.91,
+   "up": 69,
+   "down": 2,
+   "leader": "南宁百货",
+   "leader_pct": 10.09
+  },
+  {
+   "name": "旅游及酒店",
+   "pct": 2.83,
+   "net_inflow": 4.19,
+   "up": 35,
+   "down": 0,
+   "leader": "大连圣亚",
+   "leader_pct": 10.01
+  },
+  {
+   "name": "医药商业",
+   "pct": 2.81,
+   "net_inflow": 2.67,
+   "up": 30,
+   "down": 2,
+   "leader": "瑞康医药",
+   "leader_pct": 10.09
+  },
+  {
+   "name": "美容护理",
+   "pct": 2.69,
+   "net_inflow": 0.6,
+   "up": 33,
+   "down": 1,
+   "leader": "可靠股份",
+   "leader_pct": 4.91
+  },
+  {
+   "name": "种植业与林业",
+   "pct": 2.68,
+   "net_inflow": 2.21,
+   "up": 28,
+   "down": 2,
+   "leader": "华绿生物",
+   "leader_pct": 9.73
+  },
+  {
+   "name": "白酒",
+   "pct": 2.5,
+   "net_inflow": -2.16,
+   "up": 18,
+   "down": 1,
+   "leader": "皇台酒业",
+   "leader_pct": 9.96
+  },
+  {
+   "name": "家居用品",
+   "pct": 2.48,
+   "net_inflow": 1.11,
+   "up": 84,
+   "down": 14,
+   "leader": "先锋新材",
+   "leader_pct": 10.22
+  },
+  {
+   "name": "化学制品",
+   "pct": 2.47,
+   "net_inflow": -3.95,
+   "up": 164,
+   "down": 15,
+   "leader": "金丹科技",
+   "leader_pct": 20.02
+  },
+  {
+   "name": "养殖业",
+   "pct": 2.46,
+   "net_inflow": 4.07,
+   "up": 34,
+   "down": 2,
+   "leader": "华英农业",
+   "leader_pct": 10.05
+  },
+  {
+   "name": "化学原料",
+   "pct": 2.45,
+   "net_inflow": 6.5,
+   "up": 52,
+   "down": 5,
+   "leader": "金瑞矿业",
+   "leader_pct": 10.0
+  },
+  {
+   "name": "农化制品",
+   "pct": 2.45,
+   "net_inflow": 12.97,
+   "up": 61,
+   "down": 0,
+   "leader": "红四方",
+   "leader_pct": 10.01
+  },
+  {
+   "name": "饮料制造",
+   "pct": 2.43,
+   "net_inflow": 5.02,
+   "up": 46,
+   "down": 1,
+   "leader": "会稽山",
+   "leader_pct": 9.99
+  },
+  {
+   "name": "影视院线",
+   "pct": 2.42,
+   "net_inflow": 6.11,
+   "up": 18,
+   "down": 2,
+   "leader": "华智数媒",
+   "leader_pct": 13.91
+  },
+  {
+   "name": "多元金融",
+   "pct": 2.41,
+   "net_inflow": 1.71,
+   "up": 21,
+   "down": 4,
+   "leader": "华金资本",
+   "leader_pct": 10.03
+  },
+  {
+   "name": "软件开发",
+   "pct": 2.4,
+   "net_inflow": 12.2,
+   "up": 126,
+   "down": 12,
+   "leader": "绿盟科技",
+   "leader_pct": 13.69
+  },
+  {
+   "name": "元件",
+   "pct": 2.4,
+   "net_inflow": -7.1,
+   "up": 47,
+   "down": 16,
+   "leader": "迅捷兴",
+   "leader_pct": 12.61
+  },
+  {
+   "name": "煤炭开采加工",
+   "pct": 2.39,
+   "net_inflow": 13.54,
+   "up": 33,
+   "down": 1,
+   "leader": "广汇能源",
+   "leader_pct": 5.21
+  },
+  {
+   "name": "化学纤维",
+   "pct": 2.38,
+   "net_inflow": 3.42,
+   "up": 27,
+   "down": 1,
+   "leader": "汇隆新材",
+   "leader_pct": 11.7
+  },
+  {
+   "name": "教育",
+   "pct": 2.28,
+   "net_inflow": 2.92,
+   "up": 13,
+   "down": 2,
+   "leader": "ST豆神",
+   "leader_pct": 7.66
+  },
+  {
+   "name": "建筑材料",
+   "pct": 2.25,
+   "net_inflow": 1.74,
+   "up": 66,
+   "down": 6,
+   "leader": "中材科技",
+   "leader_pct": 10.0
+  },
+  {
+   "name": "非金属材料",
+   "pct": 2.25,
+   "net_inflow": -4.56,
+   "up": 13,
+   "down": 4,
+   "leader": "金戈新材",
+   "leader_pct": 10.95
+  },
+  {
+   "name": "服装家纺",
+   "pct": 2.24,
+   "net_inflow": -2.31,
+   "up": 61,
+   "down": 11,
+   "leader": "泰慕士",
+   "leader_pct": 10.01
+  },
+  {
+   "name": "物流",
+   "pct": 2.23,
+   "net_inflow": 3.53,
+   "up": 47,
+   "down": 2,
+   "leader": "三羊马",
+   "leader_pct": 10.0
+  },
+  {
+   "name": "纺织制造",
+   "pct": 2.22,
+   "net_inflow": -1.54,
+   "up": 26,
+   "down": 7,
+   "leader": "华孚时尚",
+   "leader_pct": 9.9
+  },
+  {
+   "name": "塑料制品",
+   "pct": 2.14,
+   "net_inflow": -0.57,
+   "up": 65,
+   "down": 12,
+   "leader": "海正生材",
+   "leader_pct": 10.64
+  },
+  {
+   "name": "小金属",
+   "pct": 2.02,
+   "net_inflow": -11.52,
+   "up": 25,
+   "down": 5,
+   "leader": "华锡有色",
+   "leader_pct": 9.99
+  },
+  {
+   "name": "食品加工制造",
+   "pct": 1.97,
+   "net_inflow": 1.17,
+   "up": 57,
+   "down": 7,
+   "leader": "ST交昂",
+   "leader_pct": 7.24
+  },
+  {
+   "name": "轨交设备",
+   "pct": 1.97,
+   "net_inflow": 2.2,
+   "up": 27,
+   "down": 2,
+   "leader": "通业科技",
+   "leader_pct": 10.24
+  },
+  {
+   "name": "石油加工贸易",
+   "pct": 1.96,
+   "net_inflow": 8.55,
+   "up": 25,
+   "down": 2,
+   "leader": "华锦股份",
+   "leader_pct": 6.48
+  },
+  {
+   "name": "光学光电子",
+   "pct": 1.96,
+   "net_inflow": 1.2,
+   "up": 85,
+   "down": 19,
+   "leader": "深华发A",
+   "leader_pct": 10.03
+  },
+  {
+   "name": "军工装备",
+   "pct": 1.95,
+   "net_inflow": 9.58,
+   "up": 71,
+   "down": 9,
+   "leader": "隆达股份",
+   "leader_pct": 10.77
+  },
+  {
+   "name": "小家电",
+   "pct": 1.94,
+   "net_inflow": 0.94,
+   "up": 19,
+   "down": 4,
+   "leader": "奥佳华",
+   "leader_pct": 10.04
+  },
+  {
+   "name": "消费电子",
+   "pct": 1.93,
+   "net_inflow": -0.53,
+   "up": 77,
+   "down": 19,
+   "leader": "福立旺",
+   "leader_pct": 13.17
+  },
+  {
+   "name": "燃气",
+   "pct": 1.91,
+   "net_inflow": 1.7,
+   "up": 26,
+   "down": 1,
+   "leader": "升达林业",
+   "leader_pct": 9.98
+  },
+  {
+   "name": "其他社会服务",
+   "pct": 1.9,
+   "net_inflow": 1.88,
+   "up": 37,
+   "down": 5,
+   "leader": "锋尚文化",
+   "leader_pct": 12.8
+  },
+  {
+   "name": "电机",
+   "pct": 1.86,
+   "net_inflow": 0.72,
+   "up": 24,
+   "down": 2,
+   "leader": "神力股份",
+   "leader_pct": 10.03
+  },
+  {
+   "name": "包装印刷",
+   "pct": 1.86,
+   "net_inflow": -1.52,
+   "up": 37,
+   "down": 6,
+   "leader": "美盈森",
+   "leader_pct": 10.0
+  },
+  {
+   "name": "文化传媒",
+   "pct": 1.81,
+   "net_inflow": -4.02,
+   "up": 72,
+   "down": 11,
+   "leader": "内蒙新华",
+   "leader_pct": 10.02
+  },
+  {
+   "name": "建筑装饰",
+   "pct": 1.81,
+   "net_inflow": 6.13,
+   "up": 121,
+   "down": 20,
+   "leader": "华维设计",
+   "leader_pct": 29.92
+  },
+  {
+   "name": "通信设备",
+   "pct": 1.77,
+   "net_inflow": -21.11,
+   "up": 71,
+   "down": 20,
+   "leader": "坤恒顺维",
+   "leader_pct": 12.88
+  },
+  {
+   "name": "金属新材料",
+   "pct": 1.77,
+   "net_inflow": 1.6,
+   "up": 31,
+   "down": 3,
+   "leader": "深圳新星",
+   "leader_pct": 8.15
+  },
+  {
+   "name": "计算机设备",
+   "pct": 1.76,
+   "net_inflow": -4.04,
+   "up": 66,
+   "down": 16,
+   "leader": "联合光电",
+   "leader_pct": 20.0
+  },
+  {
+   "name": "橡胶制品",
+   "pct": 1.75,
+   "net_inflow": -0.85,
+   "up": 17,
+   "down": 5,
+   "leader": "三维股份",
+   "leader_pct": 7.79
+  },
+  {
+   "name": "互联网电商",
+   "pct": 1.74,
+   "net_inflow": 11.73,
+   "up": 17,
+   "down": 3,
+   "leader": "行云科技",
+   "leader_pct": 8.55
+  },
+  {
+   "name": "通用设备",
+   "pct": 1.74,
+   "net_inflow": -14.77,
+   "up": 205,
+   "down": 47,
+   "leader": "鼎阳科技",
+   "leader_pct": 20.0
+  },
+  {
+   "name": "贸易",
+   "pct": 1.73,
+   "net_inflow": 1.2,
+   "up": 13,
+   "down": 1,
+   "leader": "苏豪弘业",
+   "leader_pct": 3.51
+  },
+  {
+   "name": "港口航运",
+   "pct": 1.71,
+   "net_inflow": 12.7,
+   "up": 32,
+   "down": 1,
+   "leader": "宁波远洋",
+   "leader_pct": 4.92
+  },
+  {
+   "name": "汽车零部件",
+   "pct": 1.71,
+   "net_inflow": 4.41,
+   "up": 222,
+   "down": 48,
+   "leader": "德尔股份",
+   "leader_pct": 14.29
+  },
+  {
+   "name": "能源金属",
+   "pct": 1.65,
+   "net_inflow": -2.52,
+   "up": 12,
+   "down": 1,
+   "leader": "*ST威领",
+   "leader_pct": 9.98
+  },
+  {
+   "name": "游戏",
+   "pct": 1.62,
+   "net_inflow": 2.11,
+   "up": 21,
+   "down": 2,
+   "leader": "电魂网络",
+   "leader_pct": 10.0
+  },
+  {
+   "name": "汽车服务及其他",
+   "pct": 1.6,
+   "net_inflow": 2.07,
+   "up": 25,
+   "down": 1,
+   "leader": "春风动力",
+   "leader_pct": 5.25
+  },
+  {
+   "name": "军工电子",
+   "pct": 1.58,
+   "net_inflow": -2.82,
+   "up": 50,
+   "down": 11,
+   "leader": "观想科技",
+   "leader_pct": 14.07
+  },
+  {
+   "name": "造纸",
+   "pct": 1.57,
+   "net_inflow": -0.15,
+   "up": 20,
+   "down": 4,
+   "leader": "华泰股份",
+   "leader_pct": 6.21
+  },
+  {
+   "name": "通信服务",
+   "pct": 1.51,
+   "net_inflow": -3.37,
+   "up": 35,
+   "down": 6,
+   "leader": "华星创业",
+   "leader_pct": 8.55
+  },
+  {
+   "name": "专用设备",
+   "pct": 1.5,
+   "net_inflow": -27.18,
+   "up": 158,
+   "down": 45,
+   "leader": "*ST卓然",
+   "leader_pct": 20.0
+  },
+  {
+   "name": "IT服务",
+   "pct": 1.5,
+   "net_inflow": -7.1,
+   "up": 104,
+   "down": 23,
+   "leader": "南威软件",
+   "leader_pct": 9.97
+  },
+  {
+   "name": "综合",
+   "pct": 1.49,
+   "net_inflow": 0.38,
+   "up": 13,
+   "down": 5,
+   "leader": "南京新百",
+   "leader_pct": 7.18
+  },
+  {
+   "name": "其他电子",
+   "pct": 1.47,
+   "net_inflow": -10.71,
+   "up": 21,
+   "down": 12,
+   "leader": "富信科技",
+   "leader_pct": 12.51
+  },
+  {
+   "name": "厨卫电器",
+   "pct": 1.46,
+   "net_inflow": 0.38,
+   "up": 7,
+   "down": 2,
+   "leader": "日出东方",
+   "leader_pct": 4.9
+  },
+  {
+   "name": "白色家电",
+   "pct": 1.45,
+   "net_inflow": -8.0,
+   "up": 36,
+   "down": 7,
+   "leader": "宏昌科技",
+   "leader_pct": 15.22
+  },
+  {
+   "name": "钢铁",
+   "pct": 1.42,
+   "net_inflow": 2.37,
+   "up": 38,
+   "down": 4,
+   "leader": "马矿股份",
+   "leader_pct": 10.01
+  },
+  {
+   "name": "证券",
+   "pct": 1.41,
+   "net_inflow": 22.15,
+   "up": 47,
+   "down": 0,
+   "leader": "湘财股份",
+   "leader_pct": 4.61
+  },
+  {
+   "name": "电网设备",
+   "pct": 1.37,
+   "net_inflow": 0.48,
+   "up": 114,
+   "down": 20,
+   "leader": "华通线缆",
+   "leader_pct": 10.01
+  },
+  {
+   "name": "环境治理",
+   "pct": 1.21,
+   "net_inflow": 0.57,
+   "up": 91,
+   "down": 20,
+   "leader": "清水源",
+   "leader_pct": 6.45
+  },
+  {
+   "name": "工程机械",
+   "pct": 1.2,
+   "net_inflow": -0.82,
+   "up": 29,
+   "down": 5,
+   "leader": "福事特",
+   "leader_pct": 7.15
+  },
+  {
+   "name": "光伏设备",
+   "pct": 1.12,
+   "net_inflow": -4.6,
+   "up": 56,
+   "down": 16,
+   "leader": "海优新材",
+   "leader_pct": 7.26
+  },
+  {
+   "name": "环保设备",
+   "pct": 1.04,
+   "net_inflow": -1.19,
+   "up": 22,
+   "down": 7,
+   "leader": "碧兴物联",
+   "leader_pct": 7.31
+  },
+  {
+   "name": "机场航运",
+   "pct": 1.02,
+   "net_inflow": 2.58,
+   "up": 13,
+   "down": 0,
+   "leader": "深圳机场",
+   "leader_pct": 2.94
+  },
+  {
+   "name": "保险",
+   "pct": 0.98,
+   "net_inflow": -0.45,
+   "up": 4,
+   "down": 1,
+   "leader": "中国人保",
+   "leader_pct": 2.81
+  },
+  {
+   "name": "其他电源设备",
+   "pct": 0.85,
+   "net_inflow": -6.55,
+   "up": 22,
+   "down": 12,
+   "leader": "英可瑞",
+   "leader_pct": 7.12
+  },
+  {
+   "name": "自动化设备",
+   "pct": 0.63,
+   "net_inflow": -22.48,
+   "up": 59,
+   "down": 40,
+   "leader": "均普智能",
+   "leader_pct": 9.29
+  },
+  {
+   "name": "汽车整车",
+   "pct": 0.62,
+   "net_inflow": 3.34,
+   "up": 13,
+   "down": 7,
+   "leader": "曙光股份",
+   "leader_pct": 5.37
+  },
+  {
+   "name": "工业金属",
+   "pct": 0.45,
+   "net_inflow": -23.52,
+   "up": 34,
+   "down": 19,
+   "leader": "闽发铝业",
+   "leader_pct": 6.85
+  },
+  {
+   "name": "公路铁路运输",
+   "pct": 0.42,
+   "net_inflow": 0.68,
+   "up": 21,
+   "down": 9,
+   "leader": "江西长运",
+   "leader_pct": 2.45
+  },
+  {
+   "name": "电力",
+   "pct": 0.38,
+   "net_inflow": -6.62,
+   "up": 62,
+   "down": 40,
+   "leader": "百通能源",
+   "leader_pct": 10.03
+  },
+  {
+   "name": "电子化学品",
+   "pct": 0.28,
+   "net_inflow": -24.27,
+   "up": 22,
+   "down": 20,
+   "leader": "德邦科技",
+   "leader_pct": 8.8
+  },
+  {
+   "name": "黑色家电",
+   "pct": 0.24,
+   "net_inflow": 0.16,
+   "up": 6,
+   "down": 2,
+   "leader": "兆驰股份",
+   "leader_pct": 1.59
+  },
+  {
+   "name": "半导体",
+   "pct": 0.23,
+   "net_inflow": -109.36,
+   "up": 97,
+   "down": 91,
+   "leader": "诚邦股份",
+   "leader_pct": 10.01
+  },
+  {
+   "name": "银行",
+   "pct": 0.21,
+   "net_inflow": 13.3,
+   "up": 21,
+   "down": 15,
+   "leader": "农业银行",
+   "leader_pct": 1.47
+  },
+  {
+   "name": "风电设备",
+   "pct": 0.17,
+   "net_inflow": -7.91,
+   "up": 17,
+   "down": 15,
+   "leader": "振江股份",
+   "leader_pct": 9.42
+  },
+  {
+   "name": "电池",
+   "pct": 0.12,
+   "net_inflow": -46.09,
+   "up": 52,
+   "down": 55,
+   "leader": "信德新材",
+   "leader_pct": 8.39
+  },
+  {
+   "name": "贵金属",
+   "pct": -1.45,
+   "net_inflow": -15.1,
+   "up": 1,
+   "down": 13,
+   "leader": "招金黄金",
+   "leader_pct": 0.59
+  }
+ ],
+ "concept_sina": [
+  {
+   "name": "华为汽车",
+   "n": 96,
+   "pct": 1.0045875892773,
+   "amount_yi": 3833797.4,
+   "leader": "德尔股份",
+   "leader_pct": 14.286
+  },
+  {
+   "name": "BC电池",
+   "n": 26,
+   "pct": -0.63212761885463,
+   "amount_yi": 1508895.5,
+   "leader": "永和智控",
+   "leader_pct": 9.986
+  },
+  {
+   "name": "华为海思",
+   "n": 36,
+   "pct": -0.43828029887088,
+   "amount_yi": 4736273.5,
+   "leader": "宁水集团",
+   "leader_pct": 4.826
+  },
+  {
+   "name": "高压快充",
+   "n": 53,
+   "pct": 0.3334185824027,
+   "amount_yi": 1743224.9,
+   "leader": "英可瑞",
+   "leader_pct": 7.115
+  },
+  {
+   "name": "华为鸿蒙",
+   "n": 47,
+   "pct": 1.9374087475402,
+   "amount_yi": 1404651.3,
+   "leader": "金溢科技",
+   "leader_pct": 10.006
+  },
+  {
+   "name": "创新药",
+   "n": 100,
+   "pct": 4.5946525793422,
+   "amount_yi": 5537060.5,
+   "leader": "亚虹医药",
+   "leader_pct": 15.984
+  },
+  {
+   "name": "钙钛矿",
+   "n": 37,
+   "pct": 0.050382843315987,
+   "amount_yi": 2385884.6,
+   "leader": "科恒股份",
+   "leader_pct": 5.219
+  },
+  {
+   "name": "核污防治",
+   "n": 26,
+   "pct": 3.579682880946,
+   "amount_yi": 542148.2,
+   "leader": "北化股份",
+   "leader_pct": 10.008
+  },
+  {
+   "name": "恒大概念",
+   "n": 47,
+   "pct": 1.3868982379226,
+   "amount_yi": 1154742.4,
+   "leader": "超达装备",
+   "leader_pct": 8.004
+  },
+  {
+   "name": "鸡肉",
+   "n": 22,
+   "pct": 2.148746564504,
+   "amount_yi": 388814.6,
+   "leader": "华英农业",
+   "leader_pct": 10.048
+  },
+  {
+   "name": "电解液",
+   "n": 28,
+   "pct": 1.124402279359,
+   "amount_yi": 1296107.8,
+   "leader": "深圳新星",
+   "leader_pct": 8.151
+  },
+  {
+   "name": "锂矿",
+   "n": 43,
+   "pct": 1.0351545204994,
+   "amount_yi": 2778451.1,
+   "leader": "*ST威领",
+   "leader_pct": 9.98
+  },
+  {
+   "name": "TOPCon",
+   "n": 33,
+   "pct": 0.11002378153787,
+   "amount_yi": 1881460.2,
+   "leader": "星帅尔",
+   "leader_pct": 9.988
+  },
+  {
+   "name": "钒电池",
+   "n": 27,
+   "pct": 1.3061851709566,
+   "amount_yi": 806496.5,
+   "leader": "智光电气",
+   "leader_pct": 9.158
+  },
+  {
+   "name": "风电",
+   "n": 100,
+   "pct": 0.76092470468875,
+   "amount_yi": 6010900.3,
+   "leader": "神力股份",
+   "leader_pct": 10.032
+  },
+  {
+   "name": "碳中和",
+   "n": 100,
+   "pct": 1.9292768614374,
+   "amount_yi": 2443351.9,
+   "leader": "诚邦股份",
+   "leader_pct": 10.006
+  },
+  {
+   "name": "大飞机",
+   "n": 80,
+   "pct": 1.2476289542924,
+   "amount_yi": 2699033.2,
+   "leader": "爱乐达",
+   "leader_pct": 6.65
+  },
+  {
+   "name": "专精特新",
+   "n": 100,
+   "pct": 0.87285927148425,
+   "amount_yi": 3844956.7,
+   "leader": "洁特生物",
+   "leader_pct": 19.981
+  },
+  {
+   "name": "CXO概念",
+   "n": 24,
+   "pct": 4.0887640353206,
+   "amount_yi": 2796131.8,
+   "leader": "成都先导",
+   "leader_pct": 13.785
+  },
+  {
+   "name": "光伏",
+   "n": 100,
+   "pct": 1.2231063955202,
+   "amount_yi": 4682713.9,
+   "leader": "振江股份",
+   "leader_pct": 9.422
+  },
+  {
+   "name": "钠电池",
+   "n": 18,
+   "pct": -0.74500128172264,
+   "amount_yi": 2288949.4,
+   "leader": "中国长城",
+   "leader_pct": 5.099
+  },
+  {
+   "name": "鸿蒙概念",
+   "n": 20,
+   "pct": 1.6843523665151,
+   "amount_yi": 688247.9,
+   "leader": "华软科技",
+   "leader_pct": 9.925
+  },
+  {
+   "name": "盐湖提锂",
+   "n": 23,
+   "pct": 0.90460526315789,
+   "amount_yi": 1329216.5,
+   "leader": "东华科技",
+   "leader_pct": 5.441
+  },
+  {
+   "name": "固态电池",
+   "n": 28,
+   "pct": -0.023943629854286,
+   "amount_yi": 2651084.6,
+   "leader": "德尔股份",
+   "leader_pct": 14.286
+  },
+  {
+   "name": "HIT电池",
+   "n": 29,
+   "pct": 0.6874732228191,
+   "amount_yi": 1331614.9,
+   "leader": "星帅尔",
+   "leader_pct": 9.988
+  },
+  {
+   "name": "三板精选",
+   "n": 13,
+   "pct": 1.5988008993255,
+   "amount_yi": 338236.4,
+   "leader": "精华制药",
+   "leader_pct": 9.975
+  },
+  {
+   "name": "CRO概念",
+   "n": 19,
+   "pct": 4.1946157767937,
+   "amount_yi": 2571459.7,
+   "leader": "成都先导",
+   "leader_pct": 13.785
+  },
+  {
+   "name": "白酒概念",
+   "n": 38,
+   "pct": 0.46730587787806,
+   "amount_yi": 978533.9,
+   "leader": "天音控股",
+   "leader_pct": 10.023
+  },
+  {
+   "name": "碳交易",
+   "n": 27,
+   "pct": 0.99316183653533,
+   "amount_yi": 1034533.6,
+   "leader": "金 融 街",
+   "leader_pct": 9.921
+  },
+  {
+   "name": "科创50",
+   "n": 50,
+   "pct": 0.69306930693069,
+   "amount_yi": 3157805.1,
+   "leader": "热景生物",
+   "leader_pct": 8.872
+  },
+  {
+   "name": "光伏概念",
+   "n": 100,
+   "pct": 0.52849315269454,
+   "amount_yi": 4753167.1,
+   "leader": "振江股份",
+   "leader_pct": 9.422
+  },
+  {
+   "name": "无线耳机",
+   "n": 39,
+   "pct": 0.56828182755413,
+   "amount_yi": 4980995.6,
+   "leader": "博通集成",
+   "leader_pct": 9.998
+  },
+  {
+   "name": "水产品",
+   "n": 9,
+   "pct": 1.7278617710583,
+   "amount_yi": 128670.6,
+   "leader": "国联水产",
+   "leader_pct": 5.137
+  },
+  {
+   "name": "朝鲜改革",
+   "n": 44,
+   "pct": 2.5808747057858,
+   "amount_yi": 719300.4,
+   "leader": "皓宸医疗",
+   "leader_pct": 10.121
+  },
+  {
+   "name": "垃圾分类",
+   "n": 37,
+   "pct": 0.72722828245791,
+   "amount_yi": 524805.8,
+   "leader": "中国天楹",
+   "leader_pct": 5.87
+  },
+  {
+   "name": "含GDR",
+   "n": 1,
+   "pct": 0.76377523186034,
+   "amount_yi": 85937.3,
+   "leader": "华泰证券",
+   "leader_pct": 0.764
+  },
+  {
+   "name": "氢能源",
+   "n": 25,
+   "pct": 2.2987808576454,
+   "amount_yi": 1406922.9,
+   "leader": "中材科技",
+   "leader_pct": 9.997
+  },
+  {
+   "name": "华为概念",
+   "n": 51,
+   "pct": 1.4563703400246,
+   "amount_yi": 8742601.2,
+   "leader": "通宇通讯",
+   "leader_pct": 10.0
+  },
+  {
+   "name": "百度概念",
+   "n": 16,
+   "pct": 1.1208343322944,
+   "amount_yi": 545654.5,
+   "leader": "金龙汽车",
+   "leader_pct": 2.958
+  },
+  {
+   "name": "小米概念",
+   "n": 39,
+   "pct": 0.37873709612549,
+   "amount_yi": 4542960.4,
+   "leader": "美盈森",
+   "leader_pct": 10.0
+  },
+  {
+   "name": "仿制药",
+   "n": 22,
+   "pct": 2.9960212837352,
+   "amount_yi": 786059.2,
+   "leader": "海南海药",
+   "leader_pct": 9.978
+  },
+  {
+   "name": "国防军工",
+   "n": 100,
+   "pct": 2.0210558328414,
+   "amount_yi": 5360078.2,
+   "leader": "ST信源",
+   "leader_pct": 8.759
+  },
+  {
+   "name": "海南自贸",
+   "n": 39,
+   "pct": 0.99005455402645,
+   "amount_yi": 1394915.8,
+   "leader": "海南海药",
+   "leader_pct": 9.978
+  },
+  {
+   "name": "乡村振兴",
+   "n": 40,
+   "pct": 2.3576319667158,
+   "amount_yi": 1632359.9,
+   "leader": "金健米业",
+   "leader_pct": 9.986
+  },
+  {
+   "name": "5G概念",
+   "n": 44,
+   "pct": 1.0396397398121,
+   "amount_yi": 5522892.2,
+   "leader": "华星创业",
+   "leader_pct": 8.545
+  },
+  {
+   "name": "军民融合",
+   "n": 100,
+   "pct": 1.494616606571,
+   "amount_yi": 5301148.3,
+   "leader": "金明精机",
+   "leader_pct": 8.67
+  },
+  {
+   "name": "免疫治疗",
+   "n": 19,
+   "pct": 3.9350238567523,
+   "amount_yi": 339246.1,
+   "leader": "南华生物",
+   "leader_pct": 9.99
+  },
+  {
+   "name": "雄安新区",
+   "n": 46,
+   "pct": 1.3533792796799,
+   "amount_yi": 937454.8,
+   "leader": "荣盛发展",
+   "leader_pct": 5.0
+  },
+  {
+   "name": "智能电网",
+   "n": 36,
+   "pct": 0.9816474605207,
+   "amount_yi": 1339334.7,
+   "leader": "智光电气",
+   "leader_pct": 9.158
+  },
+  {
+   "name": "黄河三角",
+   "n": 92,
+   "pct": 1.1933641129979,
+   "amount_yi": 5105602.1,
+   "leader": "华仁药业",
+   "leader_pct": 20.073
+  },
+  {
+   "name": "海峡西岸",
+   "n": 73,
+   "pct": 0.95011194672484,
+   "amount_yi": 2628235.9,
+   "leader": "奥佳华",
+   "leader_pct": 10.035
+  },
+  {
+   "name": "成渝特区",
+   "n": 100,
+   "pct": 1.3912255726673,
+   "amount_yi": 3084720.3,
+   "leader": "升达林业",
+   "leader_pct": 9.976
+  },
+  {
+   "name": "物联网",
+   "n": 69,
+   "pct": 1.3682988742203,
+   "amount_yi": 3013910.3,
+   "leader": "美盈森",
+   "leader_pct": 10.0
+  },
+  {
+   "name": "军工航天",
+   "n": 100,
+   "pct": 1.5413614699256,
+   "amount_yi": 4484308.1,
+   "leader": "ST信源",
+   "leader_pct": 8.759
+  },
+  {
+   "name": "黄金概念",
+   "n": 26,
+   "pct": -1.232526210684,
+   "amount_yi": 1380189.4,
+   "leader": "ST能特",
+   "leader_pct": 4.428
+  },
+  {
+   "name": "ST板块",
+   "n": 59,
+   "pct": 2.4828185695271,
+   "amount_yi": 1400513.2,
+   "leader": "百花医药",
+   "leader_pct": 10.042
+  },
+  {
+   "name": "低碳经济",
+   "n": 85,
+   "pct": 1.2698898408813,
+   "amount_yi": 2759484.0,
+   "leader": "智光电气",
+   "leader_pct": 9.158
+  },
+  {
+   "name": "含H股",
+   "n": 91,
+   "pct": 1.0596531910678,
+   "amount_yi": 6336697.9,
+   "leader": "新华文轩",
+   "leader_pct": 10.0
+  },
+  {
+   "name": "含B股",
+   "n": 77,
+   "pct": 1.5605550387191,
+   "amount_yi": 2104384.2,
+   "leader": "深华发Ａ",
+   "leader_pct": 10.031
+  },
+  {
+   "name": "稀缺资源",
+   "n": 48,
+   "pct": 1.5732275948159,
+   "amount_yi": 3485377.7,
+   "leader": "金瑞矿业",
+   "leader_pct": 10.0
+  },
+  {
+   "name": "融资融券",
+   "n": 100,
+   "pct": 0.96640516259648,
+   "amount_yi": 5167708.4,
+   "leader": "新华传媒",
+   "leader_pct": 9.981
+  },
+  {
+   "name": "武汉规划",
+   "n": 40,
+   "pct": 0.51680556598343,
+   "amount_yi": 2308823.3,
+   "leader": "汉商集团",
+   "leader_pct": 5.867
+  },
+  {
+   "name": "锂电池",
+   "n": 100,
+   "pct": 1.0844407037535,
+   "amount_yi": 7715276.2,
+   "leader": "中材科技",
+   "leader_pct": 9.997
+  },
+  {
+   "name": "核电核能",
+   "n": 64,
+   "pct": 1.7448033650508,
+   "amount_yi": 2161038.3,
+   "leader": "光智科技",
+   "leader_pct": 6.317
+  },
+  {
+   "name": "触摸屏",
+   "n": 31,
+   "pct": 0.69398246144542,
+   "amount_yi": 5115475.9,
+   "leader": "新亚制程",
+   "leader_pct": 9.959
+  },
+  {
+   "name": "水利建设",
+   "n": 18,
+   "pct": 1.0874255631311,
+   "amount_yi": 420312.5,
+   "leader": "南方泵业",
+   "leader_pct": 6.571
+  },
+  {
+   "name": "长株潭",
+   "n": 65,
+   "pct": 1.6065192083818,
+   "amount_yi": 1913642.8,
+   "leader": "金健米业",
+   "leader_pct": 9.986
+  },
+  {
+   "name": "皖江区域",
+   "n": 62,
+   "pct": 1.3771049106178,
+   "amount_yi": 2180113.8,
+   "leader": "全柴动力",
+   "leader_pct": 9.973
+  },
+  {
+   "name": "卫星导航",
+   "n": 24,
+   "pct": 0.73827257284725,
+   "amount_yi": 856869.0,
+   "leader": "深 赛 格",
+   "leader_pct": 3.841
+  },
+  {
+   "name": "电子支付",
+   "n": 39,
+   "pct": 0.84123297131019,
+   "amount_yi": 2606494.4,
+   "leader": "ST信通",
+   "leader_pct": 6.368
+  },
+  {
+   "name": "海工装备",
+   "n": 33,
+   "pct": 1.6086133157436,
+   "amount_yi": 2268947.6,
+   "leader": "海油工程",
+   "leader_pct": 7.756
+  },
+  {
+   "name": "涉矿概念",
+   "n": 68,
+   "pct": 1.4693527646807,
+   "amount_yi": 1766031.2,
+   "leader": "悦心健康",
+   "leader_pct": 5.941
+  },
+  {
+   "name": "金融改革",
+   "n": 71,
+   "pct": 1.4190390162884,
+   "amount_yi": 2276727.2,
+   "leader": "绿地控股",
+   "leader_pct": 10.345
+  },
+  {
+   "name": "页岩气",
+   "n": 35,
+   "pct": 0.53775090117596,
+   "amount_yi": 1700515.9,
+   "leader": "广汇能源",
+   "leader_pct": 5.208
+  },
+  {
+   "name": "生物疫苗",
+   "n": 43,
+   "pct": 3.469655659901,
+   "amount_yi": 969057.1,
+   "leader": "科华生物",
+   "leader_pct": 9.982
+  },
+  {
+   "name": "文化振兴",
+   "n": 29,
+   "pct": 1.8629693157995,
+   "amount_yi": 644408.3,
+   "leader": "天音控股",
+   "leader_pct": 10.023
+  },
+  {
+   "name": "宽带提速",
+   "n": 15,
+   "pct": 0.81197486408247,
+   "amount_yi": 4724298.3,
+   "leader": "特发信息",
+   "leader_pct": 7.232
+  },
+  {
+   "name": "食品安全",
+   "n": 21,
+   "pct": 1.4135122184954,
+   "amount_yi": 503698.9,
+   "leader": "华宇软件",
+   "leader_pct": 6.261
+  },
+  {
+   "name": "奢侈品",
+   "n": 16,
+   "pct": -0.18254543502188,
+   "amount_yi": 671824.8,
+   "leader": "华斯股份",
+   "leader_pct": 5.263
+  },
+  {
+   "name": "图们江",
+   "n": 30,
+   "pct": 2.7163886162905,
+   "amount_yi": 862438.9,
+   "leader": "皓宸医疗",
+   "leader_pct": 10.121
+  },
+  {
+   "name": "三沙概念",
+   "n": 14,
+   "pct": 2.1062909750314,
+   "amount_yi": 311283.6,
+   "leader": "海南海药",
+   "leader_pct": 9.978
+  },
+  {
+   "name": "3D打印",
+   "n": 39,
+   "pct": 0.19435105190734,
+   "amount_yi": 2250484.7,
+   "leader": "亚厦股份",
+   "leader_pct": 4.011
+  },
+  {
+   "name": "海水淡化",
+   "n": 20,
+   "pct": 0.74477545575811,
+   "amount_yi": 303114.6,
+   "leader": "南方泵业",
+   "leader_pct": 6.571
+  },
+  {
+   "name": "碳纤维",
+   "n": 19,
+   "pct": 2.3949795081967,
+   "amount_yi": 1564361.1,
+   "leader": "远东股份",
+   "leader_pct": 7.146
+  },
+  {
+   "name": "地热能",
+   "n": 14,
+   "pct": 0.87882096069869,
+   "amount_yi": 569878.1,
+   "leader": "海鸥住工",
+   "leader_pct": 10.072
+  },
+  {
+   "name": "摘帽概念",
+   "n": 29,
+   "pct": 1.8803418803419,
+   "amount_yi": 449425.4,
+   "leader": "华锦股份",
+   "leader_pct": 6.481
+  },
+  {
+   "name": "苹果概念",
+   "n": 34,
+   "pct": 0.68724593495935,
+   "amount_yi": 3444074.1,
+   "leader": "天音控股",
+   "leader_pct": 10.023
+  },
+  {
+   "name": "重组概念",
+   "n": 100,
+   "pct": 1.4762503039637,
+   "amount_yi": 3070610.6,
+   "leader": "百花医药",
+   "leader_pct": 10.042
+  },
+  {
+   "name": "安防服务",
+   "n": 49,
+   "pct": 1.1157826649418,
+   "amount_yi": 917095.3,
+   "leader": "综艺股份",
+   "leader_pct": 5.052
+  },
+  {
+   "name": "建筑节能",
+   "n": 22,
+   "pct": 2.0327060113283,
+   "amount_yi": 712580.7,
+   "leader": "先锋新材",
+   "leader_pct": 10.218
+  },
+  {
+   "name": "空气治理",
+   "n": 37,
+   "pct": 0.86393560945736,
+   "amount_yi": 1264229.2,
+   "leader": "龙头股份",
+   "leader_pct": 10.012
+  },
+  {
+   "name": "充电桩",
+   "n": 45,
+   "pct": 0.95220267066018,
+   "amount_yi": 2225387.7,
+   "leader": "行云科技",
+   "leader_pct": 8.548
+  },
+  {
+   "name": "石墨烯",
+   "n": 40,
+   "pct": 1.3809747268217,
+   "amount_yi": 2681269.3,
+   "leader": "华金资本",
+   "leader_pct": 10.031
+  },
+  {
+   "name": "土地流转",
+   "n": 44,
+   "pct": 2.0848259062903,
+   "amount_yi": 2263801.2,
+   "leader": "中华企业",
+   "leader_pct": 6.061
+  },
+  {
+   "name": "聚氨酯",
+   "n": 23,
+   "pct": 1.0719863694448,
+   "amount_yi": 1043145.2,
+   "leader": "北化股份",
+   "leader_pct": 10.008
+  },
+  {
+   "name": "东亚自贸",
+   "n": 25,
+   "pct": 0.93810314646079,
+   "amount_yi": 607311.2,
+   "leader": "华仁药业",
+   "leader_pct": 20.073
+  },
+  {
+   "name": "体育概念",
+   "n": 37,
+   "pct": 2.3127049703991,
+   "amount_yi": 635380.5,
+   "leader": "艾比森",
+   "leader_pct": 6.284
+  },
+  {
+   "name": "博彩概念",
+   "n": 29,
+   "pct": 1.7994279665788,
+   "amount_yi": 1401796.9,
+   "leader": "天音控股",
+   "leader_pct": 10.023
+  },
+  {
+   "name": "特斯拉",
+   "n": 58,
+   "pct": 0.38606674396938,
+   "amount_yi": 5470445.9,
+   "leader": "远东股份",
+   "leader_pct": 7.146
+  },
+  {
+   "name": "生态农业",
+   "n": 22,
+   "pct": 2.4656406032841,
+   "amount_yi": 830182.2,
+   "leader": "万向德农",
+   "leader_pct": 6.429
+  },
+  {
+   "name": "水域改革",
+   "n": 9,
+   "pct": 3.2903439153439,
+   "amount_yi": 184051.4,
+   "leader": "国联水产",
+   "leader_pct": 5.137
+  },
+  {
+   "name": "风能",
+   "n": 65,
+   "pct": 1.8483974902493,
+   "amount_yi": 3445495.8,
+   "leader": "中材科技",
+   "leader_pct": 9.997
+  },
+  {
+   "name": "草甘膦",
+   "n": 10,
+   "pct": 1.5879797764011,
+   "amount_yi": 251852.5,
+   "leader": "红太阳",
+   "leader_pct": 4.194
+  },
+  {
+   "name": "京津冀",
+   "n": 44,
+   "pct": 2.2121942116513,
+   "amount_yi": 915791.0,
+   "leader": "华远控股",
+   "leader_pct": 9.906
+  },
+  {
+   "name": "基因概念",
+   "n": 35,
+   "pct": 3.1782316938279,
+   "amount_yi": 1595868.9,
+   "leader": "澳洋健康",
+   "leader_pct": 10.038
+  },
+  {
+   "name": "海上丝路",
+   "n": 20,
+   "pct": 2.0599073986582,
+   "amount_yi": 375970.8,
+   "leader": "南宁百货",
+   "leader_pct": 10.094
+  },
+  {
+   "name": "抗癌",
+   "n": 49,
+   "pct": 3.2026865253961,
+   "amount_yi": 1976959.0,
+   "leader": "哈药股份",
+   "leader_pct": 10.0
+  },
+  {
+   "name": "维生素",
+   "n": 13,
+   "pct": 3.0635609948677,
+   "amount_yi": 272276.1,
+   "leader": "华北制药",
+   "leader_pct": 9.957
+  },
+  {
+   "name": "汽车电子",
+   "n": 31,
+   "pct": 1.9401167429555,
+   "amount_yi": 2635101.4,
+   "leader": "行云科技",
+   "leader_pct": 8.548
+  },
+  {
+   "name": "固废处理",
+   "n": 39,
+   "pct": 1.1723770414721,
+   "amount_yi": 825283.0,
+   "leader": "华金资本",
+   "leader_pct": 10.031
+  },
+  {
+   "name": "赛马概念",
+   "n": 14,
+   "pct": 1.662243330074,
+   "amount_yi": 421212.3,
+   "leader": "珠江股份",
+   "leader_pct": 4.598
+  },
+  {
+   "name": "猪肉",
+   "n": 19,
+   "pct": 1.7596405840509,
+   "amount_yi": 481573.5,
+   "leader": "ST龙大",
+   "leader_pct": 6.723
+  },
+  {
+   "name": "污水处理",
+   "n": 62,
+   "pct": 1.4706850758391,
+   "amount_yi": 862723.1,
+   "leader": "华金资本",
+   "leader_pct": 10.031
+  },
+  {
+   "name": "国产软件",
+   "n": 23,
+   "pct": 1.5701468189233,
+   "amount_yi": 1168062.5,
+   "leader": "ST信源",
+   "leader_pct": 8.759
+  },
+  {
+   "name": "基因测序",
+   "n": 8,
+   "pct": 4.9213804370022,
+   "amount_yi": 444535.0,
+   "leader": "金健米业",
+   "leader_pct": 9.986
+  },
+  {
+   "name": "电商概念",
+   "n": 14,
+   "pct": 2.2034996759559,
+   "amount_yi": 1125842.5,
+   "leader": "远东股份",
+   "leader_pct": 7.146
+  },
+  {
+   "name": "氢燃料",
+   "n": 7,
+   "pct": 2.4611240357536,
+   "amount_yi": 185845.0,
+   "leader": "华昌化工",
+   "leader_pct": 5.21
+  },
+  {
+   "name": "国企改革",
+   "n": 51,
+   "pct": 1.408572229772,
+   "amount_yi": 1309212.0,
+   "leader": "绿地控股",
+   "leader_pct": 10.345
+  },
+  {
+   "name": "超导概念",
+   "n": 17,
+   "pct": 1.9422946878052,
+   "amount_yi": 2194324.9,
+   "leader": "综艺股份",
+   "leader_pct": 5.052
+  },
+  {
+   "name": "智能家居",
+   "n": 14,
+   "pct": 1.1803147506002,
+   "amount_yi": 374519.2,
+   "leader": "海鸥住工",
+   "leader_pct": 10.072
+  },
+  {
+   "name": "智能机器",
+   "n": 40,
+   "pct": 1.1475795919241,
+   "amount_yi": 1327608.1,
+   "leader": "上海机电",
+   "leader_pct": 4.949
+  },
+  {
+   "name": "机器人概念",
+   "n": 43,
+   "pct": 1.1225260117504,
+   "amount_yi": 1686282.6,
+   "leader": "上海机电",
+   "leader_pct": 4.949
+  },
+  {
+   "name": "天津自贸",
+   "n": 9,
+   "pct": 0.73873430189608,
+   "amount_yi": 91683.0,
+   "leader": "天保基建",
+   "leader_pct": 4.281
+  },
+  {
+   "name": "信息安全",
+   "n": 13,
+   "pct": 2.8944423722492,
+   "amount_yi": 543490.5,
+   "leader": "绿盟科技",
+   "leader_pct": 13.685
+  },
+  {
+   "name": "油气改革",
+   "n": 28,
+   "pct": 1.0458167330677,
+   "amount_yi": 896776.9,
+   "leader": "海油工程",
+   "leader_pct": 7.756
+  },
+  {
+   "name": "民营医院",
+   "n": 20,
+   "pct": 2.5995273586621,
+   "amount_yi": 1135306.8,
+   "leader": "益佰制药",
+   "leader_pct": 7.303
+  },
+  {
+   "name": "民营银行",
+   "n": 49,
+   "pct": 1.4311660007265,
+   "amount_yi": 1579347.4,
+   "leader": "皓宸医疗",
+   "leader_pct": 10.121
+  },
+  {
+   "name": "婴童概念",
+   "n": 22,
+   "pct": 2.21725443679,
+   "amount_yi": 402324.3,
+   "leader": "亚宝药业",
+   "leader_pct": 5.144
+  },
+  {
+   "name": "上海自贸",
+   "n": 29,
+   "pct": 1.9373660938141,
+   "amount_yi": 440846.6,
+   "leader": "龙头股份",
+   "leader_pct": 10.012
+  },
+  {
+   "name": "互联金融",
+   "n": 17,
+   "pct": 1.8482937785836,
+   "amount_yi": 883886.8,
+   "leader": "金证股份",
+   "leader_pct": 5.057
+  },
+  {
+   "name": "网络游戏",
+   "n": 38,
+   "pct": 1.5956589480471,
+   "amount_yi": 1407005.1,
+   "leader": "天音控股",
+   "leader_pct": 10.023
+  },
+  {
+   "name": "智能穿戴",
+   "n": 19,
+   "pct": 0.44173238379748,
+   "amount_yi": 2683346.3,
+   "leader": "ST得润",
+   "leader_pct": 4.505
+  },
+  {
+   "name": "前海概念",
+   "n": 27,
+   "pct": 1.7832205392631,
+   "amount_yi": 1228953.7,
+   "leader": "深华发Ａ",
+   "leader_pct": 10.031
+  },
+  {
+   "name": "绿色照明",
+   "n": 42,
+   "pct": 0.2999919788241,
+   "amount_yi": 3403077.3,
+   "leader": "广日股份",
+   "leader_pct": 10.0
+  },
+  {
+   "name": "风能概念",
+   "n": 41,
+   "pct": 2.2884057281507,
+   "amount_yi": 2432966.3,
+   "leader": "中材科技",
+   "leader_pct": 9.997
+  },
+  {
+   "name": "生物育种",
+   "n": 14,
+   "pct": 3.4084053891011,
+   "amount_yi": 677868.7,
+   "leader": "万向德农",
+   "leader_pct": 6.429
+  },
+  {
+   "name": "内贸规划",
+   "n": 29,
+   "pct": 2.7583280288564,
+   "amount_yi": 556212.8,
+   "leader": "南宁百货",
+   "leader_pct": 10.094
+  },
+  {
+   "name": "生物燃料",
+   "n": 10,
+   "pct": 2.6865334687888,
+   "amount_yi": 316153.8,
+   "leader": "万向德农",
+   "leader_pct": 6.429
+  },
+  {
+   "name": "准ST股",
+   "n": 48,
+   "pct": 1.8239776671194,
+   "amount_yi": 2001532.0,
+   "leader": "澳洋健康",
+   "leader_pct": 10.038
+  },
+  {
+   "name": "业绩预降",
+   "n": 100,
+   "pct": 1.7172000748643,
+   "amount_yi": 5906252.9,
+   "leader": "南宁百货",
+   "leader_pct": 10.094
+  },
+  {
+   "name": "业绩预升",
+   "n": 100,
+   "pct": 1.4349586405075,
+   "amount_yi": 3162865.1,
+   "leader": "广日股份",
+   "leader_pct": 10.0
+  },
+  {
+   "name": "送转潜力",
+   "n": 17,
+   "pct": 1.1646349753025,
+   "amount_yi": 792117.2,
+   "leader": "华宇软件",
+   "leader_pct": 6.261
+  },
+  {
+   "name": "高校背景",
+   "n": 22,
+   "pct": 2.1559778078018,
+   "amount_yi": 1660484.3,
+   "leader": "宁波中百",
+   "leader_pct": 10.009
+  },
+  {
+   "name": "节能环保",
+   "n": 100,
+   "pct": 0.70975612215064,
+   "amount_yi": 2278054.9,
+   "leader": "南方泵业",
+   "leader_pct": 6.571
+  },
+  {
+   "name": "陕甘宁",
+   "n": 67,
+   "pct": 2.4680877336503,
+   "amount_yi": 3146068.1,
+   "leader": "新华百货",
+   "leader_pct": 9.981
+  },
+  {
+   "name": "自贸区",
+   "n": 22,
+   "pct": 1.9497206703911,
+   "amount_yi": 360843.8,
+   "leader": "华仁药业",
+   "leader_pct": 20.073
+  },
+  {
+   "name": "日韩贸易",
+   "n": 19,
+   "pct": 0.51977753521493,
+   "amount_yi": 553502.3,
+   "leader": "华仁药业",
+   "leader_pct": 20.073
+  },
+  {
+   "name": "外资背景",
+   "n": 19,
+   "pct": 1.0389375734032,
+   "amount_yi": 635625.6,
+   "leader": "先导基电",
+   "leader_pct": 6.595
+  },
+  {
+   "name": "整体上市",
+   "n": 69,
+   "pct": 0.19916442511303,
+   "amount_yi": 2787351.6,
+   "leader": "大悦城",
+   "leader_pct": 6.278
+  },
+  {
+   "name": "本月解禁",
+   "n": 61,
+   "pct": 0.03003779173332,
+   "amount_yi": 3139599.1,
+   "leader": "ST信源",
+   "leader_pct": 8.759
+  },
+  {
+   "name": "金融参股",
+   "n": 100,
+   "pct": 2.2737056757675,
+   "amount_yi": 3799157.8,
+   "leader": "绿地控股",
+   "leader_pct": 10.345
+  },
+  {
+   "name": "社保重仓",
+   "n": 96,
+   "pct": 1.1812074169389,
+   "amount_yi": 5927342.8,
+   "leader": "华发股份",
+   "leader_pct": 10.081
+  },
+  {
+   "name": "保险重仓",
+   "n": 98,
+   "pct": 0.55220083055442,
+   "amount_yi": 8021507.2,
+   "leader": "科华生物",
+   "leader_pct": 9.982
+  },
+  {
+   "name": "信托重仓",
+   "n": 94,
+   "pct": 1.5494971154337,
+   "amount_yi": 4673355.0,
+   "leader": "南宁百货",
+   "leader_pct": 10.094
+  },
+  {
+   "name": "券商重仓",
+   "n": 94,
+   "pct": 1.8311853330913,
+   "amount_yi": 6008633.1,
+   "leader": "广日股份",
+   "leader_pct": 10.0
+  },
+  {
+   "name": "QFII重仓",
+   "n": 98,
+   "pct": 0.3117797011189,
+   "amount_yi": 4182670.0,
+   "leader": "全柴动力",
+   "leader_pct": 9.973
+  },
+  {
+   "name": "分拆上市",
+   "n": 58,
+   "pct": 1.2138063493127,
+   "amount_yi": 3756508.8,
+   "leader": "华北制药",
+   "leader_pct": 9.957
+  },
+  {
+   "name": "超级细菌",
+   "n": 13,
+   "pct": 2.8776978417266,
+   "amount_yi": 275729.4,
+   "leader": "华北制药",
+   "leader_pct": 9.957
+  },
+  {
+   "name": "上海本地",
+   "n": 100,
+   "pct": 2.4213323747288,
+   "amount_yi": 2090473.7,
+   "leader": "绿地控股",
+   "leader_pct": 10.345
+  },
+  {
+   "name": "深圳本地",
+   "n": 58,
+   "pct": 1.8506625202812,
+   "amount_yi": 2632824.5,
+   "leader": "深华发Ａ",
+   "leader_pct": 10.031
+  },
+  {
+   "name": "振兴沈阳",
+   "n": 22,
+   "pct": 3.7032905744562,
+   "amount_yi": 600751.1,
+   "leader": "大连圣亚",
+   "leader_pct": 10.011
+  },
+  {
+   "name": "沿海发展",
+   "n": 37,
+   "pct": 1.8592406729464,
+   "amount_yi": 2665993.1,
+   "leader": "华昌化工",
+   "leader_pct": 5.21
+  },
+  {
+   "name": "央企50",
+   "n": 49,
+   "pct": 0.98603879647975,
+   "amount_yi": 4057323.3,
+   "leader": "海油工程",
+   "leader_pct": 7.756
+  },
+  {
+   "name": "超大盘",
+   "n": 20,
+   "pct": 0.63564068100358,
+   "amount_yi": 2883194.5,
+   "leader": "中远海控",
+   "leader_pct": 3.789
+  },
+  {
+   "name": "参股金融",
+   "n": 100,
+   "pct": 2.5541580581633,
+   "amount_yi": 2693618.3,
+   "leader": "绿地控股",
+   "leader_pct": 10.345
+  },
+  {
+   "name": "基金重仓",
+   "n": 97,
+   "pct": 0.4387199099537,
+   "amount_yi": 8007411.7,
+   "leader": "万 科Ａ",
+   "leader_pct": 9.94
+  },
+  {
+   "name": "股期概念",
+   "n": 26,
+   "pct": 0.88268202726783,
+   "amount_yi": 739560.5,
+   "leader": "大悦城",
+   "leader_pct": 6.278
+  },
+  {
+   "name": "股权激励",
+   "n": 100,
+   "pct": 1.2346324533827,
+   "amount_yi": 6229467.2,
+   "leader": "迪安诊断",
+   "leader_pct": 7.47
+  },
+  {
+   "name": "甲型流感",
+   "n": 14,
+   "pct": 2.6391776391776,
+   "amount_yi": 258261.8,
+   "leader": "普洛药业",
+   "leader_pct": 5.707
+  },
+  {
+   "name": "迪士尼",
+   "n": 26,
+   "pct": 1.7361433478786,
+   "amount_yi": 413645.3,
+   "leader": "龙头股份",
+   "leader_pct": 10.012
+  },
+  {
+   "name": "出口退税",
+   "n": 40,
+   "pct": 0.92211742648888,
+   "amount_yi": 2261520.3,
+   "leader": "东北制药",
+   "leader_pct": 4.936
+  },
+  {
+   "name": "新能源",
+   "n": 69,
+   "pct": 1.5267605633803,
+   "amount_yi": 3561661.8,
+   "leader": "中材科技",
+   "leader_pct": 9.997
+  },
+  {
+   "name": "未股改",
+   "n": 14,
+   "pct": 1.4318932811161,
+   "amount_yi": 349372.3,
+   "leader": "深中华A",
+   "leader_pct": 4.794
+  },
+  {
+   "name": "循环经济",
+   "n": 37,
+   "pct": 1.1040262342868,
+   "amount_yi": 961675.3,
+   "leader": "华金资本",
+   "leader_pct": 10.031
+  },
+  {
+   "name": "资产注入",
+   "n": 49,
+   "pct": 0.26723162481643,
+   "amount_yi": 1370716.1,
+   "leader": "京能置业",
+   "leader_pct": 4.31
+  }
+ ]
+}
